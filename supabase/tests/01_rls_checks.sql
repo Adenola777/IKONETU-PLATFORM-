@@ -1,9 +1,4 @@
 \set ON_ERROR_STOP 0
-grant usage on schema public, auth, storage to anon, authenticated;
-grant all on all tables in schema public to anon, authenticated;
-grant all on all sequences in schema public to anon, authenticated;
-grant all on storage.objects to authenticated;
-grant execute on all functions in schema public, auth, storage to anon, authenticated;
 insert into auth.users values ('11111111-1111-1111-1111-111111111111'), ('22222222-2222-2222-2222-222222222222');
 insert into public.rubric_versions (version, is_active) values ('v2', true) on conflict do nothing;
 
@@ -45,3 +40,30 @@ insert into public.score_events (venture_id, total, league, delta) values ('aaaa
 update public.score_events set total = 999;
 \echo T15 evidence state after tests
 select signal_code, status, lane from public.evidence;
+
+set role anon;
+reset request.jwt.claim.sub;
+set request.jwt.claim.role = 'anon';
+\echo T16 visitor not signed in reads public_profiles (expect permission denied)
+select count(*) from public.public_profiles;
+\echo T17 visitor not signed in renames a founder through the view (expect permission denied)
+update public.public_profiles set full_name = 'Changed Name';
+\echo T18 visitor not signed in deletes through the view (expect permission denied)
+delete from public.public_profiles;
+\echo T19 visitor not signed in calls is_staff (expect permission denied)
+select public.is_staff();
+
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+set request.jwt.claim.role = 'authenticated';
+\echo T20 signed-in user reads the founder card (expect 1)
+select count(*) as visible_cards from public.public_profiles;
+\echo T21 signed-in user renames another founder through the view (expect permission denied)
+update public.public_profiles set full_name = 'Changed Name';
+\echo T22 signed-in user deletes through the view (expect permission denied)
+delete from public.public_profiles;
+
+reset role;
+\echo T23 profile name after tests (expect Amara Okafor)
+select full_name from public.profiles;
