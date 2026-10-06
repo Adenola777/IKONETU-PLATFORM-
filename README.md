@@ -16,9 +16,20 @@ The mobile app (Expo), evidence upload and the rest of the signed-in founder scr
 
 ## Sign-in
 
-"Get started" leads to `/signin`. A founder enters an email and Supabase Auth emails a link; the first link creates the account. The link returns to `/auth/callback`, which turns it into a session cookie. `/onboarding` creates the profile, records the privacy consent and creates the first venture, and `/dashboard` shows them with the score. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`.
+"Get started" leads to `/signin`. A founder enters an email, confirms they are 18 or older, and Supabase Auth sends a 6-digit code (PRD A-2, SRD SEC-A1, SEC-A9). The code is entered at `/signin/code`, which turns it into a session cookie. Between the two steps the address is kept in an HTTP-only cookie, never in the URL. The first code creates the account, so sign-up and sign-in are one step.
 
-Supabase Auth needs two settings, under Authentication, then URL Configuration: the Site URL set to `NEXT_PUBLIC_SITE_URL`, and `<NEXT_PUBLIC_SITE_URL>/auth/callback` listed under Redirect URLs.
+Phone sign-in by WhatsApp or SMS (PRD A-1) is built and switched off. It needs an SMS and WhatsApp provider configured in Supabase Auth, and then `NEXT_PUBLIC_PHONE_SIGN_IN=on` on Vercel. With it on, the phone number is asked first and email becomes the fallback, as the sign-in wireframe shows.
+
+`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them with the score. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`. `/auth/callback` remains for a sign-in link, in case an email template still carries one.
+
+Supabase Auth needs these settings before sign-in works:
+
+1. Under URL Configuration, the Site URL set to `NEXT_PUBLIC_SITE_URL`, and `<NEXT_PUBLIC_SITE_URL>/auth/callback` under Redirect URLs.
+2. The "Magic Link" and "Confirm signup" email templates must show the code with `{{ .Token }}`. Supabase's default templates send a link, which this sign-in page does not ask for.
+3. The email code lasting 300 seconds and 6 digits long (SRD SEC-A1).
+4. The access token lasting 900 seconds, with refresh token rotation and reuse detection on (SRD SEC-A3).
+
+`docs/DECISIONS.md` lists where this build departs from the PRD, TRD and SRD, and why.
 
 ## Run it
 
@@ -26,7 +37,7 @@ You need Node 22 and pnpm 10.
 
 ```sh
 pnpm install
-pnpm test          # 77 tests across the score engine and the web app
+pnpm test          # 95 tests across the score engine and the web app
 pnpm typecheck
 pnpm --filter @ikonetu/web dev    # http://localhost:3000
 ```
@@ -43,6 +54,6 @@ Sign-in answers "not open yet" and the waitlist endpoint answers 503 until Supab
 
 ## Not done yet
 
-- Sign-in has not been run end to end with a real email, because no test inbox was available. The database writes it makes were run under row level security on a local copy of the migrations.
+- Sign-in has not been run end to end with a real email code, because no test inbox was available. The database writes it makes were run under row level security on a local copy of the migrations.
 - The privacy notice is a draft and needs a lawyer's review before sign-up opens to the public. It now describes the account details as well as the waitlist.
 - The in-memory rate limit on the waitlist only slows casual abuse. Production also needs Vercel firewall rules.

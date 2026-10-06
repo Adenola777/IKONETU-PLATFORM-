@@ -31,10 +31,10 @@ export default async function OnboardingPage() {
         <div className="wrap form-wrap">
           <h1 className="title" style={{ marginBottom: 12 }}>Create your profile</h1>
           <p className="lede" style={{ marginBottom: 36 }}>
-            Tell us about you and your venture. Other signed-in members can see your name, country, city, institution and
-            venture. Nobody else can see your email.
+            Tell us about you and your venture. Other signed-in members can see your name, country, city, institution, bio
+            and venture. Nobody else can see your email or phone number.
           </p>
-          <OnboardingForm />
+          <OnboardingForm askAdult={auth.user.user_metadata?.confirmed_adult !== true} />
         </div>
       </main>
     </>

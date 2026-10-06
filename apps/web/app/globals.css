@@ -133,3 +133,6 @@ h1.title, h2.title { margin: 0 0 16px; font-family: var(--font-display); font-si
 .prose { max-width: 760px; padding-top: 64px; padding-bottom: 96px; line-height: 1.7; font-size: 17px; color: var(--text-mid); }
 .prose h1 { font-family: var(--font-display); color: var(--navy); font-size: 40px; margin: 0 0 24px; }
 .prose h2 { color: var(--navy); font-size: 22px; margin: 40px 0 8px; }
+
+.link-button { align-self: flex-start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--navy); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.code-input { max-width: 220px; font-size: 24px; letter-spacing: 0.3em; text-align: center; }

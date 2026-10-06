@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { STAGES } from "@/lib/account";
+import { OPTIONAL_CONSENTS, STAGES } from "@/lib/account";
 import { COUNTRIES } from "@/lib/constants";
 import { IDLE } from "../form-state";
 import { completeOnboarding } from "./actions";
 
-export function OnboardingForm() {
+export function OnboardingForm({ askAdult }: { askAdult: boolean }) {
   const [state, action, pending] = useActionState(completeOnboarding, IDLE);
   const errors = state.status === "error" ? state.errors : {};
   const values = state.status === "error" ? (state.values ?? {}) : {};
@@ -45,6 +45,18 @@ export function OnboardingForm() {
         {err("institution")}
       </div>
 
+      <div className="field">
+        <label htmlFor="o-graduate">Student or graduate status (optional)</label>
+        <input id="o-graduate" name="graduateStatus" className="input" type="text" maxLength={80} defaultValue={values.graduateStatus} {...invalid("graduateStatus")} />
+        <p className="hint">For example: final-year student, or graduated 2024.</p>
+        {err("graduateStatus")}
+      </div>
+      <div className="field">
+        <label htmlFor="o-bio">Short bio (optional)</label>
+        <textarea id="o-bio" name="bio" className="input" rows={3} maxLength={600} defaultValue={values.bio} {...invalid("bio")} />
+        {err("bio")}
+      </div>
+
       <h2 className="legend" style={{ margin: "12px 0 0" }}>Your venture</h2>
       <div className="field">
         <label htmlFor="o-venture">Venture name</label>
@@ -72,12 +84,45 @@ export function OnboardingForm() {
         {err("description")}
       </div>
 
-      <div>
-        <label className="check">
-          <input type="checkbox" name="confirmedAdult" {...invalid("confirmedAdult")} /> <span>I am 18 or older.</span>
-        </label>
-        {err("confirmedAdult")}
+      <div className="field">
+        <label htmlFor="o-website">Website (optional)</label>
+        <input id="o-website" name="website" className="input" type="url" inputMode="url" maxLength={200} defaultValue={values.website} {...invalid("website")} />
+        {err("website")}
       </div>
+      <div className="field">
+        <label htmlFor="o-linkedin">LinkedIn (optional)</label>
+        <input id="o-linkedin" name="linkedin" className="input" type="url" inputMode="url" maxLength={200} defaultValue={values.linkedin} {...invalid("linkedin")} />
+        {err("linkedin")}
+      </div>
+      <div className="field">
+        <label htmlFor="o-x">X (optional)</label>
+        <input id="o-x" name="x" className="input" type="url" inputMode="url" maxLength={200} defaultValue={values.x} {...invalid("x")} />
+        {err("x")}
+      </div>
+      <div className="field">
+        <label htmlFor="o-instagram">Instagram (optional)</label>
+        <input id="o-instagram" name="instagram" className="input" type="url" inputMode="url" maxLength={200} defaultValue={values.instagram} {...invalid("instagram")} />
+        {err("instagram")}
+      </div>
+
+      <fieldset className="radios">
+        <legend className="legend">Your choices</legend>
+        <p className="hint" style={{ margin: 0 }}>Each of these is optional, and you can change it later. A check only runs when you have said yes to it.</p>
+        {OPTIONAL_CONSENTS.map((c) => (
+          <label key={c.code} className="check">
+            <input type="checkbox" name={`consent_${c.code}`} /> <span>{c.label}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      {askAdult && (
+        <div>
+          <label className="check">
+            <input type="checkbox" name="confirmedAdult" {...invalid("confirmedAdult")} /> <span>I am 18 or older.</span>
+          </label>
+          {err("confirmedAdult")}
+        </div>
+      )}
       <div>
         <label className="check">
           <input type="checkbox" name="acceptedPrivacy" {...invalid("acceptedPrivacy")} />

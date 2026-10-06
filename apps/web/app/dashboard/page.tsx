@@ -18,10 +18,10 @@ export default async function DashboardPage() {
   if (!auth.user) redirect("/signin");
 
   const [profile, ventures] = await Promise.all([
-    supabase.from("profiles").select("full_name, country, city, institution").eq("user_id", auth.user.id).maybeSingle(),
+    supabase.from("profiles").select("full_name, country, city, institution, bio").eq("user_id", auth.user.id).maybeSingle(),
     supabase
       .from("ventures")
-      .select("id, name, sector, stage, country, description")
+      .select("id, name, sector, stage, country, description, website")
       .eq("founder_id", auth.user.id)
       .order("created_at", { ascending: true })
       .limit(1),
@@ -50,6 +50,7 @@ export default async function DashboardPage() {
               <h2 id="venture-title" style={{ marginTop: 0 }}>{venture.name}</h2>
               <p>{venture.sector} · {stage} · {country(venture.country)}</p>
               {venture.description ? <p>{venture.description}</p> : null}
+              {venture.website ? <p><a href={venture.website} rel="noopener nofollow" target="_blank">{venture.website}</a></p> : null}
             </section>
             <section className="card card-navy" aria-labelledby="score-title" style={{ padding: 32 }}>
               <h2 id="score-title" style={{ marginTop: 0 }}>IkonetU Score</h2>
