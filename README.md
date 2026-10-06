@@ -6,13 +6,19 @@ This repository holds the new IkonetU codebase: the web app, the score engine an
 
 | Folder | Contents |
 |---|---|
-| `apps/web` | Next.js app with the landing page, the waitlist form, the draft privacy notice and the `POST /api/v1/waitlist` endpoint |
+| `apps/web` | Next.js app with the landing page, founder sign-in by emailed link, the profile and first venture form, the founder dashboard, the draft privacy notice and the `POST /api/v1/waitlist` endpoint, which no page calls since sign-up replaced the form |
 | `packages/score-engine` | The IkonetU Score rules (rubric v2), the score calculation, league placement and the "next best actions" list, with tests |
 | `packages/ui-tokens` | Brand colours, fonts, spacing and the 44 px touch target |
 | `supabase/migrations` | Database tables, access rules (row level security), the private evidence bucket and the rubric seed |
 | `supabase/tests` | SQL checks that prove the access rules work |
 
-The mobile app (Expo) and the signed-in founder screens come next.
+The mobile app (Expo), evidence upload and the rest of the signed-in founder screens come next.
+
+## Sign-in
+
+"Get started" leads to `/signin`. A founder enters an email and Supabase Auth emails a link; the first link creates the account. The link returns to `/auth/callback`, which turns it into a session cookie. `/onboarding` creates the profile, records the privacy consent and creates the first venture, and `/dashboard` shows them with the score. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`.
+
+Supabase Auth needs two settings, under Authentication, then URL Configuration: the Site URL set to `NEXT_PUBLIC_SITE_URL`, and `<NEXT_PUBLIC_SITE_URL>/auth/callback` listed under Redirect URLs.
 
 ## Run it
 
@@ -20,12 +26,12 @@ You need Node 22 and pnpm 10.
 
 ```sh
 pnpm install
-pnpm test          # 68 tests across the score engine and the web app
+pnpm test          # 77 tests across the score engine and the web app
 pnpm typecheck
 pnpm --filter @ikonetu/web dev    # http://localhost:3000
 ```
 
-The waitlist endpoint answers 503 until Supabase is configured. To connect it, copy `.env.example` to `apps/web/.env.local` and fill in the values from your Supabase project. The service role key must stay on the server and must never be committed.
+Sign-in answers "not open yet" and the waitlist endpoint answers 503 until Supabase is configured. To connect it, copy `.env.example` to `apps/web/.env.local` and fill in the values from your Supabase project. The service role key must stay on the server and must never be committed.
 
 ## Rules the code enforces
 
@@ -37,6 +43,6 @@ The waitlist endpoint answers 503 until Supabase is configured. To connect it, c
 
 ## Not done yet
 
-- No Supabase or Vercel project exists yet. Nothing is deployed.
-- The privacy notice is a draft and needs a lawyer's review before the waitlist opens.
+- Sign-in has not been run end to end with a real email, because no test inbox was available. The database writes it makes were run under row level security on a local copy of the migrations.
+- The privacy notice is a draft and needs a lawyer's review before sign-up opens to the public. It now describes the account details as well as the waitlist.
 - The in-memory rate limit on the waitlist only slows casual abuse. Production also needs Vercel firewall rules.

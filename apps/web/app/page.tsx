@@ -1,6 +1,5 @@
 import { LEAGUE_THRESHOLDS } from "@ikonetu/score-engine";
 import { leagueColors } from "@ikonetu/ui-tokens";
-import { WaitlistForm } from "./waitlist-form";
 
 const fmt = (n: number) => n.toLocaleString("en-GB");
 
@@ -43,7 +42,7 @@ export default function Home() {
             <a href="#leagues">Leagues</a>
             <a href="#rewards">Rewards</a>
             <a href="#capital">Investors and mentors</a>
-            <a href="#waitlist" className="btn btn-orange">Join the waitlist</a>
+            <a href="/signin" className="btn btn-orange">Get started</a>
           </nav>
         </div>
         <div id="top" className="wrap hero">
@@ -55,7 +54,7 @@ export default function Home() {
               and your score places you in a league that investors, mentors and programmes can trust.
             </p>
             <div className="ctas">
-              <a href="#waitlist" className="btn btn-orange">Join the waitlist</a>
+              <a href="/signin" className="btn btn-orange">Get started</a>
               <a href="#how" className="btn btn-ghost">See how scoring works</a>
             </div>
           </div>
@@ -184,13 +183,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="waitlist" className="section tint">
-          <div className="wrap form-wrap">
-            <h2 className="title" style={{ marginBottom: 12 }}>Join the waitlist</h2>
-            <p className="lede" style={{ marginBottom: 36 }}>We will tell you when Season 1 opens in your country.</p>
-            <WaitlistForm />
-          </div>
-        </section>
       </main>
 
       <footer className="footer">
