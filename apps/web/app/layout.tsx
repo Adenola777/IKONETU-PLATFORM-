@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: "IkonetU | Verified scores for African founders",
   description:
     "IkonetU gives founders in Nigeria, Ghana and Kenya a verified score. Submit evidence, earn points, climb the leagues and meet investors and mentors.",
