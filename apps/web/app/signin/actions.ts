@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { emailSignInSchema, firstErrors, phoneSignInSchema } from "@/lib/account";
 import { CODE_LIFETIME_SECONDS, PENDING_COOKIE, phoneSignInEnabled, type PendingSignIn } from "@/lib/pending-sign-in";
+import { SITE_URL } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { type FormState, typedValues } from "../form-state";
 
@@ -36,7 +37,12 @@ export async function sendCode(_prev: FormState, form: FormData): Promise<FormSt
     ({ error } = await supabase.auth.signInWithOtp({ phone: pending.phone, options: { channel: "whatsapp", data } }));
   } else if ("email" in parsed.data) {
     pending = { kind: "email", email: parsed.data.email, sentAt: Date.now() };
-    ({ error } = await supabase.auth.signInWithOtp({ email: pending.email, options: { data } }));
+    ({ error } = await supabase.auth.signInWithOtp({
+      email: pending.email,
+      // Supabase's default email carries a link, not the code, until the template
+      // can be edited. The link returns to /auth/callback, which signs the person in.
+      options: { data, emailRedirectTo: `${SITE_URL}/auth/callback` },
+    }));
   } else {
     return { status: "error", message: "Please check the form.", errors: {}, values };
   }

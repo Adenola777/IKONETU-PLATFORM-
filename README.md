@@ -20,12 +20,12 @@ The mobile app (Expo), evidence upload and the rest of the signed-in founder scr
 
 Phone sign-in by WhatsApp or SMS (PRD A-1) is built and switched off. It needs an SMS and WhatsApp provider configured in Supabase Auth, and then `NEXT_PUBLIC_PHONE_SIGN_IN=on` on Vercel. With it on, the phone number is asked first and email becomes the fallback, as the sign-in wireframe shows.
 
-`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them with the score. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`. `/auth/callback` remains for a sign-in link, in case an email template still carries one.
+`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them with the score. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`. `/auth/callback` turns the link in Supabase's default email into a session. Supabase's built-in email sender does not let the templates be edited, so until IkonetU has its own email sender the email carries a link rather than the code, and the code screen tells the founder to open it on the same device. The link only works in the browser that asked for it, because the sign-in is bound to a cookie set there.
 
 Supabase Auth needs these settings before sign-in works:
 
 1. Under URL Configuration, the Site URL set to `NEXT_PUBLIC_SITE_URL`, and `<NEXT_PUBLIC_SITE_URL>/auth/callback` under Redirect URLs.
-2. The "Magic Link" and "Confirm signup" email templates must show the code with `{{ .Token }}`. Supabase's default templates send a link, which this sign-in page does not ask for.
+2. Once IkonetU has its own email sender under SMTP Settings, the "Magic Link" and "Confirm signup" email templates should show the code with `{{ .Token }}`. Until then the default email's link is used.
 3. The email code lasting 300 seconds and 6 digits long (SRD SEC-A1).
 4. The access token lasting 900 seconds, with refresh token rotation and reuse detection on (SRD SEC-A3).
 

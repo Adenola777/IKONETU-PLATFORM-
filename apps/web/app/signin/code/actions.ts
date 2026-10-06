@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { codeSchema, firstErrors } from "@/lib/account";
 import { CODE_LIFETIME_SECONDS, PENDING_COOKIE, readPending } from "@/lib/pending-sign-in";
+import { SITE_URL } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "../../form-state";
 
@@ -51,7 +52,7 @@ export async function resendCode(_prev: FormState, form: FormData): Promise<Form
     ({ error } = await supabase.auth.signInWithOtp({ phone: pending.phone, options: { channel } }));
     pending.channel = channel;
   } else {
-    ({ error } = await supabase.auth.signInWithOtp({ email: pending.email }));
+    ({ error } = await supabase.auth.signInWithOtp({ email: pending.email, options: { emailRedirectTo: `${SITE_URL}/auth/callback` } }));
   }
   if (error) {
     console.error("resend failed", error.status, error.code);
