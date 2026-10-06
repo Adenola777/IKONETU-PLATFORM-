@@ -25,7 +25,14 @@ export default async function CodePage() {
       <main id="main" className="section tint">
         <div className="wrap form-wrap">
           <h1 className="title" style={{ marginBottom: 12 }}>Enter your code</h1>
-          <p className="lede" style={{ marginBottom: 36 }}>We sent a 6-digit code {describe(pending)}.</p>
+          {pending.kind === "email" ? (
+            <p className="lede" style={{ marginBottom: 36 }}>
+              We sent an email {describe(pending)}. Open the sign-in link in it on this device, or enter the 6-digit code
+              if the email shows one.
+            </p>
+          ) : (
+            <p className="lede" style={{ marginBottom: 36 }}>We sent a 6-digit code {describe(pending)}.</p>
+          )}
           <CodeForm expiresAt={pending.sentAt + CODE_LIFETIME_SECONDS * 1000} isPhone={pending.kind === "phone"} />
         </div>
       </main>
