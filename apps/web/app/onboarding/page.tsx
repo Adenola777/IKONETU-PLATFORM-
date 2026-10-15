@@ -1,42 +1,45 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { AppHeader } from "../app-header";
-import { signOut } from "../dashboard/actions";
-import { OnboardingForm } from "./onboarding-form";
+import { AppShell } from "@/components/app/shell";
+import { homeFor, requireViewer } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Create your profile", robots: { index: false } };
+export const metadata: Metadata = { title: "Join IkonetU", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
+/** The first step after sign-in: a person says whether they are a founder or an investor. */
 export default async function OnboardingPage() {
-  const supabase = await createClient();
-  if (!supabase) redirect("/signin");
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/signin");
-
-  const [profile, ventures] = await Promise.all([
-    supabase.from("profiles").select("user_id").eq("user_id", auth.user.id).maybeSingle(),
-    supabase.from("ventures").select("id").eq("founder_id", auth.user.id).limit(1),
-  ]);
-  if (profile.data && ventures.data && ventures.data.length > 0) redirect("/dashboard");
+  const { supabase, user, profile } = await requireViewer();
+  if (profile) {
+    if (profile.role === "founder") {
+      const ventures = await supabase.from("ventures").select("id").eq("founder_id", user.id).limit(1);
+      if (!ventures.data?.length) redirect("/onboarding/founder");
+    }
+    redirect(homeFor(profile));
+  }
 
   return (
-    <div className="app-ui">
-      <AppHeader>
-        <form action={signOut}>
-          <button type="submit" className="btn btn-ghost">Sign out</button>
-        </form>
-      </AppHeader>
-      <main id="main" className="section tint">
-        <div className="wrap form-wrap">
-          <h1 className="title" style={{ marginBottom: 12 }}>Create your profile</h1>
-          <p className="lede" style={{ marginBottom: 36 }}>
-            Tell us about you and your venture. Other signed-in members can see your name, country, city, institution, bio
-            and venture. Nobody else can see your email or phone number.
+    <AppShell role="none">
+      <h1 className="app-title">How will you use IkonetU?</h1>
+      <p className="app-lede">Choose one. Each account is either a founder account or an investor account.</p>
+      <div className="choice">
+        <section className="card card-f" aria-labelledby="c-founder">
+          <h2 id="c-founder" className="app-h2" style={{ margin: 0 }}>I am a founder</h2>
+          <p className="body2">
+            Create your profile and your venture, upload a one-minute pitch, add evidence, and publish when you are ready.
+            Approved investors can then find you and ask for an introduction, which you accept or decline.
           </p>
-          <OnboardingForm askAdult={auth.user.user_metadata?.confirmed_adult !== true} />
-        </div>
-      </main>
-    </div>
+          <Link className="btn btn-f" href="/onboarding/founder">Create a founder profile</Link>
+        </section>
+        <section className="card card-i" aria-labelledby="c-investor">
+          <h2 id="c-investor" className="app-h2" style={{ margin: 0 }}>I am an investor</h2>
+          <p className="body2">
+            Tell us what you invest in. An IkonetU admin checks each investor account before it can browse founder profiles
+            and request introductions.
+          </p>
+          <Link className="btn btn-i" href="/onboarding/investor">Create an investor profile</Link>
+        </section>
+      </div>
+    </AppShell>
   );
 }

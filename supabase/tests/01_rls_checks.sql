@@ -33,7 +33,7 @@ insert into storage.objects (bucket_id, name) values ('evidence', '22222222-2222
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 \echo T11 second user reads first user evidence (expect 0)
 select count(*) as visible_evidence from public.evidence;
-\echo T12 second user can see the venture card (expect 1)
+\echo T12 second user cannot see an unpublished venture (expect 0)
 select count(*) as visible_ventures from public.ventures;
 \echo T13 second user submits evidence on first user venture (expect RLS error)
 insert into public.evidence (venture_id, signal_code) values ('aaaaaaaa-0000-0000-0000-000000000001', 'website_live');
@@ -61,7 +61,7 @@ reset role;
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 set request.jwt.claim.role = 'authenticated';
-\echo T20 signed-in user reads the founder card (expect 1)
+\echo T20 signed-in user who is not an approved investor reads no founder card (expect 0)
 select count(*) as visible_cards from public.public_profiles;
 \echo T21 signed-in user renames another founder through the view (expect permission denied)
 update public.public_profiles set full_name = 'Changed Name';

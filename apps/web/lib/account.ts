@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { COUNTRIES } from "./constants";
+import { SECTORS } from "./product";
 import { normaliseContact, PRIVACY_VERSION } from "./waitlist";
 
 export const STAGES = [
@@ -92,7 +93,7 @@ export const onboardingSchema = z
     graduateStatus: optionalText(80, "Keep this to 80 characters."),
     bio: optionalText(600, "Keep your bio to 600 characters."),
     ventureName: z.string().trim().min(1, "Enter your venture's name.").max(120, "The venture name is too long."),
-    sector: z.string().trim().min(2, "Enter your sector, for example Fintech.").max(60, "The sector is too long."),
+    sector: z.enum(SECTORS, { message: "Choose your sector." }),
     stage: z.enum(STAGE_CODES, { message: "Choose your stage." }),
     description: optionalText(280, "Keep the description to 280 characters."),
     website: optionalUrl("Enter a full web address, for example learnloop.ng."),
@@ -120,7 +121,7 @@ export type OnboardingRows = {
   consents: { consent_type: ConsentCode; granted: boolean; policy_version: string }[];
   venture: {
     name: string;
-    sector: string;
+    sector: (typeof SECTORS)[number];
     stage: (typeof STAGE_CODES)[number];
     country: "NG" | "GH" | "KE";
     description: string | null;

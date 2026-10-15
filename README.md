@@ -6,13 +6,13 @@ This repository holds the new IkonetU codebase: the web app, the score engine an
 
 | Folder | Contents |
 |---|---|
-| `apps/web` | Next.js app with the public website, founder sign-in, the profile and first venture form, the founder dashboard, and two endpoints: `POST /api/v1/investor-interest`, which the investor interest form calls, and `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
+| `apps/web` | Next.js app with the public website, sign-in, the founder and investor sides, the staff pages, and two endpoints: `POST /api/v1/investor-interest`, which the investor interest form calls, and `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
 | `packages/score-engine` | The IkonetU Score rules (rubric v2), the score calculation, league placement and the "next best actions" list, with tests |
 | `packages/ui-tokens` | Brand colours, fonts, spacing and the 44 px touch target |
-| `supabase/migrations` | Database tables, access rules (row level security), the private evidence bucket and the rubric seed |
+| `supabase/migrations` | Database tables, access rules (row level security), the private evidence and pitch buckets, and the rubric seed |
 | `supabase/tests` | SQL checks that prove the access rules work |
 
-The mobile app (Expo), evidence upload and the rest of the signed-in founder screens come next.
+The mobile app (Expo) and the mentor role come next.
 
 ## The website
 
@@ -35,9 +35,49 @@ The public pages were built from the design boards of October 2026 and are serve
 
 IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `apps/web/lib/pages.ts`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
 
-The page markup lives in `apps/web/components/site/views` and the styles in `apps/web/app/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the two forms, is in `apps/web/components/site`. The signed-in pages keep their own styles, which `apps/web/app/globals.css` scopes to `.app-ui`.
+The page markup lives in `apps/web/components/site/views` and the styles in `apps/web/app/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the two forms, is in `apps/web/components/site`. The signed-in pages use the same shared styles, with their own additions in `apps/web/components/app/app.css`.
 
 The fonts are downloaded when the app is built and served by the app, so no visitor's browser asks Google for them.
+
+## The signed-in app
+
+After sign-in, a new person chooses at `/onboarding` whether they are a founder or an investor. `apps/web/lib/session.ts` sends each person to their own pages, so a founder cannot open the investor pages and nobody but staff can open the staff pages. The database enforces the same separation through row level security, so a bug in a page cannot widen what a person sees.
+
+**Founders** (`/dashboard`)
+
+| Address | What the founder does |
+|---|---|
+| `/dashboard` | Publishes or hides the profile, sees what is missing, edits the venture's details and sees their own score |
+| `/dashboard/pitch` | Uploads a pitch of up to 90 seconds and 50 MB, with a typed transcript. The video goes from the browser straight to the founder's folder in the private `pitches` bucket. The captions are made from the transcript |
+| `/dashboard/evidence` | Adds evidence with up to three files or a link, and sees each item's status and the reviewer's note or reason |
+| `/dashboard/updates` | Posts and removes progress updates |
+| `/dashboard/introductions` | Accepts or declines investors' requests. Accepting opens a conversation |
+| `/dashboard/preview` | Sees the profile exactly as approved investors see it |
+
+A profile is hidden until the founder publishes it, and it cannot be published without a pitch.
+
+**Investors** (`/investor`)
+
+| Address | What the investor does |
+|---|---|
+| `/onboarding/investor` | Gives their name, investor type, fund or firm, sectors, stages, countries and cheque size. The account then waits at `/investor/pending` |
+| `/investor` | Searches published founders by sector, stage, geography, evidence and recent activity. Results are sorted by company name, never by a score |
+| `/investor/ventures/<id>` | Watches the pitch with captions, reads the transcript, the evidence by area with each status, and the progress updates, and asks for an introduction with a short note |
+| `/investor/introductions` | Follows their requests, and withdraws one the founder has not answered |
+| `/investor/profile` | Changes their details |
+
+An investor sees three statuses for evidence and nothing else about it: "Founder submitted" until a reviewer decides, then "Platform reviewed" or "Third-party evidence available". Rejected, expired and "needs more" evidence, the files, the reviewer's identity and the founder's score are never shown to an investor. `venture_evidence()` and `discover_ventures()` in the migration decide this.
+
+**Both sides** (`/introductions/<id>`): the conversation an accepted request opens. Only the founder and the investor can read it.
+
+**Staff** (`/admin`)
+
+| Address | Who | What |
+|---|---|---|
+| `/admin/investors` | Admins | Approve, decline or suspend investor accounts |
+| `/admin/evidence` | Reviewers and admins | Review evidence, open its files through links that last five minutes, and approve it with a note of what was compared, ask for more, or reject it. An approval recomputes the founder's score with the score engine |
+
+Nobody can make themselves staff. The first admin is set with SQL run as the database owner, after that person has signed in once and created a profile: `update public.profiles set role = 'admin', status = 'active' where user_id = (select id from auth.users where email = '<their email>');`. An admin can then approve investors, and a reviewer is made the same way with `role = 'reviewer'`.
 
 ## Sign-in
 
@@ -62,7 +102,7 @@ You need Node 22 and pnpm 10.
 
 ```sh
 pnpm install
-pnpm test          # 106 tests: 47 in the score engine and 59 in the web app
+pnpm test          # 132 tests: 47 in the score engine and 85 in the web app
 pnpm typecheck
 pnpm --filter @ikonetu/web dev    # http://localhost:3000
 ```
@@ -82,4 +122,8 @@ Sign-in answers "not open yet", and the waitlist and investor interest endpoints
 - Sign-in has not been run end to end with a real email code, because no test inbox was available. The database writes it makes were run under row level security on a local copy of the migrations.
 - The in-memory rate limit on the waitlist and investor interest endpoints only slows casual abuse. Production also needs a limit in front of the app (SRD SEC-W4).
 - The About page still shows placeholders for the founders' names, roles and photos, and the privacy policy still shows placeholders for the ICO registration number and the video, analytics and email providers.
-- The onboarding and dashboard pages keep the styles they had before the website was built, apart from the new logo.
+- IkonetU sends no email yet, so a founder learns of a new request and an investor of an answer only by signing in. The investor sign-up records whether the person agrees to email for when a sender is set up.
+- Messages appear when the conversation page reloads. Nothing pushes them to an open page.
+- The captions are timed by the length of each sentence of the founder's transcript, not by listening to the video, so they can run a little ahead or behind.
+- The pitch's length is read in the founder's browser before upload. A browser that cannot decode the video cannot upload it, and the page says so.
+- The founder and investor journeys were run in a browser against a local stand-in for Supabase (Postgres 16 with these migrations, PostgREST, and a small stand-in for Supabase Auth and Storage), not against a real Supabase project. That stand-in is not in this repository. The first run against the real project is still to come.
