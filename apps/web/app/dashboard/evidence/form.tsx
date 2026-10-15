@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { RequestKey } from "@/components/app/request-key";
 import { FieldError, FormStatus, invalidProps } from "@/components/app/ui";
 import { IDLE_STATE, one } from "@/lib/app-state";
 import { EVIDENCE_FILE_TYPES, signalOptions } from "@/lib/forms";
@@ -16,6 +17,7 @@ export function EvidenceForm({ signal = "" }: { signal?: string }) {
   const key = state.status === "sent" ? `sent-${Date.now()}` : state.status === "error" ? JSON.stringify(values) : "new";
   return (
     <form key={key} className="form" action={action} noValidate>
+      <RequestKey />
       <FormStatus state={state} />
       <div className="field">
         <label htmlFor="e-signal">What does it show?</label>

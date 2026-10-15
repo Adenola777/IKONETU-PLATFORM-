@@ -22,6 +22,7 @@ async function insertRow(table: string, row: object, fetchImpl: typeof fetch): P
       },
       body: JSON.stringify(row),
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
     if (res.ok) return "created";
     if (res.status === 409) return "duplicate";

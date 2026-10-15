@@ -6,6 +6,7 @@ import { formValues, type AppState } from "@/lib/app-state";
 import { parseVenture } from "@/lib/forms";
 import { requireFounder } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { logError, logInfo } from "@/lib/log";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -24,7 +25,7 @@ export async function setPublished(form: FormData) {
     .from("ventures")
     .update({ published_at: publish ? new Date().toISOString() : null })
     .eq("id", venture.id);
-  if (error) console.error("set published failed", error.code, error.message);
+  if (error) (/add a pitch/.test(error.message) ? logInfo : logError)("venture.publish_failed", { venture: venture.id, code: error.code });
   revalidatePath("/dashboard");
 }
 
@@ -43,7 +44,7 @@ export async function updateVenture(_prev: AppState, form: FormData): Promise<Ap
   if (!parsed.ok) return { status: "error", message: "Please check the form.", errors: parsed.errors, values };
   const { error } = await supabase.from("ventures").update(parsed.data).eq("id", venture.id);
   if (error) {
-    console.error("update venture failed", error.code);
+    logError("venture.update_failed", { venture: venture.id, code: error.code });
     return { status: "error", message: "We could not save the changes. Please try again.", errors: {}, values };
   }
   revalidatePath("/dashboard");

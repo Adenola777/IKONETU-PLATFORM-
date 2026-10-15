@@ -31,3 +31,10 @@ services:
       # Leave unset until an SMS and WhatsApp provider is set up in Supabase Auth.
       - key: NEXT_PUBLIC_PHONE_SIGN_IN
         sync: false
+      # The number of proxies in front of the app, for the waitlist's rate limit.
+      # UNVERIFIED for Render; docs/HOSTING.md has the check to run after the first deploy.
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      # Error tracking. Leave unset until the privacy policy names Sentry (docs/OPERATIONS.md).
+      - key: SENTRY_DSN
+        sync: false

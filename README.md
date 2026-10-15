@@ -6,7 +6,7 @@ This repository holds the new IkonetU codebase: the web app, the score engine an
 
 | Folder | Contents |
 |---|---|
-| `apps/web` | Next.js app with the public website, sign-in, the founder and investor sides, the staff pages, and one endpoint, `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
+| `apps/web` | Next.js app with the public website, sign-in, the founder and investor sides, the staff pages, `GET /api/health` for an uptime monitor, and `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
 | `packages/score-engine` | The IkonetU Score rules (rubric v2), the score calculation, league placement and the "next best actions" list, with tests |
 | `packages/ui-tokens` | Brand colours, fonts, spacing and the 44 px touch target |
 | `supabase/migrations` | Database tables, access rules (row level security), the private evidence and pitch buckets, and the rubric seed |
@@ -99,7 +99,7 @@ Supabase Auth needs these settings before sign-in works:
 3. The email code lasting 300 seconds and 6 digits long (SRD SEC-A1).
 4. The access token lasting 900 seconds, with refresh token rotation and reuse detection on (SRD SEC-A3).
 
-`docs/DECISIONS.md` lists where this build departs from the PRD, TRD and SRD, and why. `docs/HOSTING.md` describes the Render service, its environment variables and the Supabase settings the public address needs.
+`docs/DECISIONS.md` lists where this build departs from the PRD, TRD and SRD, and why. `docs/HOSTING.md` describes the Render service, its environment variables and the Supabase settings the public address needs. `docs/OPERATIONS.md` says how to tell that something is wrong, what to do first, how backups are to be checked, and how to turn on Sentry.
 
 ## Run it
 
@@ -107,7 +107,7 @@ You need Node 22 and pnpm 10.
 
 ```sh
 pnpm install
-pnpm test          # 129 tests: 47 in the score engine and 82 in the web app
+pnpm test          # 147 tests: 47 in the score engine and 100 in the web app
 pnpm typecheck
 pnpm --filter @ikonetu/web dev    # http://localhost:3000
 ```
@@ -121,6 +121,17 @@ Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Sup
 - Score history and the audit log cannot be edited after they are written.
 - The waitlist and the investor interest list cannot be read or written by any signed-in user or visitor. Only the server writes to the waitlist, and nothing writes to the interest list since its form was retired.
 - The rubric in the database is generated from `packages/score-engine/src/rubric.ts`. After changing the rubric, run `pnpm --filter @ikonetu/score-engine rubric:sql`. A test fails if the two copies differ.
+
+## How failures are handled
+
+- Every call from the server to Supabase gives up after 15 seconds, or 120 seconds for a file upload (`apps/web/lib/timed-fetch.ts`).
+- Evidence and its file records are saved in one transaction. If saving fails, the files just uploaded are removed.
+- Evidence, progress updates and messages carry a request key made when the form is shown, so a form sent twice is saved once.
+- After a decision, the founder's score is recorded with up to three attempts. A score that still fails appears under "Scores to update" on `/admin/evidence`, with a button to recompute it.
+- The daily limit on introduction requests takes a lock per investor, so simultaneous requests cannot pass it.
+- Each failure is written as one line of JSON (`apps/web/lib/log.ts`) and, once `SENTRY_DSN` is set, sent to Sentry without cookies, headers, form text or the person's details.
+
+The browser checks of these fixes ran against the local stand-in described below and are not in this repository.
 
 ## Not done yet
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { RequestKey } from "@/components/app/request-key";
 import { FieldError, FormStatus, invalidProps } from "@/components/app/ui";
 import { IDLE_STATE, one } from "@/lib/app-state";
 import { postUpdate } from "./actions";
@@ -12,6 +13,7 @@ export function UpdateForm() {
   const key = state.status === "sent" ? `sent-${Date.now()}` : state.status === "error" ? JSON.stringify(values) : "new";
   return (
     <form key={key} className="form" action={action} noValidate>
+      <RequestKey />
       <FormStatus state={state} />
       <div className="field">
         <label htmlFor="u-body">What changed?</label>

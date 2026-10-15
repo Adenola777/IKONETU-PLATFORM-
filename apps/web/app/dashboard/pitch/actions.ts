@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { formValues, type AppState } from "@/lib/app-state";
 import { parsePitch, parseTranscript } from "@/lib/forms";
 import { requireFounder } from "@/lib/session";
+import { logError } from "@/lib/log";
 
 /**
  * Records a pitch the browser has just uploaded to the founder's own folder.
@@ -23,7 +24,7 @@ export async function recordPitch(input: unknown): Promise<AppState> {
     ? await supabase.from("pitches").update(row).eq("venture_id", venture.id)
     : await supabase.from("pitches").insert({ venture_id: venture.id, ...row });
   if (saved.error) {
-    console.error("record pitch failed", saved.error.code);
+    logError("pitch.save_failed", { venture: venture.id, code: saved.error.code });
     await supabase.storage.from("pitches").remove([p.path]);
     return { status: "error", message: "We could not save your pitch. Please try again.", errors: {} };
   }
@@ -52,7 +53,7 @@ export async function removePitch() {
   if (venture.published_at) await supabase.from("ventures").update({ published_at: null }).eq("id", venture.id);
   const { error } = await supabase.from("pitches").delete().eq("venture_id", venture.id);
   if (error) {
-    console.error("remove pitch failed", error.code);
+    logError("pitch.remove_failed", { venture: venture.id, code: error.code });
     return;
   }
   await supabase.storage.from("pitches").remove([old.data.storage_path]);

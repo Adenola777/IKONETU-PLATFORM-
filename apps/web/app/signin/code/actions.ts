@@ -7,6 +7,7 @@ import { CODE_LIFETIME_SECONDS, PENDING_COOKIE, readPending } from "@/lib/pendin
 import { SITE_URL } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "../../form-state";
+import { logError, logWarn } from "@/lib/log";
 
 const START_AGAIN: FormState = { status: "error", message: "Your code has expired. Please ask for a new one.", errors: {} };
 
@@ -27,7 +28,7 @@ export async function verifyCode(_prev: FormState, form: FormData): Promise<Form
       ? await supabase.auth.verifyOtp({ email: pending.email, token: parsed.data.code, type: "email" })
       : await supabase.auth.verifyOtp({ phone: pending.phone, token: parsed.data.code, type: "sms" });
   if (error) {
-    console.error("verifyOtp failed", error.status, error.code);
+    (error.status && error.status < 500 ? logWarn : logError)("auth.code_check_failed", { status: error.status, code: error.code });
     if (error.status === 429) {
       return { status: "error", message: "Too many attempts. Please wait a few minutes and try again.", errors: {} };
     }
@@ -55,7 +56,7 @@ export async function resendCode(_prev: FormState, form: FormData): Promise<Form
     ({ error } = await supabase.auth.signInWithOtp({ email: pending.email, options: { emailRedirectTo: `${SITE_URL}/auth/callback` } }));
   }
   if (error) {
-    console.error("resend failed", error.status, error.code);
+    (error.status && error.status < 500 ? logWarn : logError)("auth.code_resend_failed", { status: error.status, code: error.code });
     const message =
       error.status === 429
         ? "Too many codes were requested. Please wait a few minutes and try again."

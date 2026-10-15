@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { formValues, type AppState } from "@/lib/app-state";
 import { parseInvestorSignUp } from "@/lib/investor-profile";
 import { requireViewer } from "@/lib/session";
+import { logError } from "@/lib/log";
 
 const FAILED = "We could not save your details. Please try again.";
 
@@ -36,6 +37,6 @@ export async function createInvestor(_prev: AppState, form: FormData): Promise<A
 }
 
 function logged(step: string, error: { code?: string }, values: Record<string, string | string[]>): AppState {
-  console.error(`investor sign-up: ${step} failed`, error.code);
+  logError("onboarding.investor_failed", { step, code: error.code });
   return { status: "error", message: FAILED, errors: {}, values };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { RequestKey } from "@/components/app/request-key";
 import { FieldError, invalidProps } from "@/components/app/ui";
 import { IDLE_STATE, one } from "@/lib/app-state";
 import { sendMessage } from "./actions";
@@ -12,6 +13,7 @@ export function MessageForm({ introduction }: { introduction: string }) {
   const key = state.status === "sent" ? `sent-${Date.now()}` : state.status === "error" ? JSON.stringify(values) : "new";
   return (
     <form key={key} className="form" action={action} noValidate>
+      <RequestKey />
       {state.status === "error" && <p className="status status-err" role="alert">{state.message}</p>}
       <input type="hidden" name="introduction" value={introduction} />
       <div className="field">

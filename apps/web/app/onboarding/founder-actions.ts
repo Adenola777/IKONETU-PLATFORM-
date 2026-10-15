@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { parseOnboarding } from "@/lib/account";
 import { createClient } from "@/lib/supabase/server";
 import { type FormState, typedValues } from "../form-state";
+import { logError } from "@/lib/log";
 
 const TEXT_FIELDS = [
   "fullName", "country", "city", "institution", "graduateStatus", "bio",
@@ -49,6 +50,6 @@ export async function completeOnboarding(_prev: FormState, form: FormData): Prom
 }
 
 function logged(step: string, error: { code?: string }, values: Record<string, string>): FormState {
-  console.error(`onboarding: ${step} failed`, error.code);
+  logError("onboarding.founder_failed", { step, code: error.code });
   return { ...FAILED, values };
 }

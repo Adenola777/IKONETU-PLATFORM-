@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formValues, type AppState } from "@/lib/app-state";
 import { parseIntroductionNote, parseMessage } from "@/lib/forms";
+import { logError, logInfo } from "@/lib/log";
+import { isRepeat, requestKey } from "@/lib/request-key";
 import { requireFounder, requireInvestor, requireViewer } from "@/lib/session";
 
 const ID = /^[0-9a-f-]{36}$/;
@@ -18,7 +20,9 @@ export async function requestIntroduction(_prev: AppState, form: FormData): Prom
   if (!parsed.ok) return { status: "error", message: "Please check your note.", errors: parsed.errors, values };
   const { error } = await supabase.from("introductions").insert({ venture_id: venture, note: parsed.data.note });
   if (error) {
-    console.error("request introduction failed", error.code, error.message);
+    const expected = error.code === "23505" || /ten requests a day|not published/.test(error.message);
+    if (expected) logInfo("introduction.request_refused", { venture, code: error.code });
+    else logError("introduction.request_failed", { venture, code: error.code });
     const message =
       error.code === "23505"
         ? "You have already asked this founder for an introduction."
@@ -40,7 +44,7 @@ export async function withdrawIntroduction(form: FormData) {
   const id = String(form.get("id") ?? "");
   if (!ID.test(id)) return;
   const { error } = await supabase.from("introductions").update({ status: "withdrawn" }).eq("id", id);
-  if (error) console.error("withdraw introduction failed", error.code);
+  if (error) logError("introduction.withdraw_failed", { introduction: id, code: error.code });
   revalidatePath("/investor", "layout");
 }
 
@@ -52,7 +56,7 @@ export async function answerIntroduction(form: FormData) {
   if (!ID.test(id)) return;
   const { error } = await supabase.from("introductions").update({ status: answer }).eq("id", id);
   if (error) {
-    console.error("answer introduction failed", error.code);
+    logError("introduction.answer_failed", { introduction: id, code: error.code });
     revalidatePath("/dashboard", "layout");
     return;
   }
@@ -68,9 +72,12 @@ export async function sendMessage(_prev: AppState, form: FormData): Promise<AppS
   if (!ID.test(id)) return { status: "error", message: "This conversation could not be found.", errors: {} };
   const parsed = parseMessage({ body: values.body });
   if (!parsed.ok) return { status: "error", message: "Please check your message.", errors: parsed.errors, values };
-  const { error } = await supabase.from("introduction_messages").insert({ introduction_id: id, sender_id: user.id, body: parsed.data.body });
+  const { error } = await supabase
+    .from("introduction_messages")
+    .insert({ introduction_id: id, sender_id: user.id, body: parsed.data.body, request_key: requestKey(form) });
+  if (isRepeat(error)) return { status: "sent", message: "Sent." };
   if (error) {
-    console.error("send message failed", error.code);
+    logError("message.send_failed", { introduction: id, code: error.code });
     return { status: "error", message: "We could not send your message. Please try again.", errors: {}, values };
   }
   revalidatePath(`/introductions/${id}`);

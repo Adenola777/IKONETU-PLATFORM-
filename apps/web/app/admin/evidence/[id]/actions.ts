@@ -1,16 +1,18 @@
 "use server";
 
-import { calculateScore, RUBRIC_V2, type EvidenceItem } from "@ikonetu/score-engine";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formValues, type AppState } from "@/lib/app-state";
 import { parseDecision } from "@/lib/forms";
+import { logError, logInfo } from "@/lib/log";
+import { recordVentureScore } from "@/lib/scoring";
 import { requireStaff } from "@/lib/session";
 
 /**
  * Records a reviewer's decision through decide_evidence, which checks the
  * reviewer's role, refuses their own evidence and writes the audit log. The
- * score engine then recomputes the venture's score from its approved evidence.
+ * score engine then recomputes the venture's score from its approved evidence,
+ * with up to three attempts (lib/scoring.ts).
  */
 export async function decide(_prev: AppState, form: FormData): Promise<AppState> {
   const values = formValues(form);
@@ -26,34 +28,33 @@ export async function decide(_prev: AppState, form: FormData): Promise<AppState>
       : { p_evidence: id, p_decision: d.decision, p_reason: d.reason };
   const { error } = await supabase.rpc("decide_evidence", args);
   if (error) {
-    console.error("decide_evidence failed", error.code, error.message);
-    const message = /own evidence/.test(error.message)
+    const own = /own evidence/.test(error.message);
+    const taken = /already been decided/.test(error.message);
+    if (own || taken) logInfo("evidence.decide_refused", { evidence: id, reason: own ? "own_evidence" : "already_decided" });
+    else logError("evidence.decide_failed", { evidence: id, code: error.code });
+    const message = own
       ? "You cannot decide evidence on your own venture."
-      : /already been decided/.test(error.message)
+      : taken
         ? "Someone has already decided this evidence."
         : "The decision was not saved. Please try again.";
     return { status: "error", message, errors: {}, values };
   }
 
   const ev = await supabase.from("evidence").select("venture_id").eq("id", id).single();
-  if (ev.data) {
-    const all = await supabase
-      .from("evidence")
-      .select("id, signal_code, status, lane, expires_at, item_count, months, revenue_usd, stage")
-      .eq("venture_id", ev.data.venture_id);
-    const items: EvidenceItem[] = (all.data ?? [])
-      .filter((e) => e.lane)
-      .map((e) => ({
-        id: e.id, signalCode: e.signal_code, status: e.status, lane: e.lane, expiresAt: e.expires_at,
-        itemCount: e.item_count ?? undefined, months: e.months ?? undefined, revenueUsd: e.revenue_usd === null ? undefined : Number(e.revenue_usd), stage: e.stage ?? undefined,
-      }));
-    const score = calculateScore({ evidence: items, rubric: RUBRIC_V2 });
-    const recorded = await supabase.rpc("record_score", {
-      p_venture: ev.data.venture_id, p_total: score.total, p_league: score.league,
-      p_categories: score.categories, p_rubric: score.rubricVersion, p_cause: id,
-    });
-    if (recorded.error) console.error("record_score failed", recorded.error.code);
-  }
+  const scored = ev.data ? await recordVentureScore(supabase, ev.data.venture_id, id) : false;
   revalidatePath("/admin/evidence");
-  redirect("/admin/evidence");
+  redirect(scored ? "/admin/evidence" : "/admin/evidence?score=failed");
+}
+
+/**
+ * Recomputes the score of a venture whose score missed an update after a
+ * decision. The staff queue lists such ventures.
+ */
+export async function recomputeScore(form: FormData) {
+  const { supabase } = await requireStaff();
+  const venture = String(form.get("venture") ?? "");
+  if (!/^[0-9a-f-]{36}$/.test(venture)) return;
+  const scored = await recordVentureScore(supabase, venture, null);
+  revalidatePath("/admin/evidence");
+  redirect(scored ? "/admin/evidence" : "/admin/evidence?score=failed");
 }
