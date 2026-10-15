@@ -1,4 +1,3 @@
-import type { InvestorInterestRow } from "./investor-interest";
 import type { WaitlistRow } from "./waitlist";
 
 export type InsertOutcome = "created" | "duplicate" | "not_configured" | "failed";
@@ -34,8 +33,4 @@ async function insertRow(table: string, row: object, fetchImpl: typeof fetch): P
 
 export function insertWaitlistRow(row: WaitlistRow, fetchImpl: typeof fetch = fetch): Promise<InsertOutcome> {
   return insertRow("waitlist", row, fetchImpl);
-}
-
-export function insertInvestorInterestRow(row: InvestorInterestRow, fetchImpl: typeof fetch = fetch): Promise<InsertOutcome> {
-  return insertRow("investor_interest", row, fetchImpl);
 }

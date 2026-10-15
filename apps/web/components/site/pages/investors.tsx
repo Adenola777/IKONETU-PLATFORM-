@@ -9,21 +9,21 @@ type Status = "reviewed" | "third" | "submitted";
 type Group = "sector" | "stage" | "geo" | "evidence" | "momentum";
 type Filters = Record<Group, string[]>;
 
-const FOUNDERS: { id: PitchId; name: string; city: string; country: string; sector: string; stage: string; length: string; days: number; lv: [number, number, number]; ev: [string, Status][] }[] = [
-  { id: "chama", name: "Chama Books", city: "Nairobi", country: "Kenya", sector: "Fintech", stage: "Pre-seed", length: "0:58", days: 9, lv: [3, 3, 2], ev: [["Revenue", "reviewed"], ["Team", "submitted"]] },
-  { id: "clinic", name: "Clinic Queue", city: "Nairobi", country: "Kenya", sector: "Health", stage: "Seed", length: "0:55", days: 12, lv: [3, 4, 1], ev: [["Registration", "third"], ["Revenue", "reviewed"]] },
-  { id: "farmgate", name: "Farmgate Ledger", city: "Accra", country: "Ghana", sector: "Agritech", stage: "Seed", length: "0:59", days: 41, lv: [4, 2, 2], ev: [["Revenue", "reviewed"], ["Registration", "submitted"]] },
-  { id: "harvest", name: "Harvest Cold Rooms", city: "Kumasi", country: "Ghana", sector: "Agritech", stage: "Pre-seed", length: "0:57", days: 64, lv: [1, 3, 4], ev: [["Registration", "submitted"]] },
-  { id: "learnloop", name: "LearnLoop", city: "Lagos", country: "Nigeria", sector: "Edtech", stage: "Pre-seed", length: "1:00", days: 5, lv: [2, 4, 2], ev: [["Registration", "third"], ["Revenue", "submitted"]] },
-  { id: "mdp", name: "Market Day Pay", city: "Lagos", country: "Nigeria", sector: "Fintech", stage: "Pre-seed", length: "1:00", days: 2, lv: [4, 3, 1], ev: [["Revenue", "reviewed"], ["Registration", "third"]] },
+const FOUNDERS: { id: PitchId; name: string; city: string; country: string; sector: string; stage: string; length: string; days: number; n90: number; lv: [number, number, number]; ev: [string, Status][] }[] = [
+  { id: "chama", name: "Chama Books", city: "Nairobi", country: "Kenya", sector: "Fintech", stage: "Earning revenue", length: "0:58", days: 9, n90: 6, lv: [3, 3, 2], ev: [["Revenue", "reviewed"], ["Team", "submitted"]] },
+  { id: "clinic", name: "Clinic Queue", city: "Nairobi", country: "Kenya", sector: "Health", stage: "Scaling", length: "0:55", days: 12, n90: 4, lv: [3, 4, 1], ev: [["Registration", "third"], ["Revenue", "reviewed"]] },
+  { id: "farmgate", name: "Farmgate Ledger", city: "Accra", country: "Ghana", sector: "Agritech", stage: "Earning revenue", length: "0:59", days: 41, n90: 2, lv: [4, 2, 2], ev: [["Revenue", "reviewed"], ["Registration", "submitted"]] },
+  { id: "harvest", name: "Harvest Cold Rooms", city: "Kumasi", country: "Ghana", sector: "Agritech", stage: "First version", length: "0:57", days: 64, n90: 1, lv: [1, 3, 4], ev: [["Registration", "submitted"]] },
+  { id: "learnloop", name: "LearnLoop", city: "Lagos", country: "Nigeria", sector: "Edtech", stage: "First version", length: "1:00", days: 5, n90: 5, lv: [2, 4, 2], ev: [["Registration", "third"], ["Revenue", "submitted"]] },
+  { id: "mdp", name: "Market Day Pay", city: "Lagos", country: "Nigeria", sector: "Fintech", stage: "Earning revenue", length: "1:00", days: 2, n90: 8, lv: [4, 3, 1], ev: [["Revenue", "reviewed"], ["Registration", "third"]] },
 ];
 
 const GROUPS: [Group, string, string[]][] = [
-  ["sector", "Sector", ["Fintech", "Agritech", "Edtech", "Health"]],
-  ["stage", "Stage", ["Pre-seed", "Seed"]],
+  ["sector", "Sector", ["Fintech", "Agritech", "Edtech", "Health", "Other"]],
+  ["stage", "Stage", ["Idea", "First version", "Earning revenue", "Scaling"]],
   ["geo", "Geography", ["Nigeria", "Ghana", "Kenya"]],
-  ["evidence", "Evidence", ["Revenue reviewed", "Registry record"]],
-  ["momentum", "Activity", ["Updated in the last 30 days"]],
+  ["evidence", "Evidence", ["Revenue reviewed", "Registry record", "Any reviewed evidence"]],
+  ["momentum", "Last updated", ["In the last 30 days"]],
 ];
 
 const NO_FILTERS: Filters = { sector: [], stage: [], geo: [], evidence: [], momentum: [] };
@@ -62,6 +62,7 @@ function useForInvestorsVals() {
     if (filters.geo.length && !filters.geo.includes(f.country)) return false;
     if (filters.evidence.includes("Revenue reviewed") && !has(f, "Revenue", "reviewed")) return false;
     if (filters.evidence.includes("Registry record") && !has(f, "Registration", "third")) return false;
+    if (filters.evidence.includes("Any reviewed evidence") && !f.ev.some(([, s]) => s === "reviewed" || s === "third")) return false;
     if (filters.momentum.length && f.days > 30) return false;
     return true;
   });
@@ -87,8 +88,10 @@ function useForInvestorsVals() {
       name: f.name,
       length: f.length,
       strong: f.lv[0],
+      building: f.lv[1],
+      gap: f.lv[2],
       cells: Array.from({ length: 8 }, (_, i) => ({ c: i < f.lv[0] ? "s" : i < f.lv[0] + f.lv[1] ? "b" : "" })),
-      meta: `${f.city}, ${f.country} · ${f.sector} · ${f.stage} · ${f.length} pitch`,
+      meta: `${f.city}, ${f.country} · ${f.sector} · ${f.stage} · ${f.length} pitch · ${f.n90} ${f.n90 === 1 ? "update" : "updates"} in 90 days`,
       momText: `Updated ${f.days} days ago`,
       momCls: f.days <= 30 ? "chip-f" : "chip-n",
       momDot: f.days <= 30 ? "#F26B1D" : "#858FA1",

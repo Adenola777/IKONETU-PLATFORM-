@@ -35,7 +35,9 @@ function founderStatus(r: Row): { text: string; investors: "third_party" | "revi
   }
 }
 
-export default async function EvidencePage() {
+export default async function EvidencePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const asked = (await searchParams).signal;
+  const signal = typeof asked === "string" && RUBRIC_V2.signals.some((s) => s.code === asked) ? asked : "";
   const { supabase, venture } = await requireFounder();
   const { data } = await supabase
     .from("evidence")
@@ -85,7 +87,7 @@ export default async function EvidencePage() {
         </section>
         <aside className="card" aria-labelledby="add-h">
           <h2 id="add-h" className="app-h2">Add evidence</h2>
-          <EvidenceForm />
+          <EvidenceForm signal={signal} />
         </aside>
       </div>
     </AppShell>

@@ -75,6 +75,12 @@ values ('bbbbbbbb-0000-0000-0000-000000000001', '77777777-7777-7777-7777-7777777
         'Kola Pay lets market traders take card payments. We started in Lagos.');
 update public.ventures set published_at = now() where id = 'bbbbbbbb-0000-0000-0000-000000000001';
 select pg_temp.ok('I6 a venture with a pitch is published', published_at is not null) from public.ventures where id = 'bbbbbbbb-0000-0000-0000-000000000001';
+do $$ begin
+  update public.ventures set ask = 'Yes' where id = 'bbbbbbbb-0000-0000-0000-000000000001';
+  perform pg_temp.ok('I6a an ask of fewer than 5 characters is refused', false, 'update succeeded');
+exception when others then perform pg_temp.ok('I6a an ask of fewer than 5 characters is refused', sqlstate = '23514', sqlerrm);
+end $$;
+update public.ventures set ask = '$150,000 to reach 5,000 paying merchants' where id = 'bbbbbbbb-0000-0000-0000-000000000001';
 
 -- Founder G sees nothing of F.
 set request.jwt.claim.sub = '88888888-8888-8888-8888-888888888888';
@@ -141,6 +147,7 @@ select pg_temp.ok('I24 the approved investor is active', status = 'active', stat
 set request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 select pg_temp.ok('I25 an approved investor reads the published venture', count(*) = 1, count(*)::text) from public.ventures;
 select pg_temp.ok('I26 discovery returns the venture with its evidence area', count(*) = 1 and bool_and(areas @> '[{"category": "financial", "status": "submitted"}]'), count(*)::text) from public.discover_ventures();
+select pg_temp.ok('I26a discovery returns the founder''s ask', bool_and(ask = '$150,000 to reach 5,000 paying merchants'), coalesce(string_agg(ask, ','), 'none')) from public.discover_ventures();
 select pg_temp.ok('I27 the sector filter narrows', count(*) = 0, count(*)::text) from public.discover_ventures(p_sectors => array['Health']);
 select pg_temp.ok('I28 two sectors widen', count(*) = 1, count(*)::text) from public.discover_ventures(p_sectors => array['Health', 'Fintech']);
 select pg_temp.ok('I29 the reviewed-revenue filter excludes unreviewed revenue', count(*) = 0, count(*)::text) from public.discover_ventures(p_evidence => array['revenue_reviewed']);

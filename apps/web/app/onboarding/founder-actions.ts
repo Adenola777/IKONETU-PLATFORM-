@@ -7,7 +7,7 @@ import { type FormState, typedValues } from "../form-state";
 
 const TEXT_FIELDS = [
   "fullName", "country", "city", "institution", "graduateStatus", "bio",
-  "ventureName", "sector", "stage", "description", "website", "linkedin", "x", "instagram",
+  "ventureName", "sector", "stage", "description", "ask", "website", "linkedin", "x", "instagram",
 ] as const;
 
 const FAILED = { status: "error", message: "We could not save your details. Please try again.", errors: {} } as const;

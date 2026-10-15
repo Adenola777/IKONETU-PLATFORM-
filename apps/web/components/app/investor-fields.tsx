@@ -1,7 +1,7 @@
 import { STAGES } from "@/lib/account";
 import { many, one } from "@/lib/app-state";
 import { COUNTRIES } from "@/lib/constants";
-import { CHEQUE_SIZES } from "@/lib/investor-interest";
+import { CHEQUE_SIZES } from "@/lib/investor-options";
 import { BASED_IN, INVESTOR_TYPE_OPTIONS } from "@/lib/investor-profile";
 import { SECTORS } from "@/lib/product";
 import { FieldError, invalidProps } from "./ui";

@@ -4,7 +4,9 @@ import { AppShell } from "@/components/app/shell";
 import { Icon } from "@/components/site/icons";
 import { STAGES } from "@/lib/account";
 import { COUNTRIES } from "@/lib/constants";
-import { activityText, dateText } from "@/lib/product";
+import { AreaMeter, MeterLegend } from "@/components/app/ui";
+import { nextSteps, type OwnEvidence } from "@/lib/next-steps";
+import { activityText, AREA_WHY, areaCells, areaLabel, dateText, isShownStatus, LEVEL, type AreaSummary, type ShownStatus } from "@/lib/product";
 import { requireFounder } from "@/lib/session";
 import { setPublished } from "./actions";
 import { VentureForm } from "./venture-form";
@@ -18,11 +20,26 @@ export default async function DashboardPage() {
   const { supabase, user, profile, venture } = await requireFounder();
   const [pitch, evidence, updates, requests, score] = await Promise.all([
     supabase.from("pitches").select("duration_seconds, updated_at").eq("venture_id", venture.id).maybeSingle(),
-    supabase.from("evidence").select("status").eq("venture_id", venture.id),
+    supabase.from("evidence").select("id, signal_code, status, lane, expires_at, item_count, months, revenue_usd, stage").eq("venture_id", venture.id),
     supabase.from("venture_updates").select("created_at").eq("venture_id", venture.id).order("created_at", { ascending: false }).limit(1),
     supabase.from("introductions").select("id").eq("founder_id", user.id).eq("status", "pending"),
     supabase.from("scores").select("total, league").eq("venture_id", venture.id).maybeSingle(),
   ]);
+  // The readiness check reads the evidence the way investors see it, so the two always agree.
+  const shown = await supabase.rpc("venture_evidence", { p_venture: venture.id });
+  const RANK: Record<ShownStatus, number> = { third_party: 3, reviewed: 2, submitted: 1 };
+  const best = new Map<string, AreaSummary>();
+  for (const e of (shown.data ?? []) as { category: string; shown_status: string }[]) {
+    if (!isShownStatus(e.shown_status)) continue;
+    const had = best.get(e.category);
+    best.set(e.category, {
+      category: e.category,
+      status: had && RANK[had.status] >= RANK[e.shown_status] ? had.status : e.shown_status,
+      count: (had?.count ?? 0) + 1,
+    });
+  }
+  const areas = [...best.values()];
+  const steps = nextSteps((evidence.data ?? []) as OwnEvidence[]);
   const evidenceCount = evidence.data?.length ?? 0;
   const reviewed = evidence.data?.filter((e) => e.status === "approved").length ?? 0;
   const lastUpdate = updates.data?.[0]?.created_at ?? null;
@@ -74,6 +91,40 @@ export default async function DashboardPage() {
             {!hasPitch && !published && (
               <p id="pub-need" className="hint" style={{ marginTop: 8 }}>Add your one-minute pitch first. A profile cannot be published without one.</p>
             )}
+          </section>
+
+          <section className="card" aria-labelledby="ready-h">
+            <h2 id="ready-h" className="app-h2">Readiness check</h2>
+            <AreaMeter areas={areas} />
+            <div style={{ margin: "12px 0 16px" }}><MeterLegend /></div>
+            <ul className="todo" aria-label="The eight areas">
+              {areaCells(areas).map((c) => (
+                <li key={c.code}>
+                  <span className={`chip ${LEVEL[c.level].chip}`} style={{ minWidth: 84, justifyContent: "center" }}>{LEVEL[c.level].name}</span>
+                  <span>{c.label}{c.count ? ` · ${c.count} ${c.count === 1 ? "piece" : "pieces"} of evidence` : ""}</span>
+                </li>
+              ))}
+            </ul>
+            <h3 className="app-h3" style={{ marginTop: 24 }}>Your next three steps</h3>
+            {steps.length === 0 ? (
+              <p className="body2">Every area is as strong as your evidence can make it. Keep it current as things change.</p>
+            ) : (
+              <ol className="todo">
+                {steps.map((s, i) => (
+                  <li key={s.code}>
+                    <span className="ico open" aria-hidden="true" style={{ fontWeight: 600, fontSize: 13 }}>{i + 1}</span>
+                    <span>
+                      <Link href={`/dashboard/evidence?signal=${s.code}`}>{s.label}</Link> <span className="small">({areaLabel(s.category)})</span>
+                      <span className="small" style={{ display: "block" }}>Why it matters: {AREA_WHY[s.category].charAt(0).toLowerCase() + AREA_WHY[s.category].slice(1)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <p className="small" style={{ margin: "12px 0 0" }}>
+              The steps come from the evidence that would strengthen your profile most. Evidence already waiting for a reviewer is left
+              out. Investors see the same readiness check, never your score.
+            </p>
           </section>
 
           <section className="card" aria-labelledby="todo-h">

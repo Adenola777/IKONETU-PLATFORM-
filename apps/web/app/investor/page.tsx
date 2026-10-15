@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { AreaMeter, MeterLegend } from "@/components/app/ui";
-import { Icon } from "@/components/site/icons";
+import { PreviewThumb } from "@/components/app/preview-thumb";
 import { STAGES } from "@/lib/account";
 import { COUNTRIES } from "@/lib/constants";
 import { filterCount, matchText, PAGE_SIZE, parseFilters, queryString, rpcArgs } from "@/lib/discovery";
@@ -14,13 +14,14 @@ export const metadata: Metadata = { title: "Discover founders", robots: { index:
 export const dynamic = "force-dynamic";
 
 type Row = {
-  venture_id: string; name: string; sector: string; stage: string; country: string; description: string | null;
+  venture_id: string; name: string; sector: string; stage: string; country: string; description: string | null; ask: string | null;
   founder_name: string; city: string | null; pitch_seconds: number | null; last_activity: string | null;
   updates_90d: number; areas: AreaSummary[]; total_count: number;
 };
 
 const country = (code: string) => COUNTRIES.find((c) => c.code === code)?.name ?? code;
 const stage = (code: string) => STAGES.find((s) => s.code === code)?.label ?? code;
+const consistency = (n: number) => (n === 0 ? "no updates in 90 days" : `${n} ${n === 1 ? "update" : "updates"} in 90 days`);
 
 /** Published founder profiles, filtered and sorted by company name. Nothing here is ranked. */
 export default async function DiscoverPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -28,6 +29,17 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
   const filters = parseFilters(await searchParams);
   const { data, error } = await supabase.rpc("discover_ventures", rpcArgs(filters));
   const rows = ((data ?? []) as Row[]).map((r) => ({ ...r, areas: (r.areas ?? []).filter((a) => isShownStatus(a.status)) }));
+  // Each card's muted preview plays from a signed link, made only for the pitches on this page.
+  const pitches = rows.length
+    ? await supabase.from("pitches").select("venture_id, storage_path, transcript, duration_seconds").in("venture_id", rows.map((r) => r.venture_id))
+    : { data: [] };
+  const previews = new Map<string, { src: string | null; transcript: string; duration: number }>();
+  await Promise.all(
+    (pitches.data ?? []).map(async (p) => {
+      const signed = await supabase.storage.from("pitches").createSignedUrl(p.storage_path, 3600);
+      previews.set(p.venture_id, { src: signed.data?.signedUrl ?? null, transcript: p.transcript, duration: Number(p.duration_seconds) });
+    }),
+  );
   const total = rows[0]?.total_count ?? 0;
   const filtered = filterCount(filters) > 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -58,10 +70,14 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
             <ul className="results">
               {rows.map((r) => (
                 <li key={r.venture_id} className="res">
-                  <div className="thumb" aria-hidden="true">
-                    <span className="playdot"><Icon name="play" size={16} fill /></span>
-                    {r.pitch_seconds ? <span className="len">{clockText(r.pitch_seconds)}</span> : null}
-                  </div>
+                  <PreviewThumb
+                    href={`/investor/ventures/${r.venture_id}`}
+                    src={previews.get(r.venture_id)?.src ?? null}
+                    transcript={previews.get(r.venture_id)?.transcript ?? ""}
+                    duration={previews.get(r.venture_id)?.duration ?? 0}
+                    label={`Watch the ${r.name} pitch${r.pitch_seconds ? `, ${clockText(r.pitch_seconds)}` : ""}`}
+                    length={r.pitch_seconds ? clockText(r.pitch_seconds) : ""}
+                  />
                   <div className="res-body">
                     <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
                       <h3 className="res-name"><Link href={`/investor/ventures/${r.venture_id}`}>{r.name}</Link></h3>
@@ -72,9 +88,10 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
                     </div>
                     <p className="small" style={{ margin: 0 }}>
                       {r.founder_name}{r.city ? `, ${r.city}` : ""}, {country(r.country)} · {r.sector} · {stage(r.stage)}
-                      {r.pitch_seconds ? ` · ${clockText(r.pitch_seconds)} pitch` : ""}
+                      {r.pitch_seconds ? ` · ${clockText(r.pitch_seconds)} pitch` : ""} · {consistency(r.updates_90d)}
                     </p>
                     {r.description && <p className="body2" style={{ margin: 0 }}>{r.description}</p>}
+                    {r.ask && <p className="small" style={{ margin: 0 }}><strong style={{ color: "#101828" }}>Ask:</strong> {r.ask}</p>}
                     <AreaMeter areas={r.areas} />
                   </div>
                 </li>

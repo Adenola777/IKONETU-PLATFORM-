@@ -10,7 +10,7 @@ import { SECTORS } from "./product";
  */
 type Parsed<T> = { ok: true; data: T } | { ok: false; errors: FieldErrors };
 
-function parse<T>(schema: z.ZodType<T>, input: unknown): Parsed<T> {
+function parse<S extends z.ZodTypeAny>(schema: S, input: unknown): Parsed<z.output<S>> {
   const r = schema.safeParse(input);
   return r.success ? { ok: true, data: r.data } : { ok: false, errors: firstErrors(r.error) };
 }
@@ -125,6 +125,13 @@ const ventureSchema = z.object({
     .max(280, "Keep the description to 280 characters.")
     .transform((v) => (v === "" ? null : v)),
   website: webAddress("Enter a full web address, for example kolapay.ng."),
+  ask: z
+    .string()
+    .trim()
+    .max(160, "Keep the ask to 160 characters.")
+    .optional()
+    .transform((v) => (!v ? null : v))
+    .refine((v) => v === null || v.length >= 5, "Write at least 5 characters, or leave it empty."),
 });
 export function parseVenture(input: unknown) {
   return parse(ventureSchema, input);

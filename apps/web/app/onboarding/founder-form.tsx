@@ -91,6 +91,12 @@ export function OnboardingForm({ askAdult }: { askAdult: boolean }) {
         <textarea id="o-description" name="description" className="input" rows={3} maxLength={280} defaultValue={values.description} {...invalid("description")} />
         {err("description")}
       </div>
+      <div className="field">
+        <label htmlFor="o-ask">Your ask (optional)</label>
+        <input id="o-ask" name="ask" className="input" type="text" maxLength={160} defaultValue={values.ask} aria-describedby="o-ask-hint" {...invalid("ask")} />
+        <p id="o-ask-hint" className="hint">How much you are raising and what for, in one line. For example: $150,000 to reach 5,000 paying merchants. Investors see it.</p>
+        {err("ask")}
+      </div>
       <div className="grid2">
         <div className="field">
           <label htmlFor="o-website">Website (optional)</label>

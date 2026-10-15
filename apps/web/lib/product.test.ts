@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cuesFromTranscript, captionChunks } from "./captions";
 import { FILTER_GROUPS, filterCount, matchText, parseFilters, queryString, rpcArgs, PAGE_SIZE } from "./discovery";
-import { activityText, areaCells, areaSummaryText, clockText, dateText, isRecent } from "./product";
+import { activityText, AREA_WHY, AREAS, areaCells, clockText, dateText, evidenceAddedText, isRecent, levelOf, momentum, readinessText } from "./product";
 
 const NOW = new Date("2026-10-15T12:00:00Z");
 
@@ -32,14 +32,20 @@ describe("evidence by area", () => {
   it("gives one cell per area in rubric order", () => {
     const cells = areaCells(areas);
     expect(cells.map((c) => c.code)).toEqual(["identity", "legal", "financial", "product", "market", "team", "media", "operations"]);
-    expect(cells[0]?.status).toBe("third_party");
-    expect(cells[1]?.status).toBeNull();
+    expect(cells[0]?.level).toBe("strong");
+    expect(cells[1]?.level).toBe("gap");
     expect(cells[2]?.count).toBe(2);
+    expect(cells[5]?.level).toBe("building");
   });
-  it("says the same in words", () => {
-    expect(areaSummaryText(areas)).toBe("Evidence in 3 of 8 areas. 1 with third-party evidence, 1 platform reviewed.");
-    expect(areaSummaryText([{ category: "team", status: "submitted", count: 1 }])).toBe("Evidence in 1 of 8 areas. None reviewed yet.");
-    expect(areaSummaryText([])).toBe("No evidence added yet.");
+  it("says the readiness check in words", () => {
+    expect(readinessText(areas)).toBe("Strong in 2 of 8 areas, building in 1, with a gap in 5.");
+    expect(readinessText([])).toBe("No evidence yet, so all eight areas are gaps.");
+  });
+  it("calls an area strong only with reviewed or third-party evidence", () => {
+    expect(levelOf("third_party")).toBe("strong");
+    expect(levelOf("reviewed")).toBe("strong");
+    expect(levelOf("submitted")).toBe("building");
+    expect(levelOf(null)).toBe("gap");
   });
 });
 
@@ -97,5 +103,30 @@ describe("discovery filters", () => {
   it("words the count", () => {
     expect(matchText(1, true)).toBe("1 founder matches these filters. Sorted by company name.");
     expect(matchText(3, false)).toBe("3 founders are on IkonetU. Sorted by company name.");
+  });
+});
+
+describe("momentum", () => {
+  it("counts updates in 90 days and marks the weeks that had one", () => {
+    const m = momentum(["2026-10-14T09:00:00Z", "2026-10-13T09:00:00Z", "2026-09-20T09:00:00Z", "2026-06-01T09:00:00Z"], NOW);
+    expect(m.in90).toBe(3);
+    expect(m.consistencyText).toBe("3 updates in 90 days");
+    expect(m.weeks).toHaveLength(13);
+    expect(m.weeks[12]).toEqual({ ago: 0, active: true });
+    expect(m.weeks.filter((w) => w.active).map((w) => w.ago)).toEqual([3, 0]);
+    expect(m.activeWeeks).toBe(2);
+  });
+  it("says so when there is no update", () => {
+    expect(momentum([], NOW).consistencyText).toBe("No updates in 90 days");
+    expect(momentum(["2026-10-01T00:00:00Z"], NOW).consistencyText).toBe("1 update in 90 days");
+  });
+  it("counts the evidence added in 90 days and its areas", () => {
+    const e = (category: string, createdAt: string) => ({ category, createdAt });
+    expect(evidenceAddedText([], NOW)).toBe("None in 90 days");
+    expect(evidenceAddedText([e("financial", "2026-10-01T00:00:00Z"), e("financial", "2026-09-01T00:00:00Z"), e("legal", "2026-06-01T00:00:00Z")], NOW)).toBe("2 pieces in 90 days, in 1 of 8 areas");
+    expect(evidenceAddedText([e("team", "2026-10-14T00:00:00Z")], NOW)).toBe("1 piece in 90 days, in 1 of 8 areas");
+  });
+  it("gives every area a reason it matters", () => {
+    expect(AREAS.every((a) => AREA_WHY[a.code].length > 20)).toBe(true);
   });
 });

@@ -42,8 +42,8 @@ export function FooterView() {
               <Link className="flink" href="/for-investors">
                 For investors
               </Link>
-              <Link className="flink" href="/investor-interest">
-                Register interest
+              <Link className="flink" href="/signin">
+                Create an investor account
               </Link>
             </div>
             <div>

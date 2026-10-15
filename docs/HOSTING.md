@@ -6,7 +6,7 @@ Written on 15 October 2026. Render's documentation could not be reached from the
 
 ## 1. Supabase
 
-1. Apply `supabase/migrations/20261015000001_investor_interest.sql` and then `20261015000002_investor_side.sql` to the Supabase project, after the three earlier migrations. Until the first is applied, the investor interest form answers "Registration is not open yet" and stores nothing. Until the second is applied, the founder and investor pages fail, because they read tables and functions it creates. The second also creates the private `pitches` storage bucket. The SQL checks in `supabase/tests` were run against all five migrations on a local PostgreSQL 16 on 15 October 2026.
+1. Apply the three migrations of 15 October to the Supabase project in order, after the three earlier migrations: `20261015000001_investor_interest.sql`, `20261015000002_investor_side.sql` and `20261015000003_venture_ask.sql`. The first creates the `investor_interest` table, which the retired interest form wrote. The second creates the investor side and the private `pitches` storage bucket. The third adds the founder's ask and returns it from `discover_ventures()`. Until the second and third are applied, the founder and investor pages fail, because they read the tables, columns and functions those create. The SQL checks in `supabase/tests` were run against all six migrations on a local PostgreSQL 16 on 15 October 2026.
 2. Under Authentication, URL Configuration, set the Site URL to the public address, for example `https://ikonetu.com`, and add `<that address>/auth/callback` under Redirect URLs.
 3. The other Supabase Auth settings are listed in the README under "Sign-in".
 4. After the first admin has signed in once, make them an admin with the SQL in the README under "The signed-in app".
@@ -36,7 +36,7 @@ Each value is entered in the Render dashboard. None is written in this repositor
 | `NEXT_PUBLIC_SITE_URL` | Page metadata, the site map, the sign-in email link | The public address with `https://` and no trailing slash |
 | `NEXT_PUBLIC_SUPABASE_URL` | Sign-in and the signed-in pages | Safe in the browser |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Sign-in and the signed-in pages | Safe in the browser |
-| `SUPABASE_SERVICE_ROLE_KEY` | `POST /api/v1/waitlist` and `POST /api/v1/investor-interest` | Server only. It bypasses row level security, so it must never be committed or sent to a browser |
+| `SUPABASE_SERVICE_ROLE_KEY` | `POST /api/v1/waitlist` | Server only. It bypasses row level security, so it must never be committed or sent to a browser |
 | `NEXT_PUBLIC_PHONE_SIGN_IN` | The sign-in page | Leave unset until an SMS and WhatsApp provider is set up in Supabase Auth |
 
 Variables whose names start with `NEXT_PUBLIC_` are written into the browser code when the app is built. A change to one of them therefore needs a new build, not only a restart. `NEXT_PUBLIC_SUPABASE_URL` must be set before the build for another reason too: the Content-Security-Policy allows the browser to upload pitches to that address and to play them from it, and the policy is fixed at build time.
@@ -49,7 +49,7 @@ The domain's DNS records point it at the Render service. Render shows the record
 
 1. The home page, `/privacy`, `/terms` and `/cookies` load at the public address.
 2. `/robots.txt` and `/sitemap.xml` name the public address, which shows `NEXT_PUBLIC_SITE_URL` was set before the build.
-3. A test registration on `/investor-interest` shows the confirmation, and the row appears in `investor_interest` in Supabase.
+3. `/investor-interest` redirects to `/for-investors`.
 4. A test founder uploads a short pitch at `/dashboard/pitch` and it plays back, which shows the browser can reach Supabase Storage under the Content-Security-Policy.
 5. A test investor signs up, an admin approves them at `/admin/investors`, and the investor finds the test founder at `/investor` once the founder has published.
 6. A sign-in at `/signin` sends the email, and its link returns to `/auth/callback` on the public address.
@@ -63,4 +63,4 @@ The domain's DNS records point it at the Render service. Render shows the record
 
 ## Rate limiting
 
-The waitlist and investor interest endpoints limit each IP address in memory. Each running instance keeps its own count, so the limit only slows casual abuse. SRD SEC-W4 asks for a limit in front of the app as well. Which of Render's features can provide it is **unverified**.
+The waitlist endpoint limits each IP address in memory. Each running instance keeps its own count, so the limit only slows casual abuse. SRD SEC-W4 asks for a limit in front of the app as well. Which of Render's features can provide it is **unverified**.

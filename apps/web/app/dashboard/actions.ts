@@ -38,6 +38,7 @@ export async function updateVenture(_prev: AppState, form: FormData): Promise<Ap
     stage: values.stage,
     description: values.description,
     website: values.website,
+    ask: values.ask,
   });
   if (!parsed.ok) return { status: "error", message: "Please check the form.", errors: parsed.errors, values };
   const { error } = await supabase.from("ventures").update(parsed.data).eq("id", venture.id);

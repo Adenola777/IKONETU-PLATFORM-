@@ -7,14 +7,14 @@ import { ForFoundersView } from "../views/founders.view";
 type Level = 1 | 2 | 3;
 
 const AREAS: [string, Level, string, string][] = [
-  ["Problem and market", 3, "Evidence that the problem is real and that enough people have it.", "Customer interviews, market sizing or research."],
-  ["Product", 3, "Whether the product exists, works and is used.", "A live link, a demo account or usage data."],
-  ["Traction", 3, "Growth over time in users, volume or revenue.", "Monthly figures from a dashboard or the accounts."],
-  ["Customers", 2, "Who pays or has committed to pay, and what they say.", "Contracts, letters of intent or references."],
-  ["Business model", 1, "How the business makes money and what each sale costs.", "Pricing, unit costs and margins."],
-  ["Team", 2, "Who is building the company and whether they can deliver the plan.", "Confirmed roles and relevant experience."],
-  ["Financials", 2, "Whether the numbers are recorded and can be checked.", "Management accounts and bank statements."],
-  ["Impact or strategic fit", 3, "The outcome the business creates and how it is measured.", "An impact measure, or how the company fits an investor focus."],
+  ["Identity", 3, "Whether the company is registered and who stands behind it.", "A registry record or certificate of incorporation, and the founder's government ID."],
+  ["Legal", 2, "Whether the company can trade legally.", "A tax registration, contracts, licences or IP filings."],
+  ["Financial", 3, "Whether the numbers are recorded and can be checked.", "Bank or mobile money statements, monthly accounts and revenue for the last 12 months."],
+  ["Product", 3, "Whether the product exists, works and is used.", "A live link, a test account, signed orders or usage data."],
+  ["Market", 3, "Whether the problem is real and people want the product.", "Customer interviews, signed pilot or intent letters, or market research."],
+  ["Team", 2, "Who is building the company and whether they can deliver the plan.", "Team members and their credentials, or a programme they completed."],
+  ["Media and presence", 2, "Whether investors can check the company in public.", "A live website, a social profile, a pitch deck or press coverage."],
+  ["Operations", 1, "Whether the business can deliver.", "Supplier contracts, premises or the tools the business runs on."],
 ];
 const LEVEL_NAME: Record<Level, string> = { 3: "Strong", 2: "Building", 1: "Gap" };
 

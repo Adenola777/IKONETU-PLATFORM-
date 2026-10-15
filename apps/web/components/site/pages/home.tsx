@@ -6,7 +6,7 @@ import { readStoredSide, useNavVals } from "../side";
 import { HomeView } from "../views/home.view";
 import { useWalkVals } from "../walkthrough";
 
-type ModuleId = "traction" | "product" | "customers" | "revenue" | "model" | "team" | "roadmap" | "registration";
+type ModuleId = "identity" | "legal" | "revenue" | "product" | "market" | "team" | "media" | "operations";
 type Evidence = "reviewed" | "third" | "submitted" | "none";
 type Progress = "done" | "progress" | "action";
 
@@ -20,14 +20,14 @@ const TOUR = [
 
 // id, name, summary, evidence status, founder status, submitted, review, date, who can see
 const MODULES: [ModuleId, string, string, Evidence, Progress, string, string, string, string][] = [
-  ["traction", "Traction", "Monthly payment volume, last 12 months", "reviewed", "done", "Twelve monthly exports from the payments dashboard.", "An IkonetU reviewer compared the totals with the business bank statements.", "3 October 2026", "Investors see the monthly totals and this status. The exports and statements stay with you and the reviewer."],
-  ["product", "Product", "Live on Android and USSD", "reviewed", "done", "A link to the Android app, the USSD short code and a test account.", "A reviewer opened both and made a test payment.", "28 September 2026", "Investors see the links and this status. The test account stays private."],
-  ["customers", "Customers", "3 of 5 merchant references", "third", "progress", "Three signed reference letters from market traders, with their contact details.", "A reviewer spoke to each of the three referees.", "1 October 2026", "Investors see how many references exist and this status. The referees’ contact details stay private."],
-  ["revenue", "Revenue", "Last 12 months", "reviewed", "done", "Management accounts and 12 months of business bank statements.", "A reviewer compared the reported revenue with the bank statements. This is not an audit.", "3 October 2026", "Investors see monthly revenue and this status. The statements stay with you and the reviewer."],
-  ["model", "Business model", "Pricing and the cost of each payment", "none", "action", "Nothing yet.", "Nothing to review yet.", "Not added", "Investors will see your pricing and costs once you add them."],
-  ["team", "Team", "4 members, 2 roles confirmed", "submitted", "progress", "Four team profiles. Two members confirmed their role from their own accounts.", "Not reviewed by IkonetU yet.", "Added 30 September 2026", "Investors see names and roles. Identity documents are never shown."],
-  ["roadmap", "Roadmap", "Milestones for the next 12 months", "none", "action", "Nothing yet.", "Nothing to review yet.", "Not added", "Investors will see the milestones you add."],
-  ["registration", "Registration", "Certificate of incorporation", "third", "done", "A certificate of incorporation and a tax identification number.", "The registration matches the record in the CAC public registry.", "25 September 2026", "Investors see the registry match and this status. The tax number stays private."],
+  ["identity", "Identity", "Company registration", "third", "done", "A certificate of incorporation naming Amara Okafor as a director.", "The registration matches the record in the CAC public registry.", "25 September 2026", "Investors see your description, this status and what was compared. The certificate stays with you and the reviewer."],
+  ["legal", "Legal", "Tax registration", "submitted", "progress", "A tax identification certificate.", "Not reviewed by IkonetU yet.", "Added 30 September 2026", "Investors see your description and this status. The tax number stays private."],
+  ["revenue", "Financial", "Revenue, last 12 months", "reviewed", "done", "Management accounts and 12 months of business bank statements.", "A reviewer compared the reported revenue with the bank statements. This is not an audit.", "3 October 2026", "Investors see your description, this status and what was compared. The statements stay with you and the reviewer."],
+  ["product", "Product", "Live on Android and USSD", "reviewed", "done", "A link to the Android app, the USSD short code and a test account.", "A reviewer opened both and made a test payment.", "28 September 2026", "Investors see your description, this status and what was compared. The test account stays private."],
+  ["market", "Market", "3 signed letters of intent", "third", "done", "Signed letters of intent from three market associations in Lagos.", "A reviewer confirmed each letter with the association that signed it.", "1 October 2026", "Investors see your description, this status and what was compared. The signatories’ contact details stay private."],
+  ["team", "Team", "4 team members", "submitted", "progress", "The roles and experience of the four people building Market Day Pay.", "Not reviewed by IkonetU yet.", "Added 30 September 2026", "Investors see your description and this status. Identity documents are never shown."],
+  ["media", "Media and presence", "Website and app store page", "submitted", "progress", "Links to the website and the Android app store page.", "Not reviewed by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
+  ["operations", "Operations", "Supplier and premises", "none", "action", "Nothing yet.", "Nothing to review yet.", "Not added", "Investors will see your description and its status once you add it."],
 ];
 
 const EVIDENCE_NAME: Record<Evidence, string> = { reviewed: "Platform reviewed", third: "Third-party evidence available", submitted: "Founder submitted", none: "Not added yet" };
@@ -36,9 +36,9 @@ const PROGRESS_NAME: Record<Progress, string> = { done: "Complete", progress: "I
 const PROGRESS_CLASS: Record<Progress, string> = { done: "chip-n", progress: "chip-n", action: "chip-f" };
 
 const NEXT_STEPS = [
-  { num: 1, title: "Explain your pricing and the cost of each payment", why: "Business model is the one area with no evidence yet, and it shows investors how the company makes money.", action: "Add pricing" },
-  { num: 2, title: "Add two more merchant references", why: "References let investors hear from paying customers directly.", action: "Add references" },
-  { num: 3, title: "Add milestones for the next 12 months", why: "Milestones show what the money you raise would pay for.", action: "Add milestones" },
+  { num: 1, title: "Operational evidence such as supplier contracts, premises or tools", why: "Operations is the one area with no evidence yet. Operational evidence shows the business can deliver.", action: "Add evidence" },
+  { num: 2, title: "Months of verified financial records", why: "Recorded numbers can be reviewed. Remembered numbers cannot.", action: "Add records" },
+  { num: 3, title: "One-pager or pitch deck", why: "A public presence lets investors check what the founder says.", action: "Add a deck" },
 ];
 
 function reducedMotion() {

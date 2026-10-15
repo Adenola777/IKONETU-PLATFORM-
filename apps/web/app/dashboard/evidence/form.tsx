@@ -9,7 +9,7 @@ import { submitEvidence } from "./actions";
 
 const OPTIONS = signalOptions();
 
-export function EvidenceForm() {
+export function EvidenceForm({ signal = "" }: { signal?: string }) {
   const [state, action, pending] = useActionState(submitEvidence, IDLE_STATE);
   const errors = state.status === "error" ? state.errors : {};
   const values = state.status === "error" ? (state.values ?? {}) : {};
@@ -19,7 +19,7 @@ export function EvidenceForm() {
       <FormStatus state={state} />
       <div className="field">
         <label htmlFor="e-signal">What does it show?</label>
-        <select id="e-signal" name="signal" className="input" defaultValue={one(values, "signal")} {...invalidProps("signal", errors.signal)}>
+        <select id="e-signal" name="signal" className="input" defaultValue={one(values, "signal") || signal} {...invalidProps("signal", errors.signal)}>
           <option value="" disabled>Choose one</option>
           {AREAS.map((a) => (
             <optgroup key={a.code} label={a.label}>

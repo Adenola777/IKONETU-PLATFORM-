@@ -92,7 +92,7 @@ export function HowItWorksView({ v }: { v: HowItWorksVals }) {
                     <strong style={{ color: "#101828", fontWeight: "600" }}>
                       Founders
                     </strong>
-                    {" record what they are building and why now. Captions are added, and the founder checks them."}
+                    {" record what they are building and why now, and type what they say. The captions are made from it."}
                   </p>
                   <p className="body2">
                     <strong style={{ color: "#101828", fontWeight: "600" }}>
@@ -113,7 +113,7 @@ export function HowItWorksView({ v }: { v: HowItWorksVals }) {
                     <strong style={{ color: "#101828", fontWeight: "600" }}>
                       Founders
                     </strong>
-                    {" add evidence for traction, product, customers, revenue, team and registration, at their own pace."}
+                    {" add evidence across eight areas, from registration and revenue to product, market and team, at their own pace."}
                   </p>
                   <p className="body2">
                     <strong style={{ color: "#101828", fontWeight: "600" }}>

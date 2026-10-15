@@ -39,7 +39,7 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
               </div>
               <div className="c5">
                 <div className="shotwell shotwell-f">
-                  <img src="/media/screen-next.webp" width="1120" height="700" decoding="async" alt="The founder view of a sample profile, listing the next three steps: explain pricing and the cost of each payment, add two more merchant references, and add milestones for the next 12 months." />
+                  <img src="/media/screen-next.webp" width="1120" height="700" decoding="async" alt="A sample founder's next three steps on the IkonetU dashboard: a verified business bank or mobile money account, product stage evidence and a verified government ID, each with why it matters." />
                 </div>
               </div>
             </div>
@@ -61,7 +61,7 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                     Upload your one-minute pitch
                   </h3>
                   <p className="body2">
-                    Explain what you are building and why now. Captions are added for you.
+                    Explain what you are building and why now, and type what you say. The captions are made from it.
                   </p>
                 </li>
                 <li className="c3" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -125,10 +125,10 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                       </span>
                       <span>
                         <span style={{ display: "block", fontWeight: "600" }}>
-                          Explain your pricing and the cost of each sale
+                          Operational evidence such as supplier contracts, premises or tools
                         </span>
                         <span className="small">
-                          Why it matters: investors can see how the company makes money.
+                          Why it matters: operational evidence shows the business can deliver.
                         </span>
                       </span>
                     </li>
@@ -138,10 +138,10 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                       </span>
                       <span>
                         <span style={{ display: "block", fontWeight: "600" }}>
-                          Add two more customer references
+                          Months of verified financial records
                         </span>
                         <span className="small">
-                          Why it matters: references let investors hear from paying customers directly.
+                          Why it matters: recorded numbers can be reviewed. Remembered numbers cannot.
                         </span>
                       </span>
                     </li>
@@ -151,10 +151,10 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                       </span>
                       <span>
                         <span style={{ display: "block", fontWeight: "600" }}>
-                          Add milestones for the next 12 months
+                          One-pager or pitch deck
                         </span>
                         <span className="small">
-                          Why it matters: milestones show what the money you raise would pay for.
+                          Why it matters: a public presence lets investors check what the founder says.
                         </span>
                       </span>
                     </li>
@@ -420,7 +420,7 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                     Evidence added
                   </span>
                   <span style={{ fontFamily: "var(--font-serif), Georgia, serif", fontWeight: "600", fontSize: "22px" }}>
-                    Customer references, revenue
+                    Letters of intent, revenue
                   </span>
                 </div>
                 <div style={{ padding: "24px 0 0", borderTop: "1px solid #E7EAF0" }}>

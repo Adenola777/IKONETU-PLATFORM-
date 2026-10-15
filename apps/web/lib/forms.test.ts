@@ -96,6 +96,9 @@ describe("notes, venture details and decisions", () => {
   it("keeps the sector to the list", () => {
     expect(parseVenture({ name: "Kola Pay", sector: "Payments", stage: "revenue", description: "", website: "" }).ok).toBe(false);
     expect(parseVenture({ name: "Kola Pay", sector: "Fintech", stage: "revenue", description: "", website: "kolapay.ng" }).ok).toBe(true);
+    expect(parseVenture({ name: "Kola Pay", sector: "Fintech", stage: "revenue", description: "", website: "", ask: "Yes" }).ok).toBe(false);
+    const withAsk = parseVenture({ name: "Kola Pay", sector: "Fintech", stage: "revenue", description: "", website: "", ask: " $150,000 to reach 5,000 paying merchants " });
+    expect(withAsk.ok && withAsk.data.ask).toBe("$150,000 to reach 5,000 paying merchants");
   });
   it("needs a lane and a note to approve, and a reason to reject", () => {
     expect(parseDecision(form([["decision", "approve"], ["lane", "human"], ["publicNote", ""]])).ok).toBe(false);

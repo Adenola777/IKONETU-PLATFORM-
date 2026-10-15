@@ -44,7 +44,7 @@ export function QuestionsView() {
                   </span>
                 </summary>
                 <p>
-                  Founders aged 18 or over in Nigeria, Ghana or Kenya.
+                  Founders aged 18 or over in Nigeria, Ghana or Kenya. Investors aged 18 or over can join from any country, once an IkonetU admin approves their account.
                 </p>
               </details>
               <details>
@@ -95,7 +95,7 @@ export function QuestionsView() {
                   </span>
                 </summary>
                 <p>
-                  The one-minute pitch, the profile details, the readiness check, each piece of evidence with its review status, and recent activity.
+                  {"The one-minute pitch, the profile details and the founder's ask, the readiness check, each piece of evidence with its review status, and recent activity. Investors never see the documents a founder uploads for review."}
                 </p>
               </details>
               <details>
@@ -133,17 +133,17 @@ export function QuestionsView() {
               </details>
               <details>
                 <summary>
-                  When do investor accounts open?
+                  How do investor accounts work?
                   <span className="plus" style={{ display: "inline-flex", color: "#475467" }}>
                     <Icon name="plus" size={24} />
                   </span>
                 </summary>
                 <p>
-                  {"No opening date is set yet. You can "}
-                  <Link href="/investor-interest">
-                    register your interest
+                  {"An investor "}
+                  <Link href="/signin">
+                    creates an account
                   </Link>
-                  {" to hear when they do."}
+                  {" and says what they invest in. An IkonetU admin checks each investor account before it can browse founder profiles and request introductions."}
                 </p>
               </details>
             </div>

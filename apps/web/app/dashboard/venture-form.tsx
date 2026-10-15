@@ -7,7 +7,7 @@ import { IDLE_STATE, one } from "@/lib/app-state";
 import { SECTORS } from "@/lib/product";
 import { updateVenture } from "./actions";
 
-type Venture = { name: string; sector: string; stage: string; description: string | null; website: string | null };
+type Venture = { name: string; sector: string; stage: string; description: string | null; website: string | null; ask: string | null };
 
 export function VentureForm({ venture }: { venture: Venture }) {
   const [state, action, pending] = useActionState(updateVenture, IDLE_STATE);
@@ -15,7 +15,7 @@ export function VentureForm({ venture }: { venture: Venture }) {
   const values =
     state.status === "error" && state.values
       ? state.values
-      : { name: venture.name, sector: venture.sector, stage: venture.stage, description: venture.description ?? "", website: venture.website ?? "" };
+      : { name: venture.name, sector: venture.sector, stage: venture.stage, description: venture.description ?? "", website: venture.website ?? "", ask: venture.ask ?? "" };
   const key = state.status === "error" ? JSON.stringify(values) : "saved";
   const known = (SECTORS as readonly string[]).includes(one(values, "sector"));
   return (
@@ -52,6 +52,12 @@ export function VentureForm({ venture }: { venture: Venture }) {
         <label htmlFor="v-description">What it does, in one or two sentences</label>
         <textarea id="v-description" name="description" className="input" rows={3} maxLength={280} defaultValue={one(values, "description")} {...invalidProps("description", errors.description)} />
         <FieldError id="description" message={errors.description} />
+      </div>
+      <div className="field">
+        <label htmlFor="v-ask">Your ask</label>
+        <input id="v-ask" name="ask" className="input" type="text" maxLength={160} defaultValue={one(values, "ask")} aria-describedby="v-ask-hint" {...invalidProps("ask", errors.ask)} />
+        <p id="v-ask-hint" className="hint">How much you are raising and what for, in one line. For example: $150,000 to reach 5,000 paying merchants. Leave it empty if you are not raising.</p>
+        <FieldError id="ask" message={errors.ask} />
       </div>
       <div className="field">
         <label htmlFor="v-website">Website</label>

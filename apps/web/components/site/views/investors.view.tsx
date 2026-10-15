@@ -28,19 +28,19 @@ export function ForInvestorsView({ v }: { v: ForInvestorsVals }) {
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 24px" }}>
                   {" "}
-                  <Link className="btn btn-i btn-lg" href="/investor-interest" onClick={v.chooseInvestor}>
-                    Register your interest
+                  <Link className="btn btn-i btn-lg" href="/signin" onClick={v.chooseInvestor}>
+                    Create an investor account
                   </Link>
                   {" "}
                   <span className="small">
-                    Investor accounts are not open yet.
+                    An IkonetU admin checks each investor account before it can browse founder profiles.
                   </span>
                   {" "}
                 </div>
               </div>
               <div className="c5">
                 <div className="shotwell shotwell-i">
-                  <img src="/media/screen-evidence.webp" width="1120" height="700" decoding="async" alt="Evidence on a sample profile. Traction, Product and Revenue are Platform reviewed, Customers has Third-party evidence available, and Revenue is open to show what was submitted." />
+                  <img src="/media/screen-evidence.webp" width="1120" height="700" decoding="async" alt="Evidence on a sample founder profile in the IkonetU app. The revenue evidence of Market Day Pay is Platform reviewed and says what the reviewer compared on 3 October 2026." />
                 </div>
               </div>
             </div>
@@ -203,7 +203,10 @@ export function ForInvestorsView({ v }: { v: ForInvestorsVals }) {
                                 <span>
                                   {"Readiness check: strong in "}
                                   {f.strong}
-                                  {" of 8 areas"}
+                                  {" of 8 areas, building in "}
+                                  {f.building}
+                                  {", with a gap in "}
+                                  {f.gap}
                                 </span>
                               </p>
                               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
@@ -247,10 +250,10 @@ export function ForInvestorsView({ v }: { v: ForInvestorsVals }) {
                               <>
                                 <p className="note" role="status">
                                   {"These founders are samples, so this button sends nothing. "}
-                                  <Link href="/investor-interest" onClick={v.chooseInvestor} style={{ fontWeight: "600" }}>
-                                    Register your interest
+                                  <Link href="/signin" onClick={v.chooseInvestor} style={{ fontWeight: "600" }}>
+                                    Create an investor account
                                   </Link>
-                                  {" to hear when introductions open."}
+                                  {" to request real introductions."}
                                 </p>
                               </>
                             ) : null}
@@ -362,14 +365,14 @@ export function ForInvestorsView({ v }: { v: ForInvestorsVals }) {
           <section aria-labelledby="cta-title" style={{ borderTop: "2px solid #123C7A" }}>
             <div className="wrap sec">
               <h2 id="cta-title" className="h2">
-                Hear when investor accounts open.
+                Create your investor account.
               </h2>
               <p className="lede" style={{ marginBottom: "32px" }}>
-                Tell us what you look for. We will email you when you can browse founder profiles and request introductions.
+                Tell us who you are and what you invest in. An IkonetU admin checks each investor account, and an approved account can browse published founder profiles and request introductions.
               </p>
               {" "}
-              <Link className="btn btn-i btn-lg" href="/investor-interest" onClick={v.chooseInvestor}>
-                Register your interest
+              <Link className="btn btn-i btn-lg" href="/signin" onClick={v.chooseInvestor}>
+                Create an investor account
               </Link>
               {" "}
               <p className="small" style={{ margin: "40px 0 0", maxWidth: "760px" }}>

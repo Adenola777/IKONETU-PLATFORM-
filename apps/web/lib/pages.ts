@@ -44,11 +44,6 @@ export const PUBLIC_PAGES = {
     title: "Readiness self-check",
     description: "Eight questions, one for each area of the readiness check on a founder profile. Nothing you choose is saved or sent, and you do not need an account.",
   },
-  interest: {
-    path: "/investor-interest",
-    title: "Register your interest",
-    description: "Investor accounts are not open yet. Tell us what you look for, and we will email you when you can browse founder profiles and request introductions.",
-  },
   privacy: {
     path: "/privacy",
     title: "Privacy policy",

@@ -91,7 +91,7 @@ export function HomeView({ v }: { v: HomeVals }) {
                       Market Day Pay
                     </p>
                     <p className="small" style={{ margin: "4px 0 0" }}>
-                      Fintech · Pre-seed · Lagos, Nigeria
+                      Fintech · Earning revenue · Lagos, Nigeria
                     </p>
                     <div className="vp-ready" style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #E7EAF0", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px 16px" }}>
                       {" "}
@@ -149,10 +149,10 @@ export function HomeView({ v }: { v: HomeVals }) {
                         <>
                           <p className="note" role="status">
                             {"This is a sample profile, so the request goes nowhere. "}
-                            <Link href="/investor-interest" onClick={v.chooseInvestor} style={{ fontWeight: "600" }}>
-                              Register your interest
+                            <Link href="/signin" onClick={v.chooseInvestor} style={{ fontWeight: "600" }}>
+                              Create an investor account
                             </Link>
-                            {" to hear when introductions open."}
+                            {" to request real introductions."}
                           </p>
                         </>
                       ) : null}
@@ -219,7 +219,7 @@ export function HomeView({ v }: { v: HomeVals }) {
               </div>
               <div className="c6 card route">
                 <div className="shotwell shotwell-f">
-                  <img src="/media/screen-momentum.webp" width="1120" height="700" loading="lazy" decoding="async" alt="Momentum on a sample founder profile: updated 2 days ago, 8 meaningful updates in 90 days, and 13 weeks in a row with orange marking each week that had an update." />
+                  <img src="/media/screen-momentum.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The Momentum card on a sample founder profile in the IkonetU app: updated 2 days ago, 8 updates in 90 days, 7 pieces of evidence added in 7 of 8 areas, and orange marking 7 of the last 13 weeks." />
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                   <span className="chip chip-f">
@@ -251,7 +251,7 @@ export function HomeView({ v }: { v: HomeVals }) {
               </div>
               <div className="c6 card route">
                 <div className="shotwell shotwell-i">
-                  <img src="/media/screen-discover.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The investor filter with Fintech chosen under Sector. Two sample founders match, sorted by company name." />
+                  <img src="/media/screen-discover.webp" width="1120" height="700" loading="lazy" decoding="async" alt="Discovery in the IkonetU app with the Fintech filter chosen. Two sample founders match, sorted by company name, and Chama Books shows its pitch length, its ask and its readiness check." />
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                   <span className="chip chip-i">
@@ -275,8 +275,8 @@ export function HomeView({ v }: { v: HomeVals }) {
                   <Link className="btn btn-i" href="/for-investors" onClick={v.chooseInvestor}>
                     Explore as an investor
                   </Link>
-                  <Link className="tlink" href="/investor-interest" onClick={v.chooseInvestor}>
-                    Register your interest
+                  <Link className="tlink" href="/signin" onClick={v.chooseInvestor}>
+                    Create an investor account
                     <Icon name="arrow-right" size={18} />
                   </Link>
                 </div>
@@ -401,10 +401,10 @@ export function HomeView({ v }: { v: HomeVals }) {
                     <>
                       <p className="note" role="status" style={{ margin: "16px 24px 0" }}>
                         {"This is a sample profile, so the request goes nowhere. "}
-                        <Link href="/investor-interest" onClick={v.chooseInvestor} style={{ fontWeight: "600" }}>
-                          Register your interest
+                        <Link href="/signin" onClick={v.chooseInvestor} style={{ fontWeight: "600" }}>
+                          Create an investor account
                         </Link>
-                        {" to hear when introductions open."}
+                        {" to request real introductions."}
                       </p>
                     </>
                   ) : null}
@@ -446,7 +446,7 @@ export function HomeView({ v }: { v: HomeVals }) {
                         Stage
                       </dt>
                       <dd style={{ margin: "0", fontWeight: "600" }}>
-                        Pre-seed, revenue-generating
+                        Earning revenue
                       </dd>
                       <dt style={{ color: "#475467" }}>
                         Location
@@ -731,7 +731,7 @@ export function HomeView({ v }: { v: HomeVals }) {
               <ol className="g12 steps">
                 <li className="c6 card stepcard">
                   <div className="shotwell">
-                    <img src="/media/screen-pitch.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The pitch player for the sample company Market Day Pay, with the caption: I'm Amara Okafor, founder of Market Day Pay." />
+                    <img src="/media/screen-pitch.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The pitch player on a sample founder profile in the IkonetU app, paused at one second with the caption: I'm Amara Okafor, founder of Market Day Pay." />
                   </div>
                   <div className="stephead">
                     <span className="num">
@@ -747,7 +747,7 @@ export function HomeView({ v }: { v: HomeVals }) {
                 </li>
                 <li className="c6 card stepcard">
                   <div className="shotwell">
-                    <img src="/media/screen-evidence.webp" width="1120" height="700" loading="lazy" decoding="async" alt="Evidence on a sample profile. Traction, Product and Revenue are Platform reviewed, Customers has Third-party evidence available, and Revenue is open to show what was submitted." />
+                    <img src="/media/screen-evidence.webp" width="1120" height="700" loading="lazy" decoding="async" alt="Evidence on a sample founder profile in the IkonetU app. The revenue evidence of Market Day Pay is Platform reviewed and says what the reviewer compared on 3 October 2026." />
                   </div>
                   <div className="stephead">
                     <span className="num">
@@ -763,7 +763,7 @@ export function HomeView({ v }: { v: HomeVals }) {
                 </li>
                 <li className="c6 card stepcard">
                   <div className="shotwell">
-                    <img src="/media/screen-readiness.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The readiness check on a sample profile, with Product open to show what counts. Problem and market, Product and Traction are Strong, Customers, Team and Financials are Building, and Business model is a Gap." />
+                    <img src="/media/screen-readiness.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The readiness check on a sample founder's dashboard in the IkonetU app. Four areas are Strong, three are Building, and Operations is a Gap." />
                   </div>
                   <div className="stephead">
                     <span className="num">
@@ -779,7 +779,7 @@ export function HomeView({ v }: { v: HomeVals }) {
                 </li>
                 <li className="c6 card stepcard">
                   <div className="shotwell">
-                    <img src="/media/screen-intro.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The sample founder Chama Books in the investor results, with the note shown after Request introduction: these founders are samples, so the button sends nothing." />
+                    <img src="/media/screen-intro.webp" width="1120" height="700" loading="lazy" decoding="async" alt="An accepted introduction in the IkonetU app between a sample investor and the sample founder of Chama Books, with the investor's note and two replies." />
                   </div>
                   <div className="stephead">
                     <span className="num">
@@ -795,7 +795,7 @@ export function HomeView({ v }: { v: HomeVals }) {
                 </li>
               </ol>
               <p className="small" style={{ margin: "24px 0 0" }}>
-                The pictures are screens from this website. The founders, companies and figures in them are samples.
+                The pictures are screens from the IkonetU app. The founders, companies and figures in them are samples.
               </p>
             </div>
           </section>

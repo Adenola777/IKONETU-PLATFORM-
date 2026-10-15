@@ -1,5 +1,5 @@
 import type { Category } from "@ikonetu/score-engine";
-import { INTEREST_SECTORS } from "./investor-interest";
+import { INTEREST_SECTORS } from "./investor-options";
 
 /** The sectors a venture and an investor choose from. Discovery filters on them. */
 export const SECTORS = INTEREST_SECTORS;
@@ -56,31 +56,40 @@ export function isShownStatus(v: unknown): v is ShownStatus {
 
 export type AreaSummary = { category: string; status: ShownStatus; count: number };
 
-/** One cell per area for the card's meter, with the best status in that area or none. */
-export function areaCells(areas: AreaSummary[]): { code: Category; label: string; status: ShownStatus | null; count: number }[] {
+/**
+ * The readiness check, the same on the website and in the app. An area is
+ * strong when it holds platform-reviewed or third-party evidence, building
+ * when it holds founder-submitted evidence only, and a gap when it holds none.
+ * The owner set this on 15 October 2026.
+ */
+export type Level = "strong" | "building" | "gap";
+
+export const LEVEL: Record<Level, { name: string; chip: string; means: string }> = {
+  strong: { name: "Strong", chip: "chip-i", means: "Platform-reviewed or third-party evidence" },
+  building: { name: "Building", chip: "chip-n", means: "Founder-submitted evidence only" },
+  gap: { name: "Gap", chip: "chip-none", means: "No evidence yet" },
+};
+
+export function levelOf(status: ShownStatus | null | undefined): Level {
+  if (status === "third_party" || status === "reviewed") return "strong";
+  if (status === "submitted") return "building";
+  return "gap";
+}
+
+/** One entry per area, in rubric order, with its level and how many pieces of evidence it holds. */
+export function areaCells(areas: AreaSummary[]): { code: Category; label: string; level: Level; count: number }[] {
   return AREAS.map((a) => {
     const found = areas.find((x) => x.category === a.code);
-    return { code: a.code, label: a.label, status: found ? found.status : null, count: found ? found.count : 0 };
+    return { code: a.code, label: a.label, level: levelOf(found?.status), count: found ? found.count : 0 };
   });
 }
 
-/** A one-line summary of the meter, so the cells are never the only way to read it. */
-export function areaSummaryText(areas: AreaSummary[]): string {
-  const withEvidence = areas.length;
-  if (withEvidence === 0) return "No evidence added yet.";
-  const reviewed = areas.filter((a) => a.status === "reviewed").length;
-  const third = areas.filter((a) => a.status === "third_party").length;
-  const parts = [`Evidence in ${withEvidence} of 8 areas.`];
-  const checked: string[] = [];
-  if (third) checked.push(`${third} with third-party evidence`);
-  if (reviewed) checked.push(`${reviewed} platform reviewed`);
-  if (checked.length) parts.push(`${sentenceCase(checked.join(", "))}.`);
-  else parts.push("None reviewed yet.");
-  return parts.join(" ");
-}
-
-function sentenceCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+/** The readiness check in words, so the meter's colours are never the only signal. */
+export function readinessText(areas: AreaSummary[]): string {
+  const cells = areaCells(areas);
+  const n = (l: Level) => cells.filter((c) => c.level === l).length;
+  if (n("gap") === 8) return "No evidence yet, so all eight areas are gaps.";
+  return `Strong in ${n("strong")} of 8 areas, building in ${n("building")}, with a gap in ${n("gap")}.`;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -122,3 +131,50 @@ export const INVESTOR_TYPE_NAME: Record<string, string> = {
   angel: "Angel investor",
   fund: "Fund investor",
 };
+
+/**
+ * Why each area matters to an investor. The founder's next steps and the
+ * public readiness self-check use the same sentences.
+ */
+export const AREA_WHY: Record<Category, string> = {
+  identity: "Investors want to know the company exists and who stands behind it.",
+  legal: "A company that can trade legally carries less risk.",
+  financial: "Recorded numbers can be reviewed. Remembered numbers cannot.",
+  product: "A product investors can try is easier to believe than a description.",
+  market: "Investors want to know the problem exists before they look at the solution.",
+  team: "Investors back people, so they want to see who is building the company.",
+  media: "A public presence lets investors check what the founder says.",
+  operations: "Operational evidence shows the business can deliver.",
+};
+
+/**
+ * The evidence a founder added in the last 90 days, counted, with the number
+ * of areas it falls in, for example "7 pieces in 90 days, in 7 of 8 areas".
+ */
+export function evidenceAddedText(items: { category: string; createdAt: string }[], now: Date): string {
+  const recent = items.filter((e) => daysBetween(new Date(e.createdAt), now) <= 90);
+  if (recent.length === 0) return "None in 90 days";
+  const areas = new Set(recent.map((e) => e.category)).size;
+  return `${recent.length} ${recent.length === 1 ? "piece" : "pieces"} in 90 days, in ${areas} of 8 areas`;
+}
+
+/**
+ * Momentum, as the website describes it: recency, consistency and evidence
+ * added. Consistency counts progress updates in the last 90 days, and the
+ * strip marks each of the last 13 weeks that had an update. There are no
+ * streaks, points or ranks.
+ */
+export function momentum(updateDates: string[], now: Date) {
+  const day = (d: string) => daysBetween(new Date(d), now);
+  const in90 = updateDates.filter((d) => day(d) <= 90).length;
+  const weeks = Array.from({ length: 13 }, (_, i) => {
+    const ago = 12 - i;
+    return { ago, active: updateDates.some((d) => Math.floor(day(d) / 7) === ago) };
+  });
+  return {
+    in90,
+    consistencyText: in90 === 0 ? "No updates in 90 days" : `${in90} ${in90 === 1 ? "update" : "updates"} in 90 days`,
+    weeks,
+    activeWeeks: weeks.filter((w) => w.active).length,
+  };
+}

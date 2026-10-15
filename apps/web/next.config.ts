@@ -45,6 +45,11 @@ const config: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // The investor interest form was retired on 15 October 2026, when investor
+  // accounts opened. Its old address goes to For investors.
+  async redirects() {
+    return [{ source: "/investor-interest", destination: "/for-investors", permanent: true }];
+  },
 };
 
 export default config;

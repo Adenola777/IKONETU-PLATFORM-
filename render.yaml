@@ -25,7 +25,7 @@ services:
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
         sync: false
-      # Server-only. Used by the waitlist and investor interest endpoints.
+      # Server-only. Used by the waitlist endpoint.
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       # Leave unset until an SMS and WhatsApp provider is set up in Supabase Auth.

@@ -7,11 +7,13 @@ export type ProfileEvidence = {
 };
 
 export type VentureProfile = {
-  venture: { id: string; name: string; sector: string; stage: string; country: string; description: string | null; website: string | null; published_at: string | null };
+  venture: { id: string; name: string; sector: string; stage: string; country: string; description: string | null; website: string | null; ask: string | null; published_at: string | null };
   founder: { full_name: string; city: string | null; country: string | null; institution: string | null; bio: string | null } | null;
   pitch: { url: string; transcript: string; duration: number } | null;
   evidence: ProfileEvidence[];
   updates: { id: string; body: string; created_at: string }[];
+  /** Dates of the progress updates in the last 13 weeks, for the momentum signals. */
+  recentUpdates: string[];
   lastActivity: string | null;
 };
 
@@ -23,15 +25,17 @@ export type VentureProfile = {
 export async function loadVentureProfile(supabase: SupabaseClient, ventureId: string): Promise<VentureProfile | null> {
   const venture = await supabase
     .from("ventures")
-    .select("id, founder_id, name, sector, stage, country, description, website, published_at")
+    .select("id, founder_id, name, sector, stage, country, description, website, ask, published_at")
     .eq("id", ventureId)
     .maybeSingle();
   if (!venture.data) return null;
-  const [founder, pitch, evidence, updates] = await Promise.all([
+  const since = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000).toISOString();
+  const [founder, pitch, evidence, updates, recent] = await Promise.all([
     supabase.from("public_profiles").select("full_name, city, country, institution, bio").eq("user_id", venture.data.founder_id).maybeSingle(),
     supabase.from("pitches").select("storage_path, transcript, duration_seconds, updated_at").eq("venture_id", ventureId).maybeSingle(),
     supabase.rpc("venture_evidence", { p_venture: ventureId }),
     supabase.from("venture_updates").select("id, body, created_at").eq("venture_id", ventureId).order("created_at", { ascending: false }).limit(20),
+    supabase.from("venture_updates").select("created_at").eq("venture_id", ventureId).gte("created_at", since).limit(500),
   ]);
   const signed = pitch.data ? await supabase.storage.from("pitches").createSignedUrl(pitch.data.storage_path, 3600) : null;
   const ev = ((evidence.data ?? []) as Record<string, unknown>[])
@@ -55,6 +59,7 @@ export async function loadVentureProfile(supabase: SupabaseClient, ventureId: st
     pitch: pitch.data && signed?.data?.signedUrl ? { url: signed.data.signedUrl, transcript: pitch.data.transcript, duration: Number(pitch.data.duration_seconds) } : null,
     evidence: ev,
     updates: upd,
+    recentUpdates: (recent.data ?? []).map((r) => r.created_at as string),
     lastActivity: dates.sort().at(-1) ?? null,
   };
 }

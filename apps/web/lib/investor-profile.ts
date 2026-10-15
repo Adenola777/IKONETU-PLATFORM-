@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { firstErrors, STAGES, type FieldErrors } from "./account";
 import { COUNTRIES } from "./constants";
-import { CHEQUE_SIZES, INTEREST_COUNTRIES, INVESTOR_TYPES } from "./investor-interest";
+import { CHEQUE_SIZES, INTEREST_COUNTRIES, INVESTOR_TYPES } from "./investor-options";
 import { SECTORS } from "./product";
 import { PRIVACY_VERSION } from "./waitlist";
 

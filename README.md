@@ -6,7 +6,7 @@ This repository holds the new IkonetU codebase: the web app, the score engine an
 
 | Folder | Contents |
 |---|---|
-| `apps/web` | Next.js app with the public website, sign-in, the founder and investor sides, the staff pages, and two endpoints: `POST /api/v1/investor-interest`, which the investor interest form calls, and `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
+| `apps/web` | Next.js app with the public website, sign-in, the founder and investor sides, the staff pages, and one endpoint, `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
 | `packages/score-engine` | The IkonetU Score rules (rubric v2), the score calculation, league placement and the "next best actions" list, with tests |
 | `packages/ui-tokens` | Brand colours, fonts, spacing and the 44 px touch target |
 | `supabase/migrations` | Database tables, access rules (row level security), the private evidence and pitch buckets, and the rubric seed |
@@ -25,7 +25,6 @@ The public pages were built from the design boards of October 2026 and are serve
 | `/for-investors` | For investors |
 | `/how-it-works` | How it works |
 | `/readiness-check` | Readiness self-check. The answers stay in the browser and are never sent |
-| `/investor-interest` | Register your interest, which stores a row in `investor_interest` through `POST /api/v1/investor-interest` |
 | `/trust-and-safety` | Trust and safety |
 | `/about` | About |
 | `/questions` | Questions |
@@ -33,9 +32,13 @@ The public pages were built from the design boards of October 2026 and are serve
 | `/terms` | Terms |
 | `/cookies` | Cookie policy |
 
+The investor interest form was retired on 15 October 2026, when investor accounts opened. Every investor button on the website now leads to account sign-up, and the old address `/investor-interest` redirects to `/for-investors`. The `investor_interest` table keeps the rows it already holds.
+
+The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label.
+
 IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `apps/web/lib/pages.ts`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
 
-The page markup lives in `apps/web/components/site/views` and the styles in `apps/web/app/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the two forms, is in `apps/web/components/site`. The signed-in pages use the same shared styles, with their own additions in `apps/web/components/app/app.css`.
+The page markup lives in `apps/web/components/site/views` and the styles in `apps/web/app/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the readiness self-check, is in `apps/web/components/site`. The signed-in pages use the same shared styles, with their own additions in `apps/web/components/app/app.css`.
 
 The fonts are downloaded when the app is built and served by the app, so no visitor's browser asks Google for them.
 
@@ -47,7 +50,7 @@ After sign-in, a new person chooses at `/onboarding` whether they are a founder 
 
 | Address | What the founder does |
 |---|---|
-| `/dashboard` | Publishes or hides the profile, sees what is missing, edits the venture's details and sees their own score |
+| `/dashboard` | Publishes or hides the profile, sees the readiness check and the next three steps, edits the venture's details and its ask, and sees their own score |
 | `/dashboard/pitch` | Uploads a pitch of up to 90 seconds and 50 MB, with a typed transcript. The video goes from the browser straight to the founder's folder in the private `pitches` bucket. The captions are made from the transcript |
 | `/dashboard/evidence` | Adds evidence with up to three files or a link, and sees each item's status and the reviewer's note or reason |
 | `/dashboard/updates` | Posts and removes progress updates |
@@ -61,10 +64,12 @@ A profile is hidden until the founder publishes it, and it cannot be published w
 | Address | What the investor does |
 |---|---|
 | `/onboarding/investor` | Gives their name, investor type, fund or firm, sectors, stages, countries and cheque size. The account then waits at `/investor/pending` |
-| `/investor` | Searches published founders by sector, stage, geography, evidence and recent activity. Results are sorted by company name, never by a score |
-| `/investor/ventures/<id>` | Watches the pitch with captions, reads the transcript, the evidence by area with each status, and the progress updates, and asks for an introduction with a short note |
+| `/investor` | Searches published founders by sector, stage, geography, evidence and recent activity. Each result shows the ask, the updates in the last 90 days and the readiness check, and pointing at a pitch plays a muted preview of five seconds with captions. Results are sorted by company name, never by a score |
+| `/investor/ventures/<id>` | Watches the pitch with captions, reads the transcript, the ask, the readiness check with the evidence in each area and its status, Momentum and the progress updates, and asks for an introduction with a short note |
 | `/investor/introductions` | Follows their requests, and withdraws one the founder has not answered |
 | `/investor/profile` | Changes their details |
+
+The readiness check is the same on the website and in the app. An area is strong when it holds platform-reviewed or third-party evidence, building when it holds founder-submitted evidence only, and a gap when it holds none. The founder's next three steps come from the score engine's next best actions, leaving out evidence already waiting for a reviewer. Momentum shows how long ago the profile changed, the progress updates in the last 90 days, the evidence added in the last 90 days, and a strip of the last 13 weeks that marks each week with an update. It has no streaks, points or ranks.
 
 An investor sees three statuses for evidence and nothing else about it: "Founder submitted" until a reviewer decides, then "Platform reviewed" or "Third-party evidence available". Rejected, expired and "needs more" evidence, the files, the reviewer's identity and the founder's score are never shown to an investor. `venture_evidence()` and `discover_ventures()` in the migration decide this.
 
@@ -102,27 +107,27 @@ You need Node 22 and pnpm 10.
 
 ```sh
 pnpm install
-pnpm test          # 132 tests: 47 in the score engine and 85 in the web app
+pnpm test          # 129 tests: 47 in the score engine and 82 in the web app
 pnpm typecheck
 pnpm --filter @ikonetu/web dev    # http://localhost:3000
 ```
 
-Sign-in answers "not open yet", and the waitlist and investor interest endpoints answer 503, until Supabase is configured. To connect it, copy `.env.example` to `apps/web/.env.local` and fill in the values from your Supabase project. The service role key must stay on the server and must never be committed.
+Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Supabase is configured. To connect it, copy `.env.example` to `apps/web/.env.local` and fill in the values from your Supabase project. The service role key must stay on the server and must never be committed.
 
 ## Rules the code enforces
 
 - A score only counts approved evidence. Self-reported claims add nothing.
 - Founders cannot approve their own evidence, change its status or give themselves staff roles. The database blocks these even if the app has a bug.
 - Score history and the audit log cannot be edited after they are written.
-- The waitlist and the investor interest list cannot be read or written by any signed-in user or visitor. Only the server writes to them.
+- The waitlist and the investor interest list cannot be read or written by any signed-in user or visitor. Only the server writes to the waitlist, and nothing writes to the interest list since its form was retired.
 - The rubric in the database is generated from `packages/score-engine/src/rubric.ts`. After changing the rubric, run `pnpm --filter @ikonetu/score-engine rubric:sql`. A test fails if the two copies differ.
 
 ## Not done yet
 
 - Sign-in has not been run end to end with a real email code, because no test inbox was available. The database writes it makes were run under row level security on a local copy of the migrations.
-- The in-memory rate limit on the waitlist and investor interest endpoints only slows casual abuse. Production also needs a limit in front of the app (SRD SEC-W4).
+- The in-memory rate limit on the waitlist endpoint only slows casual abuse. Production also needs a limit in front of the app (SRD SEC-W4).
 - The About page still shows placeholders for the founders' names, roles and photos, and the privacy policy still shows placeholders for the ICO registration number and the video, analytics and email providers.
-- IkonetU sends no email yet, so a founder learns of a new request and an investor of an answer only by signing in. The investor sign-up records whether the person agrees to email for when a sender is set up.
+- IkonetU sends no email yet, so a founder learns of a new request and an investor of an answer only by signing in. For the same reason the people on the investor interest list have not been told that investor accounts are open. The investor sign-up records whether the person agrees to email for when a sender is set up.
 - Messages appear when the conversation page reloads. Nothing pushes them to an open page.
 - The captions are timed by the length of each sentence of the founder's transcript, not by listening to the video, so they can run a little ahead or behind.
 - The pitch's length is read in the founder's browser before upload. A browser that cannot decode the video cannot upload it, and the page says so.

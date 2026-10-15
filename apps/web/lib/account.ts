@@ -96,6 +96,7 @@ export const onboardingSchema = z
     sector: z.enum(SECTORS, { message: "Choose your sector." }),
     stage: z.enum(STAGE_CODES, { message: "Choose your stage." }),
     description: optionalText(280, "Keep the description to 280 characters."),
+    ask: optionalText(160, "Keep the ask to 160 characters.").refine((v) => v === null || v.length >= 5, { message: "Write at least 5 characters, or leave it empty." }),
     website: optionalUrl("Enter a full web address, for example learnloop.ng."),
     linkedin: optionalUrl("Enter a full LinkedIn address."),
     x: optionalUrl("Enter a full X address."),
@@ -125,6 +126,7 @@ export type OnboardingRows = {
     stage: (typeof STAGE_CODES)[number];
     country: "NG" | "GH" | "KE";
     description: string | null;
+    ask: string | null;
     website: string | null;
     social_links: Record<string, string>;
   };
@@ -151,6 +153,7 @@ export function parseOnboarding(
     sector: text("sector"),
     stage: text("stage"),
     description: text("description"),
+    ask: text("ask"),
     website: text("website"),
     linkedin: text("linkedin"),
     x: text("x"),
@@ -191,6 +194,7 @@ export function parseOnboarding(
         stage: d.stage,
         country: d.country,
         description: d.description,
+        ask: d.ask,
         website: d.website,
         social_links: social,
       },

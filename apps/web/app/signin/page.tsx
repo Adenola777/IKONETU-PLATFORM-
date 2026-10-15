@@ -18,12 +18,12 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const phoneEnabled = phoneSignInEnabled();
 
   return (
-    <SignInFrame label="For founders">
+    <SignInFrame label="Sign in">
       <h1>Sign in or create your account</h1>
       <p className="si-lede">
         {phoneEnabled
-          ? "Enter your phone number to create your founder account or to sign back in."
-          : "Enter your email to create your founder account or to sign back in."}
+          ? "Enter your phone number to create your account or to sign back in. A new account then chooses founder or investor."
+          : "Enter your email to create your account or to sign back in. A new account then chooses founder or investor."}
       </p>
       {error === "link" && (
         <p className="status status-err" role="alert" style={{ marginBottom: 20 }}>

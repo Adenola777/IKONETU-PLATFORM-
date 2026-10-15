@@ -105,6 +105,7 @@ describe("parseOnboarding", () => {
           sector: "Edtech",
           stage: "mvp",
           country: "NG",
+          ask: null,
           description: null,
           website: "https://learnloop.ng",
           social_links: { instagram: "https://instagram.com/learnloop" },

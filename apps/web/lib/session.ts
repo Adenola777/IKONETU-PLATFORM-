@@ -34,7 +34,7 @@ export async function requireFounder() {
   if (!v.profile || v.profile.role !== "founder") redirect(homeFor(v.profile));
   const venture = await v.supabase
     .from("ventures")
-    .select("id, name, sector, stage, country, description, website, published_at")
+    .select("id, name, sector, stage, country, description, website, ask, published_at")
     .eq("founder_id", v.user.id)
     .order("created_at", { ascending: true })
     .limit(1)
