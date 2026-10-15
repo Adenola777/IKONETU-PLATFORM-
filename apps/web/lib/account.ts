@@ -100,7 +100,7 @@ export const onboardingSchema = z
     x: optionalUrl("Enter a full X address."),
     instagram: optionalUrl("Enter a full Instagram address."),
     confirmedAdult: adult,
-    acceptedPrivacy: z.boolean().refine((v) => v, { message: "Please confirm you have read the privacy notice." }),
+    acceptedPrivacy: z.boolean().refine((v) => v, { message: "Please confirm you have read the privacy policy." }),
     consents: z.record(z.boolean()),
   })
   .strict();

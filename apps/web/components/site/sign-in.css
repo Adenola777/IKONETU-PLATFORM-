@@ -1,0 +1,25 @@
+/* The sign-in pages: the layout of the sign-in board, on the website's shared styles. */
+.pg-signin .si-hdr{background:#FFFFFF;border-bottom:1px solid #E7EAF0}
+.pg-signin .si-hdr-in{max-width:1288px;margin:0 auto;padding:16px 24px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.pg-signin .si-hdr a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-size:15px;font-weight:600}
+.pg-signin .si-main{max-width:560px;margin:0 auto;padding:96px 24px 128px;box-sizing:border-box}
+.pg-signin .si-lbl{margin:0 0 16px;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#B54708}
+.pg-signin h1{margin:0 0 16px;font-family:var(--font-serif),Georgia,serif;font-weight:600;font-size:clamp(32px,4.5vw,44px);line-height:1.1;letter-spacing:-0.02em;color:#101828;text-wrap:balance}
+.pg-signin .si-lede{margin:0 0 32px;font-size:17px;color:#475467}
+.pg-signin .form{display:flex;flex-direction:column;gap:24px}
+.pg-signin .field{display:flex;flex-direction:column;gap:8px}
+.pg-signin .field label{font-weight:600}
+.pg-signin .input{min-height:48px;padding:0 16px;font:inherit;font-size:17px;border:1px solid #858FA1;border-radius:12px;background:#FFFFFF;color:#101828;width:100%;box-sizing:border-box}
+.pg-signin .input[aria-invalid="true"]{border:2px solid #B42318}
+.pg-signin .code-input{min-height:56px;max-width:224px;font-size:24px;letter-spacing:0.3em;font-variant-numeric:tabular-nums}
+.pg-signin .hint{margin:0;font-size:14px;color:#475467}
+.pg-signin .err{margin:0;font-size:14px;font-weight:600;color:#B42318}
+.pg-signin .check{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.pg-signin .check input{width:20px;height:20px;margin:0;accent-color:#101828}
+.pg-signin .status{margin:0;padding:16px;border-radius:12px;font-weight:600;line-height:1.5}
+.pg-signin .status-err{background:#FEF3F2;color:#B42318}
+.pg-signin .status-ok{background:#F2F4F7;color:#344054}
+.pg-signin .btn{align-self:flex-start}
+.pg-signin .btn:disabled{background:#F2F4F7;border-color:#E7EAF0;color:#667085;cursor:progress}
+.pg-signin .link-button{align-self:flex-start;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;color:#123C7A;text-decoration:underline;cursor:pointer}
+.pg-signin .link-button:disabled{color:#667085;cursor:progress}

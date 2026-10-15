@@ -5,7 +5,7 @@ import { AppHeader } from "../app-header";
 import { signOut } from "../dashboard/actions";
 import { OnboardingForm } from "./onboarding-form";
 
-export const metadata: Metadata = { title: "Create your profile | IkonetU", robots: { index: false } };
+export const metadata: Metadata = { title: "Create your profile", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
@@ -21,7 +21,7 @@ export default async function OnboardingPage() {
   if (profile.data && ventures.data && ventures.data.length > 0) redirect("/dashboard");
 
   return (
-    <>
+    <div className="app-ui">
       <AppHeader>
         <form action={signOut}>
           <button type="submit" className="btn btn-ghost">Sign out</button>
@@ -37,6 +37,6 @@ export default async function OnboardingPage() {
           <OnboardingForm askAdult={auth.user.user_metadata?.confirmed_adult !== true} />
         </div>
       </main>
-    </>
+    </div>
   );
 }

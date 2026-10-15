@@ -126,7 +126,7 @@ export function OnboardingForm({ askAdult }: { askAdult: boolean }) {
       <div>
         <label className="check">
           <input type="checkbox" name="acceptedPrivacy" {...invalid("acceptedPrivacy")} />
-          <span>I have read the <a href="/privacy" target="_blank" rel="noopener">privacy notice</a>.</span>
+          <span>I have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.</span>
         </label>
         {err("acceptedPrivacy")}
       </div>

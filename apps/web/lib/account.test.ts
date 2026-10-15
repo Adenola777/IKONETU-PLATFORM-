@@ -125,7 +125,7 @@ describe("parseOnboarding", () => {
     if (!result.ok) expect(result.errors.confirmedAdult).toBe("You must be 18 or older to join.");
   });
 
-  it("requires the privacy notice box", () => {
+  it("requires the privacy policy box", () => {
     const { acceptedPrivacy: _, ...rest } = VALID;
     const result = parseOnboarding(form(rest));
     expect(result.ok).toBe(false);

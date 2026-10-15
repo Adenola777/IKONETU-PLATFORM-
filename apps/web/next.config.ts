@@ -4,9 +4,11 @@ import type { NextConfig } from "next";
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  // The fonts are served from this site by next/font, so no font host is allowed.
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
   "img-src 'self' data:",
+  "media-src 'self'",
   "connect-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",

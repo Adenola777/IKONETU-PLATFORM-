@@ -59,7 +59,7 @@ describe("parseWaitlist", () => {
     expect(r.ok).toBe(false);
     if (!r.ok && !r.bot) {
       expect(r.errors).toEqual({
-        acceptedPrivacy: "Please confirm you have read the privacy notice.",
+        acceptedPrivacy: "Please confirm you have read the privacy policy.",
         confirmedAdult: "You must be 18 or older to join.",
       });
     }

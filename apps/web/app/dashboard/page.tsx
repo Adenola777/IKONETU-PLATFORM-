@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "../app-header";
 import { signOut } from "./actions";
 
-export const metadata: Metadata = { title: "Your dashboard | IkonetU", robots: { index: false } };
+export const metadata: Metadata = { title: "Your dashboard", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 const LEAGUE_NAME = { EARLY: "Early", RISING: "Rising", INVESTABLE: "Investable", ELITE: "Elite" } as const;
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
   const place = [profile.data.city, country(profile.data.country ?? "")].filter(Boolean).join(", ");
 
   return (
-    <>
+    <div className="app-ui">
       <AppHeader>
         <form action={signOut}>
           <button type="submit" className="btn btn-ghost">Sign out</button>
@@ -66,6 +66,6 @@ export default async function DashboardPage() {
           </div>
         </div>
       </main>
-    </>
+    </div>
   );
 }

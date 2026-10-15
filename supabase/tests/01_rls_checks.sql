@@ -21,6 +21,10 @@ insert into public.evidence (venture_id, signal_code) values ('aaaaaaaa-0000-000
 update public.evidence set status = 'approved';
 \echo T8 waitlist read as signed-in user (expect 0 rows)
 select count(*) as waitlist_rows from public.waitlist;
+\echo T8b investor interest read as signed-in user (expect 0 rows or permission error)
+select count(*) as investor_interest_rows from public.investor_interest;
+\echo T8c investor interest written as signed-in user (expect permission or RLS error)
+insert into public.investor_interest (full_name, email, country, sectors, cheque_size, investor_type, confirmed_adult, confirmed_statement, email_consent, privacy_version) values ('X Y', 'x@example.com', 'NG', array['Fintech'], 'Prefer not to say', 'angel', true, true, true, 'test');
 \echo T9 upload into own folder (expect ok)
 insert into storage.objects (bucket_id, name) values ('evidence', '11111111-1111-1111-1111-111111111111/abc.pdf');
 \echo T10 upload into another user folder (expect RLS error)

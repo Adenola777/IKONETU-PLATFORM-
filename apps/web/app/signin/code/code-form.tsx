@@ -45,7 +45,7 @@ export function CodeForm({ expiresAt, isPhone }: { expiresAt: number; isPhone: b
           {error ? <p id="code-err" className="err">{error}</p> : null}
           <p className="hint" aria-live="polite">{left > 0 ? `The code expires in ${clock}.` : "The code has expired. Ask for a new one below."}</p>
         </div>
-        <button type="submit" className="btn btn-navy" style={{ alignSelf: "flex-start" }} disabled={pending}>
+        <button type="submit" className="btn btn-f btn-lg" style={{ alignSelf: "flex-start" }} disabled={pending}>
           {pending ? "Checking…" : "Continue"}
         </button>
       </form>
