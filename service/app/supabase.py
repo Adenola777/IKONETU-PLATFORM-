@@ -311,16 +311,15 @@ class Storage:
         self._client = client
         self._bearer = bearer
 
-    async def upload(self, bucket: str, path: str, content: bytes, content_type: str, filename: str = "blob") -> Result:
-        """Uploads a file as supabase-js uploads a File: a multipart form with cacheControl and the file."""
+    async def upload(self, bucket: str, path: str, content: bytes, content_type: str) -> Result:
+        """Uploads bytes as supabase-js uploads a Buffer from the server: the raw body, its type and a cache time."""
         clean = re.sub(r"/+", "/", path.strip("/"))
         headers = self._client.headers(self._bearer)
-        headers["x-upsert"] = "false"
+        headers.update({"x-upsert": "false", "cache-control": "max-age=3600", "content-type": content_type})
         try:
             response = await self._client.http.post(
                 f"{self._client.url}/storage/v1/object/{bucket}/{clean}",
-                data={"cacheControl": "3600"},
-                files={"": (filename, content, content_type)},
+                content=content,
                 headers=headers,
                 timeout=UPLOAD_SECONDS,
             )

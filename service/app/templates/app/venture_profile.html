@@ -1,0 +1,104 @@
+{# A founder profile as approved investors see it. The founder's preview shows the same. #}
+{% from "app/ui.html" import area_meter, meter_legend, status_chip %}
+{% from "app/pitch_video.html" import pitch_video %}
+{% macro venture_profile(p, now, aside="", jump="") -%}
+{% set areas = profile_areas(p.evidence) %}
+{% set country = country_name(p.venture.country) %}
+{% set place = [p.founder.city if p.founder else none, country] | select | join(", ") %}
+{% set empty = AREAS | rejectattr("code", "in", areas | map(attribute="category") | list) | list %}
+{% set m = momentum(p.recentUpdates, now) %}
+<div class="stack">
+<header>
+<p class="lbl lbl-i" style="margin-bottom:8px">{{ p.venture.sector }} · {{ stage_label(p.venture.stage) }} · {{ country }}</p>
+<h1 class="app-title">{{ p.venture.name }}</h1>
+<p class="app-lede" style="margin-bottom:12px">{% if p.founder %}{{ p.founder.full_name }}{% if place %}, {{ place }}{% endif %}{% else %}{{ place }}{% endif %}{% if p.founder and p.founder.institution %} · {{ p.founder.institution }}{% endif %}</p>
+{% if p.venture.ask %}
+<p class="body2" style="margin:0 0 12px"><strong style="color:#101828">Ask:</strong> {{ p.venture.ask }}</p>
+{% endif %}
+<div class="row">
+<span class="chip {{ 'chip-f' if is_recent(p.lastActivity, now) else 'chip-n' }}"><span class="dot" aria-hidden="true"></span>{{ activity_text(p.lastActivity, now) }}</span>
+{% if p.venture.website %}<a href="{{ p.venture.website }}" target="_blank" rel="noopener nofollow">{{ bare_url(p.venture.website) }}</a>{% endif %}
+{{ jump }}
+</div>
+</header>
+
+<div class="side">
+<div class="stack">
+<section aria-labelledby="pitch-h">
+<h2 id="pitch-h" class="app-h2">Pitch</h2>
+{% if p.pitch %}
+{{ pitch_video(p.pitch.url, p.pitch.transcript, p.pitch.duration, p.venture.name ~ " pitch") }}
+{% else %}
+<div class="empty"><p>No pitch has been added.</p></div>
+{% endif %}
+</section>
+
+{% if p.venture.description or (p.founder and p.founder.bio) %}
+<section aria-labelledby="about-h" class="card">
+<h2 id="about-h" class="app-h2">About</h2>
+{% if p.venture.description %}<p class="body2">{{ p.venture.description }}</p>{% endif %}
+{% if p.founder and p.founder.bio %}<p class="body2" style="margin-top:12px">{{ p.founder.bio }}</p>{% endif %}
+</section>
+{% endif %}
+
+<section aria-labelledby="ev-h" class="card">
+<h2 id="ev-h" class="app-h2">Readiness check</h2>
+{{ area_meter(areas) }}
+<div style="margin:12px 0 20px">{{ meter_legend() }}</div>
+<p class="small" style="margin-top:0">An area is strong when it holds evidence IkonetU reviewed or an outside source backs, building when it holds the founder's own evidence only, and a gap when it holds none. Each status says what happened to that piece of evidence and nothing more. It is not a judgement of the company, and IkonetU does not endorse or rank any company. Your own diligence decides.</p>
+{% for a in areas %}
+{% set l = level_of(a.status) %}
+<div class="area">
+<h3 class="app-h3 row" style="gap:10px">{{ a.label }}<span class="chip {{ LEVEL[l].chip }}">{{ LEVEL[l].name }}</span></h3>
+<ul class="ev">
+{% for e in a["items"] %}
+<li>
+<span class="what">{{ e.label }}</span>
+{% if e.summary %}<p class="body2" style="margin:4px 0 8px">{{ e.summary }}</p>{% endif %}
+<div class="row">{{ status_chip(e.status) }}</div>
+<p class="small" style="margin:6px 0 0">{{ STATUS[e.status].means }}</p>
+{% if e.publicNote %}<p class="note">What was compared{% if e.reviewedAt %}, on {{ date_text(e.reviewedAt) }}{% endif %}: {{ e.publicNote }}</p>{% endif %}
+{% if e.status == "submitted" %}<p class="small" style="margin:6px 0 0">Added on {{ date_text(e.createdAt) }}.</p>{% endif %}
+</li>
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
+{% if empty %}
+<p class="small area" style="margin:0">{% if empty | length == 8 %}No evidence has been added yet, so all eight areas are gaps.{% else %}Gap, with no evidence yet: {{ list_text(empty | map(attribute="label") | list) }}.{% endif %}</p>
+{% endif %}
+</section>
+</div>
+
+<aside class="stack">
+{{ aside }}
+<section aria-labelledby="mo-h" class="card">
+<h2 id="mo-h" class="app-h2">Momentum</h2>
+<dl class="kv kv-stack" style="margin-bottom:16px">
+<dt>Recency</dt><dd>{{ activity_text(p.lastActivity, now) }}</dd>
+<dt>Consistency</dt><dd>{{ m.consistencyText }}</dd>
+<dt>Evidence added</dt><dd>{{ evidence_added_text(p.evidence, now) }}</dd>
+</dl>
+<div class="weeks" role="img" aria-label="Updates in {{ m.activeWeeks }} of the last 13 weeks">{% for w in m.weeks %}<i class="{{ 'on' if w.active else '' }}"></i>{% endfor %}</div>
+<p class="small row" style="justify-content:space-between;margin:6px 0 0"><span>13 weeks ago</span><span>This week</span></p>
+<p class="small" style="margin:8px 0 0">Orange marks a week with a progress update. There are no streaks, points or ranks.</p>
+</section>
+<section aria-labelledby="up-h" class="card">
+<h2 id="up-h" class="app-h2">Progress updates</h2>
+{% if not p.updates %}
+<p class="body2">No updates have been posted.</p>
+{% else %}
+<ul class="updates">
+{% for u in p.updates %}
+<li>
+<time datetime="{{ u.created_at }}">{{ date_text(u.created_at) }}</time>
+<p>{{ u.body }}</p>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+</aside>
+</div>
+</div>
+{%- endmacro %}

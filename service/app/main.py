@@ -15,7 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .log import log_error, start_sentry
-from .routes import auth, site, system
+from .routes import auth, founder, site, system
 from .security import SecurityMiddleware
 from .session import ACCESS_COOKIE, REFRESH_COOKIE, SESSION_MAX_AGE, RedirectTo
 from .supabase import make_client
@@ -95,3 +95,4 @@ async def favicon():
 app.include_router(system.router)
 app.include_router(auth.router)
 app.include_router(site.router)
+app.include_router(founder.router)

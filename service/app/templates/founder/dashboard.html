@@ -1,0 +1,132 @@
+{% extends "app/shell.html" %}
+{% from "app/ui.html" import area_meter, meter_legend, field_error, invalid, form_status %}
+{% set role = "founder" %}
+{% set current = "overview" %}
+{% block main %}
+{% macro todo(done, href, label) -%}
+<li><span class="ico {{ 'done' if done else 'open' }}" aria-hidden="true">{{ icon("check" if done else "plus", 14) }}</span><span><a href="{{ href }}">{{ label }}</a><span class="sr-only">{{ " Done." if done else " Not done yet." }}</span></span></li>
+{%- endmacro %}
+<h1 class="app-title">Welcome, {{ profile.full_name }}</h1>
+<p class="app-lede">{{ venture.name }} · {{ venture.sector }} · {{ stage }} · {{ country }}</p>
+
+{% if waiting > 0 %}
+<p class="status status-info" role="status" style="margin-bottom:24px">
+{{ "One investor has" if waiting == 1 else waiting ~ " investors have" }} asked for an introduction. <a href="/dashboard/introductions">Answer the {{ "request" if waiting == 1 else "requests" }}</a>
+</p>
+{% endif %}
+
+<div class="side">
+<div class="stack">
+<section class="card" aria-labelledby="vis-h">
+<h2 id="vis-h" class="app-h2">Who can see your profile</h2>
+{% if held %}
+<p class="status status-err" role="status">IkonetU hid your profile from investors on {{ date_text(venture.hidden_at) }}. You can publish it again once IkonetU lifts the hold.</p>
+<p class="body2" style="margin-top:12px">The reason IkonetU gave:</p>
+<blockquote class="quote" style="margin:8px 0 0">{{ venture.hidden_reason }}</blockquote>
+<p class="body2" style="margin-top:12px">If you have questions, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.</p>
+{% elif published %}
+<p class="body2">Your profile is published. Approved investors have been able to find it since {{ date_text(venture.published_at) }}. Hide it at any time, and it leaves their search at once.</p>
+{% else %}
+<p class="body2">Your profile is hidden. Nobody but you and IkonetU staff can see it. Publish it when your pitch is ready, and approved investors can find it.</p>
+{% endif %}
+<form method="post" action="/dashboard/publish" class="row" style="margin-top:16px">
+<input type="hidden" name="publish" value="{{ 'no' if published else 'yes' }}">
+{% if published %}
+<button type="submit" class="btn btn-n">Hide my profile</button>
+{% else %}
+<button type="submit" class="btn btn-f"{% if not has_pitch or held %} disabled{% endif %}{% if not has_pitch %} aria-describedby="pub-need"{% endif %}>Publish my profile</button>
+{% endif %}
+<a href="/dashboard/preview" class="tlink">See what investors see</a>
+</form>
+{% if not has_pitch and not published and not held %}
+<p id="pub-need" class="hint" style="margin-top:8px">Add your one-minute pitch first. A profile cannot be published without one.</p>
+{% endif %}
+</section>
+
+<section class="card" aria-labelledby="ready-h">
+<h2 id="ready-h" class="app-h2">Readiness check</h2>
+{{ area_meter(areas) }}
+<div style="margin:12px 0 16px">{{ meter_legend() }}</div>
+<ul class="todo" aria-label="The eight areas">
+{% for c in area_cells(areas) %}
+<li><span class="chip {{ LEVEL[c.level].chip }}" style="min-width:84px;justify-content:center">{{ LEVEL[c.level].name }}</span><span>{{ c.label }}{% if c.count %} · {{ c.count }} {{ "piece" if c.count == 1 else "pieces" }} of evidence{% endif %}</span></li>
+{% endfor %}
+</ul>
+<h3 class="app-h3" style="margin-top:24px">Your next three steps</h3>
+{% if not steps %}
+<p class="body2">Every area is as strong as your evidence can make it. Keep it current as things change.</p>
+{% else %}
+<ol class="todo">
+{% for s in steps %}
+<li><span class="ico open" aria-hidden="true" style="font-weight:600;font-size:13px">{{ loop.index }}</span><span><a href="/dashboard/evidence?signal={{ s.code }}">{{ s.label }}</a> <span class="small">({{ area_label(s.category) }})</span><span class="small" style="display:block">Why it matters: {{ lower_first(AREA_WHY[s.category]) }}</span></span></li>
+{% endfor %}
+</ol>
+{% endif %}
+<p class="small" style="margin:12px 0 0">The steps come from the evidence that would strengthen your profile most. Evidence already waiting for a reviewer is left out. Investors see the same readiness check.</p>
+</section>
+
+<section class="card" aria-labelledby="venture-h">
+<h2 id="venture-h" class="app-h2">Your venture</h2>
+{% set st = states.get("venture", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set v = st.get("values") if st.get("status") == "error" and st.get("values") else {"name": venture.name, "sector": venture.sector, "stage": venture.stage, "description": venture.description or "", "website": venture.website or "", "ask": venture.ask or ""} %}
+{% set known = v.get("sector", "") in SECTORS %}
+<form class="form" method="post" action="/dashboard/venture" novalidate>
+{{ form_status(st) }}
+<div class="field">
+<label for="v-name">Venture name</label>
+<input id="v-name" name="name" class="input" type="text" maxlength="120" value="{{ v.get('name', '') }}"{{ invalid(errors, "name") }}>
+{{ field_error(errors, "name") }}
+</div>
+<div class="grid2">
+<div class="field">
+<label for="v-sector">Sector</label>
+<select id="v-sector" name="sector" class="input"{{ invalid(errors, "sector") }}>
+<option value="" disabled{% if not known %} selected{% endif %}>Choose a sector</option>
+{% for s in SECTORS %}<option value="{{ s }}"{% if known and v.get("sector") == s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+</select>
+{% if not known and v.get("sector") %}<p class="hint">You entered “{{ v.get("sector") }}”. Investors filter by the sectors listed, so choose the closest.</p>{% endif %}
+{{ field_error(errors, "sector") }}
+</div>
+<div class="field">
+<label for="v-stage">Stage</label>
+<select id="v-stage" name="stage" class="input"{{ invalid(errors, "stage") }}>
+{% for s in STAGES %}<option value="{{ s.code }}"{% if v.get("stage") == s.code %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
+</select>
+{{ field_error(errors, "stage") }}
+</div>
+</div>
+<div class="field">
+<label for="v-description">What it does, in one or two sentences</label>
+<textarea id="v-description" name="description" class="input" rows="3" maxlength="280"{{ invalid(errors, "description") }}>
+{{ v.get("description", "") }}</textarea>
+{{ field_error(errors, "description") }}
+</div>
+<div class="field">
+<label for="v-ask">Your ask</label>
+<input id="v-ask" name="ask" class="input" type="text" maxlength="160" value="{{ v.get('ask', '') }}"{{ invalid(errors, "ask", "v-ask-hint") }}>
+<p id="v-ask-hint" class="hint">How much you are raising and what for, in one line. For example: $150,000 to reach 5,000 paying merchants. Leave it empty if you are not raising.</p>
+{{ field_error(errors, "ask") }}
+</div>
+<div class="field">
+<label for="v-website">Website</label>
+<input id="v-website" name="website" class="input" type="url" inputmode="url" maxlength="300" value="{{ v.get('website', '') }}"{{ invalid(errors, "website") }}>
+{{ field_error(errors, "website") }}
+</div>
+<button type="submit" class="btn btn-n" style="align-self:flex-start" data-pending="Saving…">Save changes</button>
+</form>
+</section>
+</div>
+
+<aside class="stack" aria-label="Your profile">
+<section class="card" aria-labelledby="todo-h">
+<h2 id="todo-h" class="app-h2">Your profile</h2>
+<ul class="todo">
+{{ todo(has_pitch, "/dashboard/pitch", "Your one-minute pitch is added." if has_pitch else "Add your one-minute pitch.") }}
+{{ todo(evidence_count > 0, "/dashboard/evidence", (evidence_count ~ " " ~ ("piece" if evidence_count == 1 else "pieces") ~ " of evidence added, " ~ reviewed ~ " reviewed.") if evidence_count else "Add your first piece of evidence.") }}
+{{ todo(last_update, "/dashboard/updates", ("Last progress update: " ~ activity_text(last_update, now).replace("Updated ", "") ~ ".") if last_update else "Post your first progress update.") }}
+</ul>
+</section>
+</aside>
+</div>
+{% endblock %}

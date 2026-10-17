@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import pathlib
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,12 +13,44 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from . import forms, product
+from .captions import cues_from_transcript
 from .config import settings
 from .icons import icon, logo
+from .venture_profile import list_text, profile_areas
 
 HERE = pathlib.Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
-templates.env.globals.update(icon=icon, logo=logo, settings=settings)
+
+
+def meter_sentence(areas: list[dict]) -> str:
+    """The readiness check's sentence as it follows "Readiness check:"."""
+    text = product.readiness_text(areas)
+    if text.startswith("S"):
+        return "s" + text[1:]
+    return "no" + text[2:] if text.startswith("No") else text
+
+
+def lower_first(text: str) -> str:
+    return text[:1].lower() + text[1:]
+
+
+def bare_url(address: str) -> str:
+    """A web address without its http:// or https://, as the profile shows it."""
+    return re.sub(r"^https?://", "", address)
+
+
+templates.env.globals.update(
+    icon=icon, logo=logo, settings=settings, meter_sentence=meter_sentence, lower_first=lower_first,
+    STATUS=product.STATUS, LEVEL=product.LEVEL, AREAS=product.AREAS, AREA_WHY=product.AREA_WHY,
+    SECTORS=product.SECTORS, STAGES=product.STAGES, COUNTRIES=product.COUNTRIES,
+    area_cells=product.area_cells, area_label=product.area_label, date_text=product.date_text,
+    activity_text=product.activity_text, clock_text=product.clock_text, is_recent=product.is_recent,
+    stage_label=product.stage_label, country_name=product.country_name, level_of=product.level_of,
+    momentum=product.momentum, evidence_added_text=product.evidence_added_text, bare_url=bare_url,
+    cues=cues_from_transcript, PITCH_TYPES=forms.PITCH_TYPES, EVIDENCE_FILE_TYPES=forms.EVIDENCE_FILE_TYPES,
+    OPTIONAL_CONSENTS=forms.OPTIONAL_CONSENTS, profile_areas=profile_areas, list_text=list_text,
+)
 templates.env.trim_blocks = True
 templates.env.lstrip_blocks = True
 
@@ -54,12 +87,32 @@ def render(
     status_code: int = 200,
 ) -> HTMLResponse:
     flash = read_flash(request)
-    ctx = {"request": request, "meta": meta or Meta(), "flash": flash, "site_url": settings.site_url, **(context or {})}
+    ctx = {
+        "request": request, "meta": meta or Meta(), "flash": flash, "site_url": settings.site_url,
+        "states": form_states(flash), **(context or {}),
+    }
     response = templates.TemplateResponse(request, template, ctx, status_code=status_code)
     response.headers["Cache-Control"] = "private, no-cache, no-store, max-age=0, must-revalidate"
     if flash:
         response.delete_cookie(FLASH_COOKIE, path="/")
     return response
+
+
+def form_states(flash: dict[str, str]) -> dict[str, dict]:
+    """The reply each form on a page shows. A form that saved names itself in the one-time message."""
+    if not flash.get("form") or not flash.get("message"):
+        return {}
+    return {flash["form"]: {"status": flash.get("status", "sent"), "message": flash["message"]}}
+
+
+def sent(location: str, form: str, message: str) -> RedirectResponse:
+    """Back to the page after a form saved, with its confirmation shown once."""
+    return redirect(location, {"form": form, "status": "sent", "message": message})
+
+
+def failed(form: str, message: str, errors: dict | None = None, values: dict | None = None) -> dict[str, dict]:
+    """The page's form states after a form was refused, to render the page again with it."""
+    return {form: {"status": "error", "message": message, "errors": errors or {}, "values": values or {}}}
 
 
 def redirect(location: str, flash: dict[str, str] | None = None) -> RedirectResponse:

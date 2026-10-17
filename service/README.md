@@ -8,7 +8,7 @@ built in batches, each committed on its own, and `apps/web` keeps serving until 
 | 1 | The score engine, `app/score_engine` | Done. Its 47 tests pass, and a parity check found the TypeScript and Python engines agree on 2,000 generated profiles |
 | 2 | The app core: sign-in, sessions, security headers, health, the waitlist | Done. 107 tests pass, and a browser signed in through the local stand-in |
 | 3 | The website pages | Done. The website's functional test passed 144 of 144, as it does on the Next.js app. All twelve routes give the same visible text, title, description, canonical address and element counts as the Next.js app, with no layout shift and no sideways scroll at 320, 390 or 768 pixels |
-| 4 | The founder pages | Not started |
+| 4 | The founder pages | Done. Onboarding, the dashboard, the pitch, evidence, updates, the preview and the suspended page. The founder half of the product journey passes 21 of 21 checks, and a check of the actions it does not reach passes 24 of 24. With the same founder signed in to both apps on the same database, all 27 pages and refused forms compared give the same title, text and element attributes. A parity check found the two apps' form rules give the same answer on 3,600 generated inputs. 174 tests pass |
 | 5 | The investor pages and introductions | Not started |
 | 6 | The staff and admin pages | Not started |
 | 7 | The switch-over: Render runs this app, and `apps/web` is removed | Not started |
@@ -46,6 +46,12 @@ in both the drawn state and any `<template>` block that repeats it.
   server for the access token just before it starts.
 - **Scripts may only come from this site.** The Content-Security-Policy no longer allows inline scripts, which
   Next.js needed to start React.
+- **A form that saved sends the browser back to its page** with a one-time confirmation, so reloading the page
+  does not send the form again. A refused form shows the page again with the errors and what was typed, as
+  the React forms did. A form's request key is made by the server when the page is drawn, rather than in the
+  browser after it loads, so a form sent before its script runs still carries one.
+- **A web address is read by ada**, the URL parser inside Node.js (`ada-url` 4.0.0), so an address is accepted
+  or refused exactly as `new URL()` did in the Next.js app.
 - **A form sent from another site is refused.** Next.js checked this for its server actions. This app checks the
   Origin header of every form, and the session cookies are SameSite=Lax.
 - **The requests to Supabase repeat what supabase-js 2.117.2 sends**, read from its source on 17 October 2026:

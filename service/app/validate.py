@@ -9,7 +9,8 @@ so a limit of 160 means what it meant before.
 from __future__ import annotations
 
 import re
-from urllib.parse import urlsplit
+
+from ada_url import URL
 
 # JavaScript's WhiteSpace and LineTerminator characters, which trim() and \s cover.
 JS_SPACE = "\t\n\x0b\x0c\r \xa0                　﻿"
@@ -36,15 +37,18 @@ def remove_js_space(value: str) -> str:
 
 
 def is_web_address(value: str) -> bool:
-    """An http or https address whose host contains a dot, as the app's isWebAddress() required."""
+    """An http or https address whose host contains a dot, as the app's isWebAddress() required.
+
+    The address is read by ada, the URL parser inside Node.js, so an address is accepted or
+    refused exactly as `new URL()` accepted or refused it in the Next.js app. ada also parses
+    the host the way a browser does: it percent-decodes it, converts an international name to
+    its ASCII form and reads numbers such as 0x7f.1 as an IPv4 address.
+    """
     try:
-        parts = urlsplit(value)
-    except ValueError:
+        address = URL(value)
+    except (ValueError, UnicodeError):
         return False
-    host = parts.hostname or ""
-    if parts.scheme.lower() not in ("http", "https") or not host or "." not in host:
-        return False
-    return not any(c.isspace() for c in value)
+    return address.protocol in ("http:", "https:") and "." in address.hostname
 
 
 class Errors(dict):

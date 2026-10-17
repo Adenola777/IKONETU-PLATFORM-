@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{#
+  The frame of every signed-in page: the lockup, the sections for the person's role, and sign
+  out. It uses the website's shared styles. A page sets `role` and `current` before it starts.
+#}
+{% set NAV = {
+  "founder": [
+    ("overview", "/dashboard", "Overview"),
+    ("pitch", "/dashboard/pitch", "Pitch"),
+    ("evidence", "/dashboard/evidence", "Evidence"),
+    ("updates", "/dashboard/updates", "Updates"),
+    ("introductions", "/dashboard/introductions", "Introductions"),
+    ("preview", "/dashboard/preview", "What investors see"),
+  ],
+  "investor": [
+    ("discover", "/investor", "Discover founders"),
+    ("requests", "/investor/introductions", "Introductions"),
+    ("profile", "/investor/profile", "Your profile"),
+  ],
+  "reviewer": [
+    ("overview", "/admin", "Overview"),
+    ("founders", "/admin/founders", "Founders"),
+    ("queue", "/admin/evidence", "Evidence to review"),
+  ],
+  "admin": [
+    ("overview", "/admin", "Overview"),
+    ("founders", "/admin/founders", "Founders"),
+    ("queue", "/admin/evidence", "Evidence to review"),
+    ("investors", "/admin/investors", "Investors"),
+    ("people", "/admin/people", "People and roles"),
+    ("audit", "/admin/audit", "Audit log"),
+  ],
+} %}
+{% block styles %}<link rel="stylesheet" href="/static/css/app.css">{% endblock %}
+{% block body %}
+{% set links = NAV.get(role, []) if role and role != "none" else [] %}
+<div class="site pg-app {{ 'app-i' if role == 'investor' else 'app-f' }}">
+<div class="page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="app-hdr">
+<div class="app-hdr-in">
+<a href="/" aria-label="IkonetU home" class="app-logo">{{ logo("default", 30) }}</a>
+<form method="post" action="/signout">
+<button type="submit" class="btn btn-n btn-sm">Sign out</button>
+</form>
+</div>
+{% if links %}
+<nav aria-label="Sections" class="app-nav">
+<ul>
+{% for key, href, label in links %}
+<li><a href="{{ href }}"{% if key == current %} aria-current="page"{% endif %}>{{ label }}</a></li>
+{% endfor %}
+</ul>
+</nav>
+{% endif %}
+</header>
+<main id="main" class="app-main">{% block main %}{% endblock %}</main>
+</div>
+</div>
+{% endblock %}

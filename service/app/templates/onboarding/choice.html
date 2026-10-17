@@ -1,0 +1,19 @@
+{% extends "app/shell.html" %}
+{# The first step after sign-in: a person says whether they are a founder or an investor. #}
+{% set role = "none" %}
+{% block main %}
+<h1 class="app-title">How will you use IkonetU?</h1>
+<p class="app-lede">Choose one. Each account is either a founder account or an investor account.</p>
+<div class="choice">
+<section class="card card-f" aria-labelledby="c-founder">
+<h2 id="c-founder" class="app-h2" style="margin:0">I am a founder</h2>
+<p class="body2">Create your profile and your venture, upload a one-minute pitch, add evidence, and publish when you are ready. Approved investors can then find you and ask for an introduction, which you accept or decline.</p>
+<a class="btn btn-f" href="/onboarding/founder">Create a founder profile</a>
+</section>
+<section class="card card-i" aria-labelledby="c-investor">
+<h2 id="c-investor" class="app-h2" style="margin:0">I am an investor</h2>
+<p class="body2">Tell us what you invest in. An IkonetU admin checks each investor account before it can browse founder profiles and request introductions.</p>
+<a class="btn btn-i" href="/onboarding/investor">Create an investor profile</a>
+</section>
+</div>
+{% endblock %}
