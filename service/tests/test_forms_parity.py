@@ -30,7 +30,20 @@ from app.forms import (
 )
 from app.discovery import filter_count, match_text, parse_filters, query_string, rpc_args
 from app.investor import parse_investor_edit, parse_investor_signup
+from app.jsfmt import parse_int, search_params, to_fixed
 from app.score_engine import RUBRIC_V2
+from app.staff import (
+    action_text,
+    change_lines,
+    entity_href,
+    entry_reason,
+    parse_hold,
+    parse_lift,
+    parse_role_change,
+    parse_status_change,
+    refusal_text,
+    roles_for,
+)
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LIB = ROOT / "apps" / "web" / "lib"
@@ -48,6 +61,8 @@ export {{ parseEvidence, parsePitch, parseTranscript, parseUpdate, parseIntroduc
 export {{ parseOnboarding }} from {json.dumps(str(LIB / "account.ts"))};
 export {{ parseInvestorSignUp, parseInvestorEdit }} from {json.dumps(str(LIB / "investor-profile.ts"))};
 export {{ parseFilters, rpcArgs, queryString, matchText, filterCount }} from {json.dumps(str(LIB / "discovery.ts"))};
+export {{ parseHold, parseLift, parseRoleChange, parseStatusChange, changeLines, entryReason, entityHref, actionText, rolesFor,
+  refusalText }} from {json.dumps(str(LIB / "admin.ts"))};
 """
 
 RUNNER = """
@@ -68,6 +83,15 @@ const out = cases.map(([kind, input, extra]) => {
     case "venture": return f.parseVenture(input);
     case "investor_signup": { const r = f.parseInvestorSignUp(form(input), extra); return r.ok ? { ok: true, data: { profile: r.profile, investor: r.investor, consents: r.consents } } : r; }
     case "investor_edit": { const r = f.parseInvestorEdit(form(input)); return r.ok ? { ok: true, data: { profile: r.profile, investor: r.investor } } : r; }
+    case "hold": return f.parseHold(form(input));
+    case "lift": return f.parseLift(form(input));
+    case "role": return f.parseRoleChange(form(input));
+    case "status": return f.parseStatusChange(form(input));
+    case "audit": return { ok: true, data: { lines: f.changeLines(input.before, input.after), reason: f.entryReason(input.after),
+      href: f.entityHref(input.entity, input.entity_id), action: f.actionText(input.action), refusal: f.refusalText(input.message) } };
+    case "roles": return { ok: true, data: f.rolesFor(input.current, { venture: input.venture, investorProfile: input.investor }) };
+    case "numbers": return { ok: true, data: { fixed: input.sizes.map((b) => (b / 1024 / 1024).toFixed(1)), int: input.texts.map((t) => Number.parseInt(t, 10) || 1),
+      search: new URLSearchParams(input.pairs).toString() } };
     case "filters": {
       const x = f.parseFilters(input);
       return { ok: true, data: { filters: x, rpc: f.rpcArgs(x), query: f.queryString(x), next: f.queryString(x, x.page + 1), count: f.filterCount(x),
@@ -242,6 +266,52 @@ def _filters(rng: random.Random) -> list:
     return ["filters", params]
 
 
+UUID = "6f1c1a3e-1111-4222-8333-944455556666"
+REASONS = ["", "No", "Fake", "Wrong pitch", " The pitch names another company. ", "x" * 280, "x" * 281, "\u3000\u3000", "😀" * 141]
+
+
+def _staff(rng: random.Random) -> list:
+    pick = rng.choice
+    kind = pick(["hold", "lift", "role", "status", "audit", "roles", "numbers"])
+    ident = pick([UUID, UUID, "nope", "", UUID.upper()])
+    if kind == "hold":
+        return ["hold", {"id": ident, "reason": pick(REASONS)}]
+    if kind == "lift":
+        return ["lift", {"id": ident, "note": pick(REASONS)}]
+    if kind == "role":
+        return ["role", {"id": ident, "role": pick(["founder", "investor", "reviewer", "admin", "mentor", "", "Admin"]), "reason": pick(REASONS)}]
+    if kind == "status":
+        return ["status", {k: v for k, v in {"id": ident, "status": pick(["active", "suspended", "", "pending"]), "reason": pick(REASONS)}.items()
+                           if rng.random() > 0.1}]
+    if kind == "roles":
+        return ["roles", {"current": pick(["founder", "investor", "reviewer", "admin", "mentor"]), "venture": rng.random() < 0.5,
+                          "investor": rng.random() < 0.5}]
+    if kind == "numbers":
+        return ["numbers", {"sizes": [rng.choice([1, 52429, 157286, 262144, 786432, 1048576, 4718592, 10485760, 1310720, 2621440])
+                                      for _ in range(3)],
+                            "texts": [rng.choice(["2", "2abc", " 3", "-1", "0x10", "1e3", "", "  +7x", "٣", "\u30005", "08", "3.9"])
+                                      for _ in range(3)],
+                            "pairs": [[rng.choice(["q", "state", "page", "a b"]), rng.choice(["Kola Pay", "a+b~c*d", "é", "x/y?z&w=1", "", "50%"])]
+                                      for _ in range(rng.choice([0, 1, 2, 3]))]}]
+    values = [None, "", "pending", "active", "suspended", "approved", "needs_more", "founder", "admin", "human", "government",
+              "2026-10-17T10:00:00+00:00", 3, 2.5, True, False, [1, None, "a"], {"x": 1}, "mentor"]
+    def side():
+        if rng.random() < 0.15:
+            return None
+        keys = rng.sample(["status", "role", "lane", "published_at", "hidden_at", "public_note", "reason", "note", "profiles_hidden", "other"],
+                          rng.randint(0, 4))
+        return {k: pick(values) for k in keys}
+    return ["audit", {"before": side(), "after": side(), "entity": pick(["profiles", "ventures", "evidence", "scores"]),
+                      "entity_id": pick([UUID, None, "12", UUID.upper()]),
+                      "action": pick(list(ACTION_NAMES) + ["unknown.thing"]),
+                      "message": pick(["cannot change your own role", "this person has no venture", "has no investor profile", "already has that role",
+                                       "profile is already hidden", "profile is not hidden", "only admins can", "boom", ""])}]
+
+
+ACTION_NAMES = ("investor.approve", "investor.decline", "evidence.approve", "evidence.reject", "evidence.needs_more", "venture.hide",
+                "venture.lift_hold", "account.role", "account.suspend", "account.reactivate")
+
+
 class _Params(dict):
     def getlist(self, key):
         return list(self.get(key, []))
@@ -258,6 +328,8 @@ def _cases() -> list[list]:
         cases.append(["message", {"body": _pad(rng, rng.choice(TEXT))}])
         cases.append(_investor(rng))
         cases.append(_filters(rng))
+        cases.append(_staff(rng))
+        cases.append(_staff(rng))
     return cases
 
 
@@ -283,6 +355,24 @@ def _python(case: list):
         r = parse_investor_signup(i, case[2])
     elif kind == "investor_edit":
         r = parse_investor_edit(i)
+    elif kind == "hold":
+        r = parse_hold(i)
+    elif kind == "lift":
+        r = parse_lift(i)
+    elif kind == "role":
+        r = parse_role_change(i)
+    elif kind == "status":
+        r = parse_status_change(i)
+    elif kind == "audit":
+        return {"ok": True, "data": {"lines": change_lines(i["before"], i["after"]), "reason": entry_reason(i["after"]),
+                                     "href": entity_href(i["entity"], i["entity_id"]), "action": action_text(i["action"]),
+                                     "refusal": refusal_text(i["message"])}}
+    elif kind == "roles":
+        return {"ok": True, "data": roles_for(i["current"], i["venture"], i["investor"])}
+    elif kind == "numbers":
+        return {"ok": True, "data": {"fixed": [to_fixed(b / 1024 / 1024, 1) for b in i["sizes"]],
+                                     "int": [max_or_one(parse_int(t)) for t in i["texts"]],
+                                     "search": search_params([tuple(x) for x in i["pairs"]])}}
     elif kind == "filters":
         x = parse_filters(_Params(i))
         return {"ok": True, "data": {"filters": x, "rpc": rpc_args(x), "query": query_string(x), "next": query_string(x, x["page"] + 1),
@@ -290,6 +380,11 @@ def _python(case: list):
     else:
         r = parse_venture(i["name"], i["sector"], i["stage"], i["description"], i["website"], i.get("ask"))
     return {"ok": True, "data": r.data} if r.ok else {"ok": False, "errors": r.errors}
+
+
+def max_or_one(n):
+    # Number.parseInt(text, 10) || 1, as the staff pages read a page number.
+    return n if n else 1
 
 
 def _typescript(cases: list[list]) -> list[dict]:
@@ -324,6 +419,6 @@ def test_both_apps_read_every_form_the_same_way():
     assert not differences, f"{len(differences)} of {len(cases)} cases differ:\n{shown}"
     # The generated cases reach both answers for every form.
     for kind in ("onboarding", "evidence", "pitch", "decision", "venture", "transcript", "update", "note", "message",
-                 "investor_signup", "investor_edit"):
+                 "investor_signup", "investor_edit", "hold", "lift", "role", "status"):
         answers = {t["ok"] for c, t in zip(cases, ts, strict=True) if c[0] == kind}
         assert answers == {True, False}, (kind, answers)

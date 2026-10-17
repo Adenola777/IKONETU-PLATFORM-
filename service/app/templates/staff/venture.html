@@ -1,0 +1,131 @@
+{% extends "app/shell.html" %}
+{#
+  Everything one venture holds, for staff: the founder's account, whether investors see the profile, the
+  pitch, every piece of evidence in every status, recent updates and introductions by status. An admin can
+  hide the profile from investors here, or lift the hold.
+#}
+{% from "app/ui.html" import field_error, invalid, form_status %}
+{% set current = "founders" %}
+{% block main %}
+<a class="back" href="/admin/founders">Back to founders</a>
+<h1 class="app-title">{{ venture.name }}</h1>
+<p class="app-lede">{{ venture.sector }} · {{ stage_label(venture.stage) }} · {{ country_name(venture.country) }} · on IkonetU since {{ date_text(venture.created_at) }}</p>
+{% if done %}<p class="status status-ok" role="status" style="margin-bottom:24px">{{ done }}</p>{% endif %}
+
+<div class="side">
+<div class="stack">
+<section class="card{{ ' hold' if venture.hidden_at else '' }}" aria-labelledby="vis-h">
+<h2 id="vis-h" class="app-h2">Who can see this profile</h2>
+{% if venture.hidden_at %}
+<p class="body2">{{ holder or "An admin" }} hid this profile from investors on {{ date_text(venture.hidden_at) }}. The founder cannot publish it until an admin lifts the hold. The founder reads this reason on their dashboard:</p>
+<blockquote class="quote" style="margin:12px 0 20px">{{ venture.hidden_reason }}</blockquote>
+{% if admin %}
+{% set st = states.get("lift", {}) %}
+{% set errors = st.get("errors", {}) %}
+{# Lifts the hold. The note is optional and goes to the audit log only. #}
+<form class="form" method="post" action="/admin/founders/{{ venture.id }}/lift" novalidate>
+{{ form_status(st) }}
+<input type="hidden" name="id" value="{{ venture.id }}">
+<div class="field">
+<label for="l-note">Note for the audit log (optional)</label>
+<textarea id="l-note" name="note" class="input" rows="2" maxlength="280"{{ invalid(errors, "note") }}>
+{{ one(st.get("values", {}), "note") }}</textarea>
+{{ field_error(errors, "note") }}
+</div>
+<div class="row"><button type="submit" class="btn btn-n" data-pending="Lifting the hold">Lift the hold</button></div>
+</form>
+{% endif %}
+{% else %}
+<p class="body2" style="margin-bottom:{{ '20px' if admin else '0' }}">{{ ("Published. Approved investors have been able to find it since " ~ date_text(venture.published_at) ~ ".") if venture.published_at else "Not published. Only the founder and IkonetU staff can see it." }}</p>
+{% if admin %}
+{% set st = states.get("hide", {}) %}
+{% set errors = st.get("errors", {}) %}
+{# Hides the profile from investors. The reason is required, because the founder reads it. #}
+<form class="form" method="post" action="/admin/founders/{{ venture.id }}/hide" novalidate>
+{{ form_status(st) }}
+<input type="hidden" name="id" value="{{ venture.id }}">
+<div class="field">
+<label for="h-reason">Why are you hiding {{ venture.name }}? The founder reads this.</label>
+<textarea id="h-reason" name="reason" class="input" rows="3" maxlength="280" required{{ invalid(errors, "reason", "h-reason-hint") }}>
+{{ one(st.get("values", {}), "reason") }}</textarea>
+<p id="h-reason-hint" class="hint">Say what is wrong and what would let you lift the hold. Up to 280 characters.</p>
+{{ field_error(errors, "reason") }}
+</div>
+<div class="row"><button type="submit" class="btn danger" data-pending="Hiding the profile">Hide the profile from investors</button></div>
+</form>
+{% endif %}
+{% endif %}
+</section>
+
+<section class="card" aria-labelledby="ev-h">
+<h2 id="ev-h" class="app-h2">Evidence ({{ evidence | length }})</h2>
+{% if not evidence %}
+<p class="body2" style="margin:0">The founder has not added evidence yet.</p>
+{% else %}
+<div class="scroll">
+<table class="tbl">
+<thead><tr><th scope="col">Evidence</th><th scope="col">State</th><th scope="col">Added</th></tr></thead>
+<tbody>
+{% for e in evidence %}
+<tr>
+<td>{% if e.waiting %}<a href="/admin/evidence/{{ e.id }}">{{ signal_label(e.signal_code) }}</a>{% else %}{{ signal_label(e.signal_code) }}{% endif %}{% if e.summary %}<span class="sub">{{ e.summary }}</span>{% endif %}</td>
+<td>{{ e.state }}{% if e.decided_at %}<span class="sub">{{ date_text(e.decided_at) }}</span>{% endif %}</td>
+<td>{{ date_text(e.created_at) }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+</section>
+
+<section class="card" aria-labelledby="up-h">
+<h2 id="up-h" class="app-h2">Latest progress updates</h2>
+{% if not updates %}
+<p class="body2" style="margin:0">No updates yet.</p>
+{% else %}
+<ul class="updates">
+{% for u in updates %}<li><time datetime="{{ u.created_at }}">{{ date_text(u.created_at) }}</time><p>{{ u.body }}</p></li>{% endfor %}
+</ul>
+{% endif %}
+</section>
+</div>
+
+<aside class="stack" aria-label="The founder and the venture">
+<section class="card" aria-labelledby="f-h">
+<h2 id="f-h" class="app-h3">Founder</h2>
+{% if founder %}
+<dl class="kv kv-stack">
+<dt>Name</dt><dd>{{ founder.full_name }}</dd>
+<dt>Account</dt><dd>{{ ROLE_NAME[founder.role] }}, {{ ACCOUNT_STATUS_NAME[founder.status] | lower }}</dd>
+<dt>City</dt><dd>{{ founder.city if founder.city is not none else "Not given" }}</dd>
+<dt>Joined</dt><dd>{{ date_text(founder.created_at) }}</dd>
+</dl>
+{% else %}
+<p class="body2">The founder's profile could not be read.</p>
+{% endif %}
+{% if admin %}<a class="tlink" href="/admin/people/{{ venture.founder_id }}">Change the account</a>{% endif %}
+</section>
+<section class="card" aria-labelledby="d-h">
+<h2 id="d-h" class="app-h3">On the profile</h2>
+<dl class="kv kv-stack">
+<dt>Pitch</dt><dd>{{ (clock_text(pitch.duration_seconds) ~ ", updated " ~ date_text(pitch.updated_at)) if pitch else "None yet" }}</dd>
+<dt>The ask</dt><dd>{{ venture.ask if venture.ask is not none else "Not given" }}</dd>
+<dt>Description</dt><dd>{{ venture.description if venture.description is not none else "Not given" }}</dd>
+<dt>Website</dt><dd>{% if venture.website %}<a href="{{ venture.website }}" target="_blank" rel="noopener nofollow">{{ venture.website }}</a>{% else %}Not given{% endif %}</dd>
+<dt>Score</dt><dd>{{ (score.total ~ " of 1,000, " ~ (score.league | lower) ~ " league. Investors never see it.") if score else "Not computed yet" }}</dd>
+</dl>
+</section>
+<section class="card" aria-labelledby="i-h">
+<h2 id="i-h" class="app-h3">Introductions</h2>
+<dl class="kv kv-stack">
+<dt>Waiting for the founder</dt><dd>{{ intro_count("pending") }}</dd>
+<dt>Accepted</dt><dd>{{ intro_count("accepted") }}</dd>
+<dt>Declined</dt><dd>{{ intro_count("declined") }}</dd>
+<dt>Withdrawn by the investor</dt><dd>{{ intro_count("withdrawn") }}</dd>
+</dl>
+<p class="hint">Staff see counts only. Nobody but the founder and the investor reads a conversation.</p>
+</section>
+</aside>
+</div>
+{% endblock %}

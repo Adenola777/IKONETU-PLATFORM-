@@ -15,7 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .log import log_error, start_sentry
-from .routes import auth, founder, introductions, investor, site, system
+from .routes import auth, founder, introductions, investor, site, staff, system
 from .security import SecurityMiddleware
 from .session import ACCESS_COOKIE, REFRESH_COOKIE, SESSION_MAX_AGE, RedirectTo
 from .supabase import make_client
@@ -98,3 +98,4 @@ app.include_router(site.router)
 app.include_router(founder.router)
 app.include_router(investor.router)
 app.include_router(introductions.router)
+app.include_router(staff.router)

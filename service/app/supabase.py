@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import math
 import re
 import secrets
 from dataclasses import dataclass, field
@@ -63,6 +64,28 @@ class Session:
     refresh_token: str
     expires_at: int | None
     user: dict
+
+
+def _js_value(value: Any) -> Any:
+    """A value as JSON.stringify writes it: a whole number has no decimal point, and NaN or Infinity is null.
+
+    JavaScript has one number type, so supabase-js sent 18000 where Python would send 18000.0, and a
+    numeric column keeps the scale it was given.
+    """
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            return None
+        return int(value) if value.is_integer() and abs(value) < 1e21 else value
+    if isinstance(value, dict):
+        return {k: _js_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_js_value(v) for v in value]
+    return value
+
+
+def js_json(value: Any) -> str:
+    """JSON.stringify(value)."""
+    return json.dumps(_js_value(value), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
 def _error_from(response: httpx.Response) -> ApiError:
@@ -157,6 +180,9 @@ class Query:
             if t not in seen:
                 seen.append(t)
         return self._filter(column, f"in.({','.join(seen)})")
+
+    def like(self, column: str, pattern: str) -> "Query":
+        return self._filter(column, f"like.{pattern}")
 
     def ilike(self, column: str, pattern: str) -> "Query":
         return self._filter(column, f"ilike.{pattern}")
@@ -282,7 +308,7 @@ class Database:
                 method,
                 f"{self._client.url}/rest/v1/{path}",
                 params=params,
-                content=json.dumps(body) if body is not None else None,
+                content=js_json(body).encode() if body is not None else None,
                 headers=headers,
                 timeout=timeout or QUICK_SECONDS,
             )

@@ -1,0 +1,46 @@
+{% extends "app/shell.html" %}
+{#
+  Evidence waiting for a decision, oldest first, and any venture whose score missed an update after a
+  decision, with a button to recompute it.
+#}
+{% set current = "queue" %}
+{% block main %}
+<h1 class="app-title">Evidence to review</h1>
+<p class="app-lede">Until you decide, investors see each item as founder submitted. Approving it shows investors what you compared and when. Asking for more or rejecting it hides it from investors and tells the founder why.</p>
+{% if score_failed %}
+<p class="status status-err" role="alert">The decision is saved, but the founder's score did not update after three attempts. Recompute it below, or try again later.</p>
+{% endif %}
+{% if stale %}
+<section class="card" aria-labelledby="stale-h" style="margin-bottom:24px">
+<h2 id="stale-h" class="app-h2">Scores to update</h2>
+<p class="body2">Each of these ventures has a decision that is newer than its score, so its founder sees an out-of-date score.</p>
+<ul class="todo">
+{% for v in stale %}
+<li style="align-items:center;justify-content:space-between"><span>{{ v.name }} <span class="small">· decided {{ date_text(v.last_decided_at) }}{% if v.scored_at %}, scored {{ date_text(v.scored_at) }}{% else %}, never scored{% endif %}</span></span><form method="post" action="/admin/evidence/recompute"><input type="hidden" name="venture" value="{{ v.venture_id }}"><button type="submit" class="btn btn-n btn-sm">Recompute the score</button></form></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% if failed %}<p class="status status-err" role="alert">The queue could not be read. Please reload the page.</p>{% endif %}
+{% if not rows %}
+<div class="empty"><p>Nothing is waiting for review.</p></div>
+{% else %}
+<div class="scroll">
+<table class="tbl">
+<thead>
+<tr><th scope="col">Venture</th><th scope="col">Evidence</th><th scope="col">Added on</th><th scope="col"><span class="sr-only">Review</span></th></tr>
+</thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td>{{ (r.ventures or {}).get("name", "") }}</td>
+<td><strong>{{ signal_label(r.signal_code) }}</strong>{% if r.summary %}<br>{{ r.summary }}{% endif %}</td>
+<td>{{ date_text(r.created_at) }}</td>
+<td><a class="btn btn-i btn-sm" href="/admin/evidence/{{ r.id }}">Review</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}
