@@ -1,24 +1,27 @@
-# Render blueprint for the IkonetU web app, in Frankfurt.
+# Render blueprint for the IkonetU web app, in Frankfurt. The app is the Python app in service/.
 #
-# UNVERIFIED: written on 15 October 2026 without access to Render's documentation,
-# which this session could not reach. Render checks the file when the blueprint is
-# created, and the dashboard shows any field it does not accept. The build and start
-# commands were run as written on Node 22 and answered on the port in PORT.
+# UNVERIFIED: written on 17 October 2026 without access to Render's documentation, which
+# this session could not reach, as on 15 October. Render checks the file when the blueprint
+# is created, and the dashboard shows any field it does not accept. The build command was run
+# as written into a fresh Python 3.13.16 environment, and installed exactly the pinned set in
+# service/requirements.txt. The start command was run as written and answered on the port in PORT.
 #
 # Every value marked sync: false is entered in the Render dashboard, never in this file.
 services:
   - type: web
     name: ikonetu-web
-    runtime: node
+    runtime: python
     region: frankfurt
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ikonetu/web build
-    startCommand: pnpm --filter @ikonetu/web start
+    buildCommand: pip install -r service/requirements.txt
+    startCommand: cd service && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:
-      - key: NODE_VERSION
-        value: "22"
+      # The Python version the app was built and tested with. UNVERIFIED as Render's way of choosing it.
+      - key: PYTHON_VERSION
+        value: "3.13.16"
       # The public address, with https:// and no trailing slash, for example https://ikonetu.com.
       # Supabase Auth must list <this address>/auth/callback under Redirect URLs.
+      # The names keep the NEXT_PUBLIC_ prefix of the Next.js app, so the values already on Render keep working.
       - key: NEXT_PUBLIC_SITE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_URL

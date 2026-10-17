@@ -29,8 +29,9 @@ def rubric_to_sql(rubric: Rubric) -> str:
             f"{s.points}, {s.max_points}, {usd}, {stage})"
         )
     return "\n".join([
-        # The first two lines name the TypeScript source until the switch-over, so the
-        # migration's text, and its applied checksum, do not change while both engines exist.
+        # The first two lines name the TypeScript script that first wrote this migration, which
+        # was removed on 17 October 2026. They stay, because a migration is never edited once it
+        # may have been applied, so its text must come out the same as before.
         "-- Generated from packages/score-engine/src/rubric.ts. Do not edit by hand.",
         "-- Regenerate with: pnpm --filter @ikonetu/score-engine rubric:sql",
         f"insert into public.rubric_versions (version, is_active) values ({_q(rubric.version)}, true)",

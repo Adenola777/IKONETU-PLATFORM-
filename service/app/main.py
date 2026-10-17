@@ -79,11 +79,7 @@ async def on_error(request: Request, exc: Exception):
 
 
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
-# The website's pictures and walkthrough stay in apps/web/public/media until the switch-over moves them here,
-# so the repository holds one copy of each.
 MEDIA = HERE / "public" / "media"
-if not MEDIA.exists():
-    MEDIA = HERE.parents[1] / "apps" / "web" / "public" / "media"
 app.mount("/media", StaticFiles(directory=str(MEDIA)), name="media")
 
 

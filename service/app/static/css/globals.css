@@ -1,4 +1,4 @@
-/* Colour values come from packages/ui-tokens. lib/tokens.test.ts checks that they match. */
+/* The brand colours, copied from packages/ui-tokens before the Next.js app was removed on 17 October 2026. */
 :root {
   --navy: #0C1E4A;
   --navy-deep: #071330;

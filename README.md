@@ -2,13 +2,13 @@
 
 This repository holds the new IkonetU codebase: the web app, the score engine and the database setup. It follows the PRD, TRD and SRD written in October 2026.
 
+The web app is written in Python. It was rebuilt from a Next.js app on 17 October 2026, at the owner's request, and `service/README.md` records how the rebuild was checked and where it differs.
+
 ## What is in it
 
 | Folder | Contents |
 |---|---|
-| `apps/web` | Next.js app with the public website, sign-in, the founder and investor sides, the staff pages, `GET /api/health` for an uptime monitor, and `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form |
-| `packages/score-engine` | The IkonetU Score rules (rubric v2), the score calculation, league placement and the "next best actions" list, with tests |
-| `packages/ui-tokens` | Brand colours, fonts, spacing and the 44 px touch target |
+| `service` | The web app, in Python with FastAPI and Jinja2: the public website, sign-in, the founder and investor sides, the staff pages, `GET /api/health` for an uptime monitor, and `POST /api/v1/waitlist`, which no page calls since sign-up replaced the form. `service/app/score_engine` holds the IkonetU Score rules (rubric v2), the score calculation, league placement and the "next best actions" list |
 | `supabase/migrations` | Database tables, access rules (row level security), the private evidence and pitch buckets, and the rubric seed |
 | `supabase/tests` | SQL checks that prove the access rules work |
 
@@ -36,15 +36,15 @@ The investor interest form was retired on 15 October 2026, when investor account
 
 The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label. The picture of the next three steps was captured again on 17 October 2026, after the dashboard's wording changed.
 
-IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `apps/web/lib/pages.ts`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
+IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `service/app/pages.py`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
 
-The page markup lives in `apps/web/components/site/views` and the styles in `apps/web/app/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the readiness self-check, is in `apps/web/components/site`. The signed-in pages use the same shared styles, with their own additions in `apps/web/components/app/app.css`.
+The page markup lives in `service/app/templates/site/pages` and the styles in `service/app/static/css/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the readiness self-check, is in `service/app/static/js/ik`. The signed-in pages use the same shared styles, with their own additions in `service/app/static/css/app.css`.
 
-The fonts are downloaded when the app is built and served by the app, so no visitor's browser asks Google for them.
+The fonts are kept in `service/app/static/fonts` and served by the app, so no visitor's browser asks Google for them.
 
 ## The signed-in app
 
-After sign-in, a new person chooses at `/onboarding` whether they are a founder or an investor. `apps/web/lib/session.ts` sends each person to their own pages, so a founder cannot open the investor pages and nobody but staff can open the staff pages. The database enforces the same separation through row level security, so a bug in a page cannot widen what a person sees.
+After sign-in, a new person chooses at `/onboarding` whether they are a founder or an investor. `service/app/session.py` sends each person to their own pages, so a founder cannot open the investor pages and nobody but staff can open the staff pages. The database enforces the same separation through row level security, so a bug in a page cannot widen what a person sees.
 
 **Founders** (`/dashboard`)
 
@@ -103,7 +103,7 @@ What the admin changes do (migration `20261017000001_admin.sql`):
 
 Phone sign-in by WhatsApp or SMS (PRD A-1) is built and switched off. It needs an SMS and WhatsApp provider configured in Supabase Auth, and then `NEXT_PUBLIC_PHONE_SIGN_IN=on` on Render. With it on, the phone number is asked first and email becomes the fallback, as the sign-in wireframe shows.
 
-`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`. `/auth/callback` turns the link in Supabase's default email into a session. Supabase's built-in email sender does not let the templates be edited, so until IkonetU has its own email sender the email carries a link rather than the code, and the code screen tells the founder to open it on the same device. The link only works in the browser that asked for it, because the sign-in is bound to a cookie set there.
+`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. Each signed-in page sends anyone without a session to `/signin`. `/auth/callback` turns the link in Supabase's default email into a session. Supabase's built-in email sender does not let the templates be edited, so until IkonetU has its own email sender the email carries a link rather than the code, and the code screen tells the founder to open it on the same device. The link only works in the browser that asked for it, because the sign-in is bound to a cookie set there.
 
 Supabase Auth needs these settings before sign-in works:
 
@@ -116,16 +116,17 @@ Supabase Auth needs these settings before sign-in works:
 
 ## Run it
 
-You need Node 22 and pnpm 10.
+The app was built and tested with Python 3.13.16.
 
 ```sh
-pnpm install
-pnpm test          # 156 tests: 47 in the score engine and 109 in the web app
-pnpm typecheck
-pnpm --filter @ikonetu/web dev    # http://localhost:3000
+cd service
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest          # 201 tests, 47 of them in the score engine
+.venv/bin/uvicorn app.main:app --port 3000    # http://localhost:3000
 ```
 
-Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Supabase is configured. To connect it, copy `.env.example` to `apps/web/.env.local` and fill in the values from your Supabase project. The service role key must stay on the server and must never be committed.
+Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Supabase is configured. To connect it, copy `.env.example` to `service/.env`, fill in the values from your Supabase project, and load it before starting the app, as `service/README.md` shows. The service role key must stay on the server and must never be committed.
 
 ## Rules the code enforces
 
@@ -133,16 +134,16 @@ Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Sup
 - Founders cannot approve their own evidence, change its status or give themselves staff roles. The database blocks these even if the app has a bug.
 - Score history and the audit log cannot be edited after they are written.
 - The waitlist and the investor interest list cannot be read or written by any signed-in user or visitor. Only the server writes to the waitlist, and nothing writes to the interest list since its form was retired.
-- The rubric in the database is generated from `packages/score-engine/src/rubric.ts`. After changing the rubric, run `pnpm --filter @ikonetu/score-engine rubric:sql`. A test fails if the two copies differ.
+- The rubric in the database is generated from `service/app/score_engine/rubric.py`. After changing the rubric, run `.venv/bin/python -m app.score_engine.rubric_sql` from `service`. A test fails if the two copies differ.
 
 ## How failures are handled
 
-- Every call from the server to Supabase gives up after 15 seconds, or 120 seconds for a file upload (`apps/web/lib/timed-fetch.ts`).
+- Every call from the server to Supabase gives up after 15 seconds, or 120 seconds for a file upload (`service/app/supabase.py`).
 - Evidence and its file records are saved in one transaction. If saving fails, the files just uploaded are removed.
 - Evidence, progress updates and messages carry a request key made when the form is shown, so a form sent twice is saved once.
 - After a decision, the founder's score is recorded with up to three attempts. A score that still fails appears under "Scores to update" on `/admin/evidence`, with a button to recompute it, and is counted on the overview at `/admin`.
 - The daily limit on introduction requests takes a lock per investor, so simultaneous requests cannot pass it.
-- Each failure is written as one line of JSON (`apps/web/lib/log.ts`) and, once `SENTRY_DSN` is set, sent to Sentry without cookies, headers, form text or the person's details.
+- Each failure is written as one line of JSON (`service/app/log.py`) and, once `SENTRY_DSN` is set, sent to Sentry without cookies, headers, form text or the person's details.
 
 The browser checks of these fixes ran against the local stand-in described below and are not in this repository.
 
