@@ -34,7 +34,7 @@ The public pages were built from the design boards of October 2026 and are serve
 
 The investor interest form was retired on 15 October 2026, when investor accounts opened. Every investor button on the website now leads to account sign-up, and the old address `/investor-interest` redirects to `/for-investors`. The `investor_interest` table keeps the rows it already holds.
 
-The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label.
+The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label. The picture of the next three steps was captured again on 17 October 2026, after the dashboard's wording changed.
 
 IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `apps/web/lib/pages.ts`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
 
@@ -50,7 +50,7 @@ After sign-in, a new person chooses at `/onboarding` whether they are a founder 
 
 | Address | What the founder does |
 |---|---|
-| `/dashboard` | Publishes or hides the profile, sees the readiness check and the next three steps, edits the venture's details and its ask, and sees their own score |
+| `/dashboard` | Publishes or hides the profile, sees the readiness check and the next three steps, and edits the venture's details and its ask. The dashboard shows no score |
 | `/dashboard/pitch` | Uploads a pitch of up to 90 seconds and 50 MB, with a typed transcript. The video goes from the browser straight to the founder's folder in the private `pitches` bucket. The captions are made from the transcript |
 | `/dashboard/evidence` | Adds evidence with up to three files or a link, and sees each item's status and the reviewer's note or reason |
 | `/dashboard/updates` | Posts and removes progress updates |
@@ -73,7 +73,7 @@ The readiness check is the same on the website and in the app. An area is strong
 
 An investor sees three statuses for evidence and nothing else about it: "Founder submitted" until a reviewer decides, then "Platform reviewed" or "Third-party evidence available". Rejected, expired and "needs more" evidence, the files, the reviewer's identity and the founder's score are never shown to an investor. `venture_evidence()` and `discover_ventures()` in the migration decide this.
 
-**Both sides** (`/introductions/<id>`): the conversation an accepted request opens. Only the founder and the investor can read it.
+**Both sides** (`/introductions/<id>`): the conversation an accepted request opens. Only the founder and the investor can read it. Each side can report the conversation through a link that opens an email to info@ikonetu.com with the conversation's reference filled in, because IkonetU has no email sender of its own yet.
 
 **Staff** (`/admin`)
 
@@ -103,7 +103,7 @@ What the admin changes do (migration `20261017000001_admin.sql`):
 
 Phone sign-in by WhatsApp or SMS (PRD A-1) is built and switched off. It needs an SMS and WhatsApp provider configured in Supabase Auth, and then `NEXT_PUBLIC_PHONE_SIGN_IN=on` on Render. With it on, the phone number is asked first and email becomes the fallback, as the sign-in wireframe shows.
 
-`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them with the score. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`. `/auth/callback` turns the link in Supabase's default email into a session. Supabase's built-in email sender does not let the templates be edited, so until IkonetU has its own email sender the email carries a link rather than the code, and the code screen tells the founder to open it on the same device. The link only works in the browser that asked for it, because the sign-in is bound to a cookie set there.
+`/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. `middleware.ts` sends anyone without a session from `/dashboard` and `/onboarding` to `/signin`. `/auth/callback` turns the link in Supabase's default email into a session. Supabase's built-in email sender does not let the templates be edited, so until IkonetU has its own email sender the email carries a link rather than the code, and the code screen tells the founder to open it on the same device. The link only works in the browser that asked for it, because the sign-in is bound to a cookie set there.
 
 Supabase Auth needs these settings before sign-in works:
 
@@ -120,7 +120,7 @@ You need Node 22 and pnpm 10.
 
 ```sh
 pnpm install
-pnpm test          # 147 tests: 47 in the score engine and 100 in the web app
+pnpm test          # 156 tests: 47 in the score engine and 109 in the web app
 pnpm typecheck
 pnpm --filter @ikonetu/web dev    # http://localhost:3000
 ```

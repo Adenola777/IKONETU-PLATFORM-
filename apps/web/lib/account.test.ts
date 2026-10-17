@@ -26,7 +26,7 @@ const VALID = {
   instagram: "https://instagram.com/learnloop",
   confirmedAdult: "on",
   acceptedPrivacy: "on",
-  consent_registry_check: "on",
+  consent_evidence_processing: "on",
 };
 
 describe("emailSignInSchema", () => {
@@ -95,9 +95,7 @@ describe("parseOnboarding", () => {
         },
         consents: [
           { consent_type: "profile", granted: true, policy_version: PRIVACY_VERSION },
-          { consent_type: "evidence_processing", granted: false, policy_version: PRIVACY_VERSION },
-          { consent_type: "registry_check", granted: true, policy_version: PRIVACY_VERSION },
-          { consent_type: "bank_check", granted: false, policy_version: PRIVACY_VERSION },
+          { consent_type: "evidence_processing", granted: true, policy_version: PRIVACY_VERSION },
           { consent_type: "notifications", granted: false, policy_version: PRIVACY_VERSION },
         ],
         venture: {

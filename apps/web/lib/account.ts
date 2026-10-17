@@ -13,13 +13,13 @@ export const STAGES = [
 /**
  * The consents a founder gives before any data is processed (PRD A-4, SRD SEC-D4).
  * The profile is needed to run the account, so it is required. The others are
- * optional toggles, and each answer is recorded, including a no.
+ * optional toggles, and each answer is recorded, including a no. Consents for
+ * registry lookups and bank statements return when those checks exist; the
+ * database still accepts them (migration 20261005000001).
  */
 export const OPTIONAL_CONSENTS = [
-  { code: "evidence_processing", label: "Check the evidence I submit, by AI and by a reviewer" },
-  { code: "registry_check", label: "Look up my company in the official registry" },
-  { code: "bank_check", label: "Read my business bank statements when I connect an account" },
-  { code: "notifications", label: "Send me notifications about my evidence, rounds and introductions" },
+  { code: "evidence_processing", label: "Check the evidence I submit. An IkonetU reviewer compares it with its source" },
+  { code: "notifications", label: "Send me notifications about my evidence and introductions. IkonetU does not send them yet" },
 ] as const;
 
 type ConsentCode = "profile" | (typeof OPTIONAL_CONSENTS)[number]["code"];

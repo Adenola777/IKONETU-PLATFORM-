@@ -172,7 +172,7 @@ export function QuestionsView() {
                   </span>
                 </summary>
                 <p>
-                  You can edit or remove your profile and pitch where the platform allows. IkonetU may keep some information where the law, security, fraud prevention or a dispute requires it. Account data is kept for one year after the account closes, and profile and pitch data for one year after the profile is deleted.
+                  {"You can edit your venture's details, hide your profile from investors at any time, and replace or remove your pitch. To delete your account and its data, write to privacy@ikonetu.com. IkonetU may keep some information where the law, security, fraud prevention or a dispute requires it. Account data is kept for one year after the account closes, and profile and pitch data for one year after the profile is deleted."}
                 </p>
               </details>
               <details>

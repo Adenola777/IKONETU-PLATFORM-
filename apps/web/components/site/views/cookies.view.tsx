@@ -68,7 +68,7 @@ export function CookiesView() {
                 <strong>
                   Cookies we use.
                 </strong>
-                {" Strictly necessary cookies keep you signed in and support security: a session cookie set by IkonetU's sign-in provider, and a short-lived cookie that holds your email address or phone number while you enter your sign-in code. A preference item in your browser's local storage remembers whether you chose the founder path or the investor path. IkonetU does not use analytics or marketing cookies."}
+                {" Strictly necessary cookies keep you signed in and support security: a session cookie set by IkonetU's sign-in provider, and a short-lived cookie that holds your email address while you complete sign-in. A preference item in your browser's local storage remembers whether you chose the founder path or the investor path. IkonetU does not use analytics or marketing cookies."}
               </p>
               <p>
                 <strong>

@@ -32,6 +32,11 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     .limit(500);
   const investorLine = `${i.investor_name}, ${INVESTOR_TYPE_NAME[i.investor_type] ?? i.investor_type}${i.investor_firm ? `, ${i.investor_firm}` : ""}`;
   const who = (sender: string) => (sender === user.id ? "You" : sender === i.founder_id ? i.founder_name : i.investor_name);
+  // A report goes by email to the address the trust and safety page gives, until IkonetU has its own sender.
+  const report = `mailto:info@ikonetu.com?${new URLSearchParams({
+    subject: `Report about conversation ${i.id}`,
+    body: `Conversation reference: ${i.id}\n\nWhat happened:\n`,
+  }).toString().replace(/\+/g, "%20")}`;
 
   return (
     <AppShell role={iAmFounder ? "founder" : "investor"} current={iAmFounder ? "introductions" : "requests"}>
@@ -72,6 +77,10 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
             </p>
           </>
         )}
+        <p className="small" style={{ margin: 0 }}>
+          If anything here makes you uncomfortable, <a href={report}>report this conversation to IkonetU</a>. Your email program
+          opens with the conversation&apos;s reference filled in.
+        </p>
       </div>
     </AppShell>
   );

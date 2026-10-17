@@ -61,7 +61,7 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                     Upload your one-minute pitch
                   </h3>
                   <p className="body2">
-                    Explain what you are building and why now, and type what you say. The captions are made from it.
+                    Explain what you are building and why now, in about a minute and no more than 90 seconds. Type what you say, and the captions are made from it.
                   </p>
                 </li>
                 <li className="c3" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -368,9 +368,9 @@ export function ForFoundersView({ v }: { v: ForFoundersVals }) {
                     </span>
                     <span>
                       <strong style={{ fontWeight: "600" }}>
-                        A meaningful update
+                        A progress update
                       </strong>
-                      {" adds or changes evidence, a metric, a milestone or a product release. Edits to wording or photographs do not count."}
+                      {" is a short note on what changed, such as a new customer, a metric, a milestone or a product release. Momentum counts every update and every piece of evidence added, and a change to the pitch counts as recent activity."}
                     </span>
                   </li>
                   <li>

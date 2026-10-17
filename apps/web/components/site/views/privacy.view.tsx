@@ -146,7 +146,7 @@ export function PrivacyView() {
                     </tr>
                     <tr>
                       <td>
-                        Service improvement and analytics
+                        Service improvement
                       </td>
                       <td>
                         Consent and/or legitimate interests
@@ -181,25 +181,13 @@ export function PrivacyView() {
                 6. International transfers
               </h2>
               <p>
-                {"If personal data is transferred outside the UK, we will use appropriate safeguards, such as the UK International Data Transfer Addendum, standard contractual clauses or another lawful transfer mechanism. Current hosting and sub-processors: Render (hosting, in Frankfurt, Germany), "}
-                <span className="ph">
-                  [VIDEO PROVIDER]
-                </span>
-                {", "}
-                <span className="ph">
-                  [ANALYTICS PROVIDER]
-                </span>
-                {", "}
-                <span className="ph">
-                  [EMAIL PROVIDER]
-                </span>
-                , Stripe (payments).
+                If personal data is transferred outside the UK, we will use appropriate safeguards, such as the UK International Data Transfer Addendum, standard contractual clauses or another lawful transfer mechanism. Current hosting and sub-processors: Render (hosting, in Frankfurt, Germany) and Supabase (sign-in and sign-in emails, the database, and stored files, including pitch videos and evidence documents). IkonetU uses no analytics or payment provider.
               </p>
               <h2 className="doc-h2">
                 7. Retention
               </h2>
               <p>
-                We retain personal data only for as long as necessary for the purposes described in this policy. Account data: while your account is active and for one year afterwards. Founder profile and pitch data: while your profile is active and for one year after deletion. Introduction records: one year. Support communications: one year. Security and fraud records: one year. Legal and accounting records: as required by law.
+                We retain personal data only for as long as necessary for the purposes described in this policy. Account data: while your account is active and for one year after it is closed. Founder profile and pitch data: while your profile is active and for one year after deletion. Accounts are closed and profiles deleted on request: write to privacy@ikonetu.com. Introduction records: one year. Support communications: one year. Security and fraud records: one year. Legal and accounting records: as required by law.
               </p>
               <h2 className="doc-h2">
                 8. Your rights
@@ -215,7 +203,7 @@ export function PrivacyView() {
                 9. Security
               </h2>
               <p>
-                We use technical and organisational measures appropriate to the risk, including access controls, encryption in transit, secure hosting and monitoring. No online platform can guarantee complete security. IkonetU signs you in with a one-time code sent to your email address or phone, so there is no password to choose. You should keep access to that email account or phone secure.
+                We use technical and organisational measures appropriate to the risk, including access controls, encryption in transit, secure hosting and monitoring. No online platform can guarantee complete security. IkonetU signs you in with a one-time link or code sent to your email address, so there is no password to choose. You should keep access to that email account secure. Sign-in by phone is not available yet.
               </p>
               <h2 className="doc-h2">
                 10. Children

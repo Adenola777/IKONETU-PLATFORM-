@@ -39,7 +39,7 @@ export function SignInForm({ phoneEnabled }: { phoneEnabled: boolean }) {
           <label htmlFor="s-email">Email</label>
           <input id="s-email" name="email" className="input" type="email" autoComplete="email" required maxLength={160} defaultValue={values.email} {...invalid("email")} />
           {err("email")}
-          <p className="hint">We send a 6-digit code to this email. You do not need a password.</p>
+          <p className="hint">We send a sign-in email with a link or a 6-digit code. You do not need a password.</p>
         </div>
       )}
 

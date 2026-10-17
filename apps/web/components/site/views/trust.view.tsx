@@ -176,7 +176,7 @@ export function TrustView() {
                       <Icon name="lock" size={20} />
                     </span>
                     <span>
-                      Reviewers see the documents they review, and only for the review.
+                      Only IkonetU reviewers and admins can open the documents, through links that last five minutes.
                     </span>
                   </li>
                 </ul>
@@ -213,7 +213,7 @@ export function TrustView() {
                       <Icon name="flag" size={20} />
                     </span>
                     <span>
-                      Either side can report a conversation that makes them uncomfortable.
+                      Either side can report a conversation to IkonetU from the conversation page.
                     </span>
                   </li>
                 </ul>

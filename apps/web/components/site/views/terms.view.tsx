@@ -172,7 +172,7 @@ export function TermsView() {
                 <strong>
                   7. Removal.
                 </strong>
-                {" You may edit or remove your profile and pitch where the Platform allows. We may retain certain information where required for legal, security, fraud-prevention or dispute-resolution purposes."}
+                {" You may edit your venture's details, hide your profile from investors, and replace or remove your pitch. To delete your account and its data, write to privacy@ikonetu.com. We may retain certain information where required for legal, security, fraud-prevention or dispute-resolution purposes."}
               </p>
             </div>
           </section>

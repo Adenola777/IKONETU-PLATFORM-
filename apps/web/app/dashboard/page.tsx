@@ -14,16 +14,13 @@ import { VentureForm } from "./venture-form";
 export const metadata: Metadata = { title: "Your dashboard", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-const LEAGUE_NAME = { EARLY: "Early", RISING: "Rising", INVESTABLE: "Investable", ELITE: "Elite" } as const;
-
 export default async function DashboardPage() {
   const { supabase, user, profile, venture } = await requireFounder();
-  const [pitch, evidence, updates, requests, score] = await Promise.all([
+  const [pitch, evidence, updates, requests] = await Promise.all([
     supabase.from("pitches").select("duration_seconds, updated_at").eq("venture_id", venture.id).maybeSingle(),
     supabase.from("evidence").select("id, signal_code, status, lane, expires_at, item_count, months, revenue_usd, stage").eq("venture_id", venture.id),
     supabase.from("venture_updates").select("created_at").eq("venture_id", venture.id).order("created_at", { ascending: false }).limit(1),
     supabase.from("introductions").select("id").eq("founder_id", user.id).eq("status", "pending"),
-    supabase.from("scores").select("total, league").eq("venture_id", venture.id).maybeSingle(),
   ]);
   // The readiness check reads the evidence the way investors see it, so the two always agree.
   const shown = await supabase.rpc("venture_evidence", { p_venture: venture.id });
@@ -136,10 +133,17 @@ export default async function DashboardPage() {
             )}
             <p className="small" style={{ margin: "12px 0 0" }}>
               The steps come from the evidence that would strengthen your profile most. Evidence already waiting for a reviewer is left
-              out. Investors see the same readiness check, never your score.
+              out. Investors see the same readiness check.
             </p>
           </section>
 
+          <section className="card" aria-labelledby="venture-h">
+            <h2 id="venture-h" className="app-h2">Your venture</h2>
+            <VentureForm venture={venture} />
+          </section>
+        </div>
+
+        <aside className="stack" aria-label="Your profile">
           <section className="card" aria-labelledby="todo-h">
             <h2 id="todo-h" className="app-h2">Your profile</h2>
             <ul className="todo">
@@ -155,29 +159,6 @@ export default async function DashboardPage() {
                 label={lastUpdate ? `Last progress update: ${activityText(lastUpdate, now).replace("Updated ", "")}.` : "Post your first progress update."}
               />
             </ul>
-          </section>
-
-          <section className="card" aria-labelledby="venture-h">
-            <h2 id="venture-h" className="app-h2">Your venture</h2>
-            <VentureForm venture={venture} />
-          </section>
-        </div>
-
-        <aside className="stack" aria-label="Your score">
-          <section className="card" aria-labelledby="score-h">
-            <h2 id="score-h" className="app-h2">IkonetU Score</h2>
-            {score.data ? (
-              <p className="body2">
-                <strong style={{ fontSize: 36, color: "#101828" }}>{score.data.total.toLocaleString("en-GB")}</strong> of 1,000 ·{" "}
-                {LEAGUE_NAME[score.data.league as keyof typeof LEAGUE_NAME]} league
-              </p>
-            ) : (
-              <p className="body2">You have no score yet. Your score starts when your first piece of evidence is approved.</p>
-            )}
-            <p className="small" style={{ margin: "12px 0 0" }}>
-              Only you and IkonetU staff see your score. Investors see your evidence by area and its status, never a score or a
-              league.
-            </p>
           </section>
         </aside>
       </div>

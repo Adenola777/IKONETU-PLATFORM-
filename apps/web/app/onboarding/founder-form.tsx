@@ -122,7 +122,7 @@ export function OnboardingForm({ askAdult }: { askAdult: boolean }) {
 
       <fieldset className="field">
         <legend>Your choices</legend>
-        <p className="hint">Each of these is optional, and you can change it later. A check only runs when you have said yes to it.</p>
+        <p className="hint">Each of these is optional. To change an answer later, write to privacy@ikonetu.com.</p>
         {OPTIONAL_CONSENTS.map((c) => (
           <label key={c.code} className="check">
             <input type="checkbox" name={`consent_${c.code}`} /> <span>{c.label}</span>
