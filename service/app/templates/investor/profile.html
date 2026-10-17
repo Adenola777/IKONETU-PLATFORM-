@@ -1,0 +1,18 @@
+{% extends "app/shell.html" %}
+{% from "app/investor_fields.html" import investor_fields %}
+{% from "app/ui.html" import form_status %}
+{% set role = "investor" %}
+{% set current = "profile" %}
+{% block main %}
+{% set st = states.get("investor", {}) %}
+{% set v = st.get("values") if st.get("status") == "error" and st.get("values") else initial %}
+<div class="app-narrow">
+<h1 class="app-title">Your investor profile</h1>
+<p class="app-lede">Founders see your name, investor type and firm when you ask them for an introduction. A request you already sent keeps the details it was sent with.</p>
+<form class="form" method="post" action="/investor/profile" novalidate>
+{{ form_status(st) }}
+{{ investor_fields(v, st.get("errors", {})) }}
+<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Saving…">Save changes</button>
+</form>
+</div>
+{% endblock %}

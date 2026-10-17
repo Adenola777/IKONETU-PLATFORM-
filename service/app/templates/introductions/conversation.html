@@ -1,0 +1,43 @@
+{% extends "app/shell.html" %}
+{# The conversation an accepted introduction opens. Only the founder and the investor can read it. #}
+{% from "app/ui.html" import field_error, invalid, request_key %}
+{% set role = "founder" if i_am_founder else "investor" %}
+{% set current = "introductions" if i_am_founder else "requests" %}
+{% block main %}
+<a href="{{ '/dashboard/introductions' if i_am_founder else '/investor/introductions' }}" class="back">{{ icon("arrow-left", 16) }} All introductions</a>
+<h1 class="app-title">{{ investor_line if i_am_founder else i.founder_name ~ ", " ~ i.venture_name }}</h1>
+<p class="app-lede">{% if i.status == "accepted" %}{{ i.founder_name }} accepted this introduction on {{ date_text(i.decided_at) }}. Only the two of you can read this conversation.{% elif i.status == "pending" %}{{ i.founder_name }} has not answered this request yet. The conversation opens if the request is accepted.{% elif i.status == "declined" %}{{ i.founder_name }} declined this request. There is no conversation.{% else %}This request was withdrawn. There is no conversation.{% endif %}</p>
+<div class="app-narrow stack">
+<ol class="msgs" aria-label="Messages">
+<li class="msg {{ '' if i_am_founder else 'msg-me' }}">
+<span class="who">{{ i.investor_name if i_am_founder else "You" }} asked for an introduction on {{ date_text(i.created_at) }}</span>
+<p>{{ i.note }}</p>
+</li>
+{% for m in messages %}
+<li class="msg {{ 'msg-me' if m.sender_id == me else '' }}">
+<span class="who">{{ who(m.sender_id) }}, {{ date_text(m.created_at) }}</span>
+<p>{{ m.body }}</p>
+</li>
+{% endfor %}
+</ol>
+{% if i.status == "accepted" %}
+{% set st = states.get("message", {}) %}
+{% set errors = st.get("errors", {}) %}
+<form class="form" method="post" action="/introductions/{{ i.id }}/message" novalidate>
+{{ request_key(new_key) }}
+{% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
+<input type="hidden" name="introduction" value="{{ i.id }}">
+<div class="field">
+<label for="m-body">Your message</label>
+<textarea id="m-body" name="body" class="input" rows="4" maxlength="2000"{{ invalid(errors, "body") }}>
+{{ one(st.get("values", {}), "body") }}</textarea>
+{{ field_error(errors, "body") }}
+</div>
+<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Sending…">Send</button>
+</form>
+<p class="small" style="margin:0">New messages appear when the page reloads. <a href="/introductions/{{ i.id }}">Reload the conversation</a></p>
+<p class="small" style="margin:0">IkonetU does not provide investment advice and takes no part in any investment. Your own diligence decides.</p>
+{% endif %}
+<p class="small" style="margin:0">If anything here makes you uncomfortable, <a href="{{ report }}">report this conversation to IkonetU</a>. Your email program opens with the conversation's reference filled in.</p>
+</div>
+{% endblock %}

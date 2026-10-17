@@ -28,6 +28,8 @@ from app.forms import (
     parse_update,
     parse_venture,
 )
+from app.discovery import filter_count, match_text, parse_filters, query_string, rpc_args
+from app.investor import parse_investor_edit, parse_investor_signup
 from app.score_engine import RUBRIC_V2
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -44,12 +46,14 @@ ENTRY = f"""
 export {{ parseEvidence, parsePitch, parseTranscript, parseUpdate, parseIntroductionNote, parseMessage, parseVenture,
   parseDecision }} from {json.dumps(str(LIB / "forms.ts"))};
 export {{ parseOnboarding }} from {json.dumps(str(LIB / "account.ts"))};
+export {{ parseInvestorSignUp, parseInvestorEdit }} from {json.dumps(str(LIB / "investor-profile.ts"))};
+export {{ parseFilters, rpcArgs, queryString, matchText, filterCount }} from {json.dumps(str(LIB / "discovery.ts"))};
 """
 
 RUNNER = """
 import { readFileSync } from "node:fs";
 import * as f from "./forms.mjs";
-const form = (fields) => { const d = new FormData(); for (const [k, v] of Object.entries(fields)) d.append(k, v); return d; };
+const form = (fields) => { const d = new FormData(); for (const [k, v] of Object.entries(fields)) for (const x of [].concat(v)) d.append(k, x); return d; };
 const cases = JSON.parse(readFileSync(0, "utf8"));
 const out = cases.map(([kind, input, extra]) => {
   switch (kind) {
@@ -62,6 +66,13 @@ const out = cases.map(([kind, input, extra]) => {
     case "note": return f.parseIntroductionNote(input);
     case "message": return f.parseMessage(input);
     case "venture": return f.parseVenture(input);
+    case "investor_signup": { const r = f.parseInvestorSignUp(form(input), extra); return r.ok ? { ok: true, data: { profile: r.profile, investor: r.investor, consents: r.consents } } : r; }
+    case "investor_edit": { const r = f.parseInvestorEdit(form(input)); return r.ok ? { ok: true, data: { profile: r.profile, investor: r.investor } } : r; }
+    case "filters": {
+      const x = f.parseFilters(input);
+      return { ok: true, data: { filters: x, rpc: f.rpcArgs(x), query: f.queryString(x), next: f.queryString(x, x.page + 1), count: f.filterCount(x),
+        text: [f.matchText(x.page, false), f.matchText(x.page, true)] } };
+    }
   }
 });
 process.stdout.write(JSON.stringify(out));
@@ -187,6 +198,55 @@ def _venture(rng: random.Random) -> list:
     return ["venture", v]
 
 
+def _investor(rng: random.Random) -> list:
+    pick = lambda options: rng.choice(options)  # noqa: E731
+    fields = {
+        "fullName": _pad(rng, pick(NAMES)),
+        "basedIn": pick(["NG", "GH", "KE", "other", "", "ZA"]),
+        "investorType": pick(["individual", "angel", "fund", "fund", "", "vc"]),
+        "firm": _pad(rng, pick(["", "", "Savannah Seed", "x" * 121])),
+        "website": pick(WEB),
+        "sectors": pick([[], ["Fintech"], ["Fintech", "Health"], ["Fintech", "Fintech"], ["Crypto"], ["Fintech", "Crypto", "Fintech"], "Edtech"]),
+        "stages": pick([[], ["idea"], ["idea", "idea"], ["seed"], ["mvp", "revenue", "scaling"]]),
+        "countries": pick([[], ["NG"], ["NG", "KE"], ["ZA"], ["GH", "GH"]]),
+        "chequeSize": pick(["Under $25,000", "Prefer not to say", "", "A lot", "$25,000 to $100,000"]),
+        "thesis": pick(["", "Payments in Lagos.", "x" * 601]),
+    }
+    if rng.random() < 0.3:
+        fields = {**fields, "fullName": "Ife Adeyemi", "basedIn": "NG", "investorType": rng.choice(["angel", "fund"]),
+                  "website": "", "sectors": ["Fintech"], "chequeSize": "Prefer not to say", "thesis": "",
+                  "firm": rng.choice(["", "Savannah Seed"]), "stages": [], "countries": []}
+    fields = {k: v for k, v in fields.items() if rng.random() > 0.05}
+    for box in ("confirmedStatement", "confirmedAdult", "acceptedPrivacy", "notifications"):
+        if rng.random() < 0.8:
+            fields[box] = "on"
+    if rng.random() < 0.5:
+        return ["investor_signup", fields, rng.random() < 0.5]
+    return ["investor_edit", fields]
+
+
+def _filters(rng: random.Random) -> list:
+    values = {
+        "sector": ["Fintech", "Health", "Fintech,Health", " Fintech , Agritech ", "Crypto", "", "fintech"],
+        "stage": ["idea", "revenue", "unicorn", "idea,idea"],
+        "country": ["NG", "KE", "ZA", "NG,GH"],
+        "evidence": ["revenue_reviewed", "registry_record", "any_reviewed", "made_up"],
+        "activity": ["30", "90", "7", "", "30,90"],
+        "page": ["2", "1", "0", "999", "1000", "2.5", "x", "0x3", " 4 ", "", "3,9", "1e2", "-2"],
+    }
+    params = {}
+    for k, options in values.items():
+        n = rng.choice([0, 0, 1, 1, 2])
+        if n:
+            params[k] = [rng.choice(options) for _ in range(n)]
+    return ["filters", params]
+
+
+class _Params(dict):
+    def getlist(self, key):
+        return list(self.get(key, []))
+
+
 def _cases() -> list[list]:
     rng = random.Random(20261017)
     cases = []
@@ -196,6 +256,8 @@ def _cases() -> list[list]:
         cases.append(["update", {"body": _pad(rng, rng.choice(TEXT))}])
         cases.append(["note", {"note": _pad(rng, rng.choice(TEXT))}])
         cases.append(["message", {"body": _pad(rng, rng.choice(TEXT))}])
+        cases.append(_investor(rng))
+        cases.append(_filters(rng))
     return cases
 
 
@@ -217,6 +279,14 @@ def _python(case: list):
         r = parse_introduction_note(i["note"])
     elif kind == "message":
         r = parse_message(i["body"])
+    elif kind == "investor_signup":
+        r = parse_investor_signup(i, case[2])
+    elif kind == "investor_edit":
+        r = parse_investor_edit(i)
+    elif kind == "filters":
+        x = parse_filters(_Params(i))
+        return {"ok": True, "data": {"filters": x, "rpc": rpc_args(x), "query": query_string(x), "next": query_string(x, x["page"] + 1),
+                                     "count": filter_count(x), "text": [match_text(x["page"], False), match_text(x["page"], True)]}}
     else:
         r = parse_venture(i["name"], i["sector"], i["stage"], i["description"], i["website"], i.get("ask"))
     return {"ok": True, "data": r.data} if r.ok else {"ok": False, "errors": r.errors}
@@ -253,6 +323,7 @@ def test_both_apps_read_every_form_the_same_way():
     shown = "\n".join(f"{c}\n  python:     {p}\n  typescript: {t}" for c, p, t in differences[:5])
     assert not differences, f"{len(differences)} of {len(cases)} cases differ:\n{shown}"
     # The generated cases reach both answers for every form.
-    for kind in ("onboarding", "evidence", "pitch", "decision", "venture", "transcript", "update", "note", "message"):
+    for kind in ("onboarding", "evidence", "pitch", "decision", "venture", "transcript", "update", "note", "message",
+                 "investor_signup", "investor_edit"):
         answers = {t["ok"] for c, t in zip(cases, ts, strict=True) if c[0] == kind}
         assert answers == {True, False}, (kind, answers)

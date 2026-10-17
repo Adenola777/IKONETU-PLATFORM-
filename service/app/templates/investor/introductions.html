@@ -1,0 +1,33 @@
+{% extends "app/shell.html" %}
+{% set role = "investor" %}
+{% set current = "requests" %}
+{% set STATUS_NAME = {"pending": "Waiting for the founder", "accepted": "Accepted", "declined": "Declined", "withdrawn": "Withdrawn"} %}
+{% set STATUS_CHIP = {"pending": "chip-n", "accepted": "chip-i", "declined": "chip-none", "withdrawn": "chip-none"} %}
+{% block main %}
+<h1 class="app-title">Your introductions</h1>
+<p class="app-lede">You can send up to ten requests a day. A founder who declines is not asked again by you. An accepted request opens a conversation that only the two of you can read.</p>
+{% if not rows %}
+<div class="empty">
+<p>You have not asked for an introduction yet.</p>
+<p><a href="/investor">Discover founders</a></p>
+</div>
+{% else %}
+<div class="scroll">
+<table class="tbl">
+<thead>
+<tr><th scope="col">Founder</th><th scope="col">Asked on</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Action</span></th></tr>
+</thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td><a href="/investor/ventures/{{ r.venture_id }}">{{ r.venture_name }}</a><br><span class="small">{{ r.founder_name }}</span></td>
+<td>{{ date_text(r.created_at) }}</td>
+<td><span class="chip {{ STATUS_CHIP[r.status] }}">{{ STATUS_NAME[r.status] }}</span></td>
+<td>{% if r.status == "accepted" %}<a href="/introductions/{{ r.id }}">Open the conversation</a>{% endif %}{% if r.status == "pending" %}<form method="post" action="/investor/introductions/withdraw"><input type="hidden" name="id" value="{{ r.id }}"><button type="submit" class="linkbtn">Withdraw</button></form>{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

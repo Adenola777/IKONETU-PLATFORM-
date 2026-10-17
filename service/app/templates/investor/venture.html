@@ -1,0 +1,47 @@
+{% extends "app/shell.html" %}
+{% from "app/venture_profile.html" import venture_profile %}
+{% from "app/ui.html" import field_error, invalid %}
+{% set role = "investor" %}
+{% set current = "discover" %}
+{% block scripts %}<script src="/static/js/app/pitch-video.js" defer></script>{% endblock %}
+{% block main %}
+{% set founder = p.founder.full_name if p.founder else "The founder" %}
+{% set st = states.get("request", {}) %}
+{% set aside %}
+<section class="card card-i" aria-labelledby="intro-h" style="scroll-margin-top:16px">
+<h2 id="intro-h" class="app-h2">Introduction</h2>
+{% if intro and intro.status == "pending" and not st %}
+<p class="body2">You asked on {{ date_text(intro.created_at) }}. {{ founder }} has not answered yet.</p>
+<form method="post" action="/investor/ventures/{{ venture_id }}/withdraw" style="margin-top:12px">
+<input type="hidden" name="id" value="{{ intro.id }}">
+<button type="submit" class="btn btn-n btn-sm">Withdraw my request</button>
+</form>
+{% elif intro and intro.status == "accepted" and not st %}
+<p class="body2">{{ founder }} accepted on {{ date_text(intro.decided_at) }}.</p>
+<a class="btn btn-i btn-sm" href="/introductions/{{ intro.id }}" style="margin-top:12px">Open the conversation</a>
+{% elif intro and intro.status == "declined" and not st %}
+<p class="body2">{{ founder }} declined your request on {{ date_text(intro.decided_at) }}. A declined request cannot be sent again.</p>
+{% else %}
+<p class="body2" style="margin-bottom:16px">Every introduction starts here, so both sides know who is asking and why. The founder accepts or declines, and an accepted request opens a conversation on IkonetU.</p>
+{% set errors = st.get("errors", {}) %}
+{% set v = st.get("values", {}) %}
+<form class="form" method="post" action="/investor/ventures/{{ venture_id }}/introduction" novalidate>
+{% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
+<input type="hidden" name="venture" value="{{ venture_id }}">
+<div class="field">
+<label for="r-note">Why do you want to talk?</label>
+<textarea id="r-note" name="note" class="input" rows="5" maxlength="600"{{ invalid(errors, "note", "r-note-hint") }}>
+{{ one(v, "note") }}</textarea>
+<p id="r-note-hint" class="hint">{{ founder }} sees this note with your name, investor type and firm, and decides whether to accept. Up to 600 characters.</p>
+{{ field_error(errors, "note") }}
+</div>
+<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Sending…">Request an introduction</button>
+</form>
+{% endif %}
+</section>
+{% endset %}
+{% set jump %}<a class="tlink jump" href="#intro-h">Introduction</a>{% endset %}
+<a href="/investor" class="back">{{ icon("arrow-left", 16) }} All founders</a>
+{{ venture_profile(p, now, aside, jump) }}
+<p class="small" style="margin-top:48px;max-width:720px">Investing in early-stage companies can lose all the money invested. IkonetU facilitates discovery and introductions. It does not provide investment advice, and it does not endorse or approve any company.</p>
+{% endblock %}

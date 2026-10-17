@@ -9,7 +9,7 @@ built in batches, each committed on its own, and `apps/web` keeps serving until 
 | 2 | The app core: sign-in, sessions, security headers, health, the waitlist | Done. 107 tests pass, and a browser signed in through the local stand-in |
 | 3 | The website pages | Done. The website's functional test passed 144 of 144, as it does on the Next.js app. All twelve routes give the same visible text, title, description, canonical address and element counts as the Next.js app, with no layout shift and no sideways scroll at 320, 390 or 768 pixels |
 | 4 | The founder pages | Done. Onboarding, the dashboard, the pitch, evidence, updates, the preview and the suspended page. The founder half of the product journey passes 21 of 21 checks, and a check of the actions it does not reach passes 24 of 24. With the same founder signed in to both apps on the same database, all 27 pages and refused forms compared give the same title, text and element attributes. A parity check found the two apps' form rules give the same answer on 3,600 generated inputs. 174 tests pass |
-| 5 | The investor pages and introductions | Not started |
+| 5 | The investor pages and introductions | Done. Investor sign-up, the waiting page, discovery with its filters and muted previews, a founder profile with the request form, the investor's profile and requests, the founder's introductions and the conversation. With the same people signed in to both apps on the same database, all 51 pages, refusals and outcomes compared read the same, apart from one page title recorded below. The interactive checks pass 19 of 19 in both apps. An investor's approval was made in SQL for these runs, because the admin pages come in batch 6. The parity check now covers 4,400 generated inputs, including the investor form and the discovery filters. 187 tests pass |
 | 6 | The staff and admin pages | Not started |
 | 7 | The switch-over: Render runs this app, and `apps/web` is removed | Not started |
 
@@ -52,6 +52,10 @@ in both the drawn state and any `<template>` block that repeats it.
   browser after it loads, so a form sent before its script runs still carries one.
 - **A web address is read by ada**, the URL parser inside Node.js (`ada-url` 4.0.0), so an address is accepted
   or refused exactly as `new URL()` did in the Next.js app.
+- **A page that is not found is titled "Page not found".** When a Next.js page called `notFound()`, the
+  not-found page kept that page's own title, such as "Conversation | IkonetU". Its text was the same.
+- **The discovery filters fetch the new results and put them in place** of the old ones, so focus stays on
+  the box that changed, as the Next.js router did.
 - **A form sent from another site is refused.** Next.js checked this for its server actions. This app checks the
   Origin header of every form, and the session cookies are SameSite=Lax.
 - **The requests to Supabase repeat what supabase-js 2.117.2 sends**, read from its source on 17 October 2026:

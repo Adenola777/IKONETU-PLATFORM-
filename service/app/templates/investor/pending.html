@@ -1,0 +1,18 @@
+{% extends "app/shell.html" %}
+{# Where an investor waits for an admin's decision, or learns it was declined. #}
+{% set role = "none" %}
+{% block main %}
+<div class="app-narrow stack">
+{% if declined %}
+<h1 class="app-title">Your investor account is not approved</h1>
+<p class="app-lede" style="margin:0">An IkonetU admin did not approve this account, so it cannot browse founder profiles or request introductions. If you think this is a mistake, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.</p>
+{% else %}
+<h1 class="app-title">Your investor account is waiting for approval</h1>
+<p class="app-lede" style="margin:0">You sent your details on {{ date_text(sent_at) }}. An IkonetU admin checks each investor account before it can browse founder profiles and request introductions. Sign in again later to see the decision.</p>
+<div class="card card-i">
+<h2 class="app-h3">While you wait</h2>
+<p class="body2" style="margin:0">You can read <a href="/for-investors">what investors see</a> and the <a href="/terms#terms-investor">investor terms</a>.</p>
+</div>
+{% endif %}
+</div>
+{% endblock %}
