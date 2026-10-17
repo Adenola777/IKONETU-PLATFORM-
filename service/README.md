@@ -7,7 +7,7 @@ built in batches, each committed on its own, and `apps/web` keeps serving until 
 |---|---|---|
 | 1 | The score engine, `app/score_engine` | Done. Its 47 tests pass, and a parity check found the TypeScript and Python engines agree on 2,000 generated profiles |
 | 2 | The app core: sign-in, sessions, security headers, health, the waitlist | Done. 107 tests pass, and a browser signed in through the local stand-in |
-| 3 | The website pages | Not started |
+| 3 | The website pages | Done. The website's functional test passed 144 of 144, as it does on the Next.js app. All twelve routes give the same visible text, title, description, canonical address and element counts as the Next.js app, with no layout shift and no sideways scroll at 320, 390 or 768 pixels |
 | 4 | The founder pages | Not started |
 | 5 | The investor pages and introductions | Not started |
 | 6 | The staff and admin pages | Not started |
@@ -28,6 +28,16 @@ python3 -m venv .venv
 The app reads the same environment variables as `apps/web`, with the same names, so the values entered on
 Render keep working. `docs/HOSTING.md` lists them. The server reads them when it starts, so a change needs a
 restart rather than a new build.
+
+## The website pages
+
+The pages in `app/templates/site/pages` were generated on 17 October 2026 from the design boards by a script
+that ran in the session, beside the one that generated the Next.js views. Neither the boards nor the scripts are in
+this repository. Each page is drawn in its first state, so it reads in full before any script runs. Its
+`data-` attributes and `<template>` blocks carry the bindings the boards declared, and `static/js/ik/runtime.js`
+keeps them in step with the page's state. The state and its handlers are in `static/js/ik/components`, ported
+from the React hooks of `apps/web/components/site`. A change to a page's wording can be made in its template,
+in both the drawn state and any `<template>` block that repeats it.
 
 ## How it differs from the Next.js app
 

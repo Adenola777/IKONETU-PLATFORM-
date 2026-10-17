@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{# A website page. Its markup is generated from the design boards, and boot.js starts its interactive parts. #}
+{% block scripts %}<script type="module" src="/static/js/ik/boot.js"></script>{% endblock %}
+{% block body %}{% include page_template %}{% endblock %}

@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% block scripts %}<script type="module" src="/static/js/ik/boot.js"></script>{% endblock %}
 {% block body %}
 <div class="site">
 <div class="page">
-{% if site_header is defined %}{{ site_header }}{% endif %}
+{% include "site/partials/header.html" %}
 <main id="main">
 <section aria-labelledby="nf-title">
 <div class="wrap narrow" style="padding-top:96px;padding-bottom:112px">
@@ -16,6 +17,7 @@
 </div>
 </section>
 </main>
+{% include "site/partials/footer.html" %}
 </div>
 </div>
 {% endblock %}
