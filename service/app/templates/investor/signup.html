@@ -1,0 +1,29 @@
+{% extends "app/shell.html" %}
+{% from "app/investor_fields.html" import investor_fields %}
+{% from "app/ui.html" import field_error, invalid %}
+{% set role = "none" %}
+{% block main %}
+{% set st = states.get("investor", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set v = st.get("values", {}) if st.get("status") == "error" else {"fullName": name} %}
+<div class="app-narrow">
+<h1 class="app-title">Create your investor profile</h1>
+<p class="app-lede">Tell us who you are and what you invest in. An IkonetU admin checks each investor account before it can browse founder profiles. We will show you here when yours is approved.</p>
+<form class="form" method="post" action="/onboarding/investor" novalidate>
+{% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
+{{ investor_fields(v, errors) }}
+<label class="check"><input type="checkbox" name="notifications"{% if one(v, 'notifications') == "on" %} checked{% endif %}><span>IkonetU may email me about my account and my introductions (optional). IkonetU does not send these emails yet.</span></label>
+{% if ask_adult %}
+<div>
+<label class="check"><input type="checkbox" name="confirmedAdult"{{ invalid(errors, "confirmedAdult") }}> <span>I am 18 or older.</span></label>
+{{ field_error(errors, "confirmedAdult") }}
+</div>
+{% endif %}
+<div>
+<label class="check"><input type="checkbox" name="acceptedPrivacy"{{ invalid(errors, "acceptedPrivacy") }}><span>I have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.</span></label>
+{{ field_error(errors, "acceptedPrivacy") }}
+</div>
+<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Saving…">Send for approval</button>
+</form>
+</div>
+{% endblock %}

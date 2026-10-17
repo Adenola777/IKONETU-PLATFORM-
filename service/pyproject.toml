@@ -1,0 +1,11 @@
+[project]
+name = "ikonetu"
+version = "0.1.0"
+description = "The IkonetU web app, in Python"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+# Starlette asks for httpx2 in its test client. The app itself uses httpx 0.28.1, pinned in requirements.txt.
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]

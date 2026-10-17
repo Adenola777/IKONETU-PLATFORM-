@@ -1,0 +1,17 @@
+{#
+  A founder's pitch, with captions made from the transcript and switched on. The captions are
+  added through the browser's text track interface by pitch-video.js, so no caption file is
+  fetched. The transcript is shown in full below the video.
+#}
+{% macro pitch_video(src, transcript, duration, title) -%}
+<div class="stack-s">
+<div class="player">
+<video src="{{ src }}" controls preload="metadata" playsinline aria-label="{{ title }}" data-cues="{{ cues(transcript, duration) | tojson | forceescape }}"></video>
+</div>
+<details class="transcript">
+<summary>Read the transcript</summary>
+<p>{{ transcript }}</p>
+</details>
+<p class="small" style="margin:0">The founder typed the transcript. The captions are made from it and timed by the length of each sentence, so they may run a little ahead of or behind the speech.</p>
+</div>
+{%- endmacro %}

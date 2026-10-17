@@ -1,0 +1,32 @@
+{% extends "signin/frame.html" %}
+{% block scripts %}<script src="/static/js/code-clock.js" defer></script>{% endblock %}
+{% block content %}
+<h1>Enter your code</h1>
+{% if pending.sent_at %}
+{% if pending.kind == "email" %}
+<p class="si-lede">We sent an email {{ describe }}. Open the sign-in link in it on this device, or enter the 6-digit code if the email shows one.</p>
+{% else %}
+<p class="si-lede">We sent a 6-digit code {{ describe }}.</p>
+{% endif %}
+{% endif %}
+{% set is_phone = pending.kind == "phone" %}
+<div class="form">
+<form class="form" method="post" action="/signin/code" novalidate>
+{% if message %}<p class="status status-err" role="alert">{{ message }}</p>{% endif %}
+<div class="field">
+<label for="c-code">6-digit code</label>
+<input id="c-code" name="code" class="input code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="7" required{% if error %} aria-invalid="true" aria-describedby="code-err"{% endif %}>
+{% if error %}<p id="code-err" class="err">{{ error }}</p>{% endif %}
+<p class="hint" aria-live="polite" data-expires-at="{{ expires_at }}">{% if seconds_left > 0 %}The code expires in {{ seconds_left // 60 }}:{{ "%02d"|format(seconds_left % 60) }}.{% else %}The code has expired. Ask for a new one below.{% endif %}</p>
+</div>
+<button type="submit" class="btn btn-f btn-lg" style="align-self:flex-start" data-pending="Checking…">Continue</button>
+</form>
+<form method="post" action="/signin/code/resend">
+{% if flash.resent %}<p class="status status-ok" role="status">{{ flash.resent }}</p>{% endif %}
+{% if resend_error %}<p class="status status-err" role="alert">{{ resend_error }}</p>{% endif %}
+{% if is_phone %}<input type="hidden" name="channel" value="sms">{% endif %}
+<button type="submit" class="link-button">{{ "Send the code by SMS instead" if is_phone else "Send a new code" }}</button>
+</form>
+<a href="/signin" class="link-button" style="display:inline-flex;align-items:center">Use a different {{ "number" if is_phone else "email" }}</a>
+</div>
+{% endblock %}

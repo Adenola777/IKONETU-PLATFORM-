@@ -1,0 +1,46 @@
+{% extends "signin/frame.html" %}
+{% from "macros.html" import err, invalid %}
+{% set label = "Sign in" %}
+{% block content %}
+<h1>Sign in or create your account</h1>
+<p class="si-lede">
+{% if phone_enabled %}Enter your phone number to create your account or to sign back in. A new account then chooses founder or investor.
+{% else %}Enter your email to create your account or to sign back in. A new account then chooses founder or investor.{% endif %}
+</p>
+{% if link_error %}
+<p class="status status-err" role="alert" style="margin-bottom:20px">That sign-in link has expired or was already used. Please ask for a new code.</p>
+{% endif %}
+<form class="form" method="post" action="/signin" novalidate>
+{% if message %}<p class="status status-err" role="alert">{{ message }}</p>{% endif %}
+<input type="hidden" name="method" value="{{ method }}">
+{% if method == "phone" %}
+<div class="field">
+<label for="s-phone">Phone number</label>
+<div style="display:flex;gap:8px">
+<select name="country" aria-label="Country code" class="input" style="width:auto">
+{% for c in countries %}<option value="{{ c.code }}"{% if (values.country or "NG") == c.code %} selected{% endif %}>+{{ c.dial }}</option>{% endfor %}
+</select>
+<input id="s-phone" name="phone" class="input" type="tel" autocomplete="tel-national" inputmode="tel" required maxlength="30" value="{{ values.phone or '' }}"{{ invalid(errors, "phone") }}>
+</div>
+{{ err(errors, "phone") }}
+<p class="hint">We send a 6-digit code by WhatsApp, or by SMS if you ask.</p>
+</div>
+{% else %}
+<div class="field">
+<label for="s-email">Email</label>
+<input id="s-email" name="email" class="input" type="email" autocomplete="email" required maxlength="160" value="{{ values.email or '' }}"{{ invalid(errors, "email") }}>
+{{ err(errors, "email") }}
+<p class="hint">We send a sign-in email with a link or a 6-digit code. You do not need a password.</p>
+</div>
+{% endif %}
+<div>
+<label class="check"><input type="checkbox" name="confirmedAdult"{{ invalid(errors, "confirmedAdult") }}> <span>I am 18 or older.</span></label>
+{{ err(errors, "confirmedAdult") }}
+</div>
+<button type="submit" class="btn btn-f btn-lg" style="align-self:flex-start" data-pending="Sending…">Send my code</button>
+{% if phone_enabled %}
+<a class="link-button" href="/signin?method={{ 'email' if method == 'phone' else 'phone' }}">{{ "Use email instead" if method == "phone" else "Use my phone number instead" }}</a>
+{% endif %}
+<p class="hint">By continuing you agree to the <a href="/terms" target="_blank" rel="noopener">terms</a> and confirm you have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.</p>
+</form>
+{% endblock %}

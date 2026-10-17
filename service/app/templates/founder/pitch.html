@@ -1,0 +1,77 @@
+{% extends "app/shell.html" %}
+{% from "app/ui.html" import field_error, invalid, form_status %}
+{% from "app/pitch_video.html" import pitch_video %}
+{% set role = "founder" %}
+{% set current = "pitch" %}
+{% block scripts %}<script src="/static/js/app/pitch-video.js" defer></script>
+<script src="/static/js/app/pitch-upload.js" defer></script>{% endblock %}
+{% block main %}
+<h1 class="app-title">Your one-minute pitch</h1>
+<p class="app-lede">Say who you are, what your venture does, who it is for and what you have done so far. Investors see the video with captions and your transcript. Your profile cannot be published without a pitch.</p>
+<div class="side">
+<div class="stack">
+{% if pitch %}
+<section class="card" aria-labelledby="cur-h">
+<h2 id="cur-h" class="app-h2">Your current pitch</h2>
+<p class="small" style="margin-top:0">{{ clock_text(pitch.duration_seconds) }} long, saved on {{ date_text(pitch.updated_at) }}.</p>
+{% if signed %}
+{{ pitch_video(signed, pitch.transcript, pitch.duration_seconds | float, venture.name ~ " pitch") }}
+{% else %}
+<p class="status status-err">The video could not be loaded. Please reload the page.</p>
+{% endif %}
+</section>
+{% endif %}
+<section class="card" aria-labelledby="up-h">
+<h2 id="up-h" class="app-h2">{{ "Replace your pitch" if pitch else "Upload your pitch" }}</h2>
+{#
+  The founder chooses a video and types what they say. pitch-upload.js sends the video from the
+  browser straight to the founder's own folder in storage, and the server then records it with
+  the transcript. Without the script the form cannot send a video, so it says so.
+#}
+{% set up = states.get("upload", {}) %}
+<form class="form" novalidate data-pitch-upload data-user="{{ user_id }}" data-storage="{{ storage_url }}" data-key="{{ storage_key }}" data-has-pitch="{{ 'yes' if pitch else 'no' }}">
+{% if up.get("status") == "sent" %}<p class="status status-ok" role="status">{{ up.message }}</p>{% endif %}
+<div class="field">
+<label for="p-video">{{ "Choose a new video to replace your pitch" if pitch else "Your pitch video" }}</label>
+<input id="p-video" type="file" accept="{{ PITCH_TYPES | join(',') }}" class="input" aria-describedby="p-video-hint">
+<p id="p-video-hint" class="hint">MP4, WebM or MOV, up to 90 seconds and 50 MB. A one-minute video recorded at 720p is usually well under 50 MB.</p>
+</div>
+<div class="field">
+<label for="p-transcript">What you say in the pitch</label>
+<textarea id="p-transcript" name="transcript" class="input" rows="6" maxlength="2000" aria-describedby="p-transcript-hint">
+{{ pitch.transcript if pitch else "" }}</textarea>
+<p id="p-transcript-hint" class="hint">Investors read this, and the captions are made from it. Each caption is timed by the length of its sentence, so write it in the order you speak.</p>
+</div>
+<button type="submit" class="btn btn-f" style="align-self:flex-start">{{ "Replace my pitch" if pitch else "Upload my pitch" }}</button>
+</form>
+</section>
+</div>
+{% if pitch %}
+<aside class="stack" aria-label="Change the pitch">
+<section class="card">
+<h2 class="app-h3">Change the transcript only</h2>
+{% set st = states.get("transcript", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set value = st.get("values", {}).get("transcript", "") if st.get("status") == "error" else pitch.transcript %}
+<form class="form" method="post" action="/dashboard/pitch/transcript" novalidate>
+{{ form_status(st) }}
+<div class="field">
+<label for="t-transcript">Transcript</label>
+<textarea id="t-transcript" name="transcript" class="input" rows="6" maxlength="2000"{{ invalid(errors, "transcript") }}>
+{{ value }}</textarea>
+{{ field_error(errors, "transcript") }}
+</div>
+<button type="submit" class="btn btn-n" style="align-self:flex-start" data-pending="Saving…">Save the transcript</button>
+</form>
+</section>
+<section class="card">
+<h2 class="app-h3">Remove your pitch</h2>
+<p class="body2">Removing the pitch also hides your profile from investors, because a profile needs a pitch.</p>
+<form method="post" action="/dashboard/pitch/remove" style="margin-top:12px">
+<button type="submit" class="btn btn-n btn-sm">Remove my pitch</button>
+</form>
+</section>
+</aside>
+{% endif %}
+</div>
+{% endblock %}

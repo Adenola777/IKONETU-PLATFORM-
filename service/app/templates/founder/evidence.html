@@ -1,0 +1,76 @@
+{% extends "app/shell.html" %}
+{% from "app/ui.html" import status_chip, field_error, invalid, form_status, request_key %}
+{% set role = "founder" %}
+{% set current = "evidence" %}
+{% block main %}
+<h1 class="app-title">Your evidence</h1>
+<p class="app-lede">Each piece of evidence shows investors one of three statuses: founder submitted until a reviewer has looked at it, then platform reviewed or third-party evidence available. Investors see what it shows, your sentence and its status, never your files.</p>
+<div class="side">
+<section aria-labelledby="list-h" class="stack">
+<h2 id="list-h" class="app-h2">Added so far ({{ rows | length }})</h2>
+{% if not rows %}
+<div class="empty"><p>You have not added any evidence yet.</p><p>Start with what an investor would ask for first, such as your company registration or revenue.</p></div>
+{% else %}
+<ul class="reqs">
+{% for r in rows %}
+{% set s = r.shown %}
+{% set files = r.evidence_files | length %}
+<li class="card">
+<p class="lbl" style="margin-bottom:6px">{{ area_label(r.area) }}</p>
+<h3 class="app-h3">{{ r.label }}</h3>
+{% if r.summary %}<p class="body2" style="margin:0 0 8px">{{ r.summary }}</p>{% endif %}
+<div class="row" style="margin-bottom:8px">{% if s.investors %}{{ status_chip(s.investors) }}{% else %}<span class="chip chip-none">Not shown to investors</span>{% endif %}</div>
+<p class="small" style="margin:0">{{ s.text }}</p>
+{% if r.public_note %}<p class="note">What the reviewer compared: {{ r.public_note }}</p>{% endif %}
+{% if r.reason %}<p class="note" style="background:#FEF3F2;color:#B42318">The reviewer said: {{ r.reason }}</p>{% endif %}
+<p class="small" style="margin:8px 0 0">Added on {{ date_text(r.created_at) }}{% if r.decided_at %}, decided on {{ date_text(r.decided_at) }}{% endif %} · {{ files }} {{ "file" if files == 1 else "files" }}{% if r.source_ref %} · <a href="{{ r.source_ref }}" target="_blank" rel="noopener nofollow">link</a>{% endif %}</p>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+<aside class="card" aria-labelledby="add-h">
+<h2 id="add-h" class="app-h2">Add evidence</h2>
+{% set st = states.get("evidence", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set v = st.get("values", {}) if st.get("status") == "error" else {} %}
+{% set chosen = v.get("signal") or signal %}
+<form class="form" method="post" action="/dashboard/evidence{{ "?signal=" ~ signal if signal }}" enctype="multipart/form-data" novalidate>
+{{ request_key(new_key) }}
+{{ form_status(st) }}
+<div class="field">
+<label for="e-signal">What does it show?</label>
+<select id="e-signal" name="signal" class="input"{{ invalid(errors, "signal") }}>
+<option value="" disabled{% if not chosen %} selected{% endif %}>Choose one</option>
+{% for a in AREAS %}
+<optgroup label="{{ a.label }}">
+{% for o in signal_options if o.category == a.code %}<option value="{{ o.code }}"{% if chosen == o.code %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+</optgroup>
+{% endfor %}
+</select>
+{{ field_error(errors, "signal") }}
+</div>
+<div class="field">
+<label for="e-summary">Describe it in a sentence</label>
+<textarea id="e-summary" name="summary" class="input" rows="3" maxlength="280"{{ invalid(errors, "summary", "e-summary-hint") }}>
+{{ v.get("summary", "") }}</textarea>
+<p id="e-summary-hint" class="hint">Investors read this next to the evidence's status. For example: twelve months of bank statements for the business account.</p>
+{{ field_error(errors, "summary") }}
+</div>
+<div class="field">
+<label for="e-files">Files (optional if you give a link)</label>
+<input id="e-files" name="files" type="file" multiple accept="{{ EVIDENCE_FILE_TYPES | join(',') }}" class="input"{{ invalid(errors, "files", "e-files-hint") }}>
+<p id="e-files-hint" class="hint">Up to 3 files, each a PDF, JPEG or PNG of 10 MB or less. Only you and IkonetU reviewers can open them. Investors never see the files.</p>
+{{ field_error(errors, "files") }}
+</div>
+<div class="field">
+<label for="e-link">Link (optional if you add a file)</label>
+<input id="e-link" name="link" type="url" inputmode="url" class="input" maxlength="300" value="{{ v.get('link', '') }}"{{ invalid(errors, "link", "e-link-hint") }}>
+<p id="e-link-hint" class="hint">For example a press article, an app store page or a registry record.</p>
+{{ field_error(errors, "link") }}
+</div>
+<button type="submit" class="btn btn-f" style="align-self:flex-start" data-pending="Adding…">Add this evidence</button>
+</form>
+</aside>
+</div>
+{% endblock %}

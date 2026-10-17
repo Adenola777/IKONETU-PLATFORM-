@@ -1,0 +1,119 @@
+{% extends "app/shell.html" %}
+{% from "app/ui.html" import field_error as err, invalid %}
+{% set role = "none" %}
+{% block main %}
+{% set st = states.get("onboarding", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set v = st.get("values", {}) if st.get("status") == "error" else {} %}
+{% macro value(name) %}{% if name in v %} value="{{ v[name] }}"{% endif %}{% endmacro %}
+<div class="app-narrow">
+<h1 class="app-title">Create your founder profile</h1>
+<p class="app-lede">Tell us about you and your venture. Nobody sees your profile until you publish it, and then only approved investors see it. Nobody else can see your email or phone number.</p>
+<form class="form" method="post" action="/onboarding/founder" novalidate>
+{% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
+
+<h2 class="app-h2" style="margin:0">About you</h2>
+<div class="field">
+<label for="o-name">Full name</label>
+<input id="o-name" name="fullName" class="input" type="text" autocomplete="name" required maxlength="120"{{ value("fullName") }}{{ invalid(errors, "fullName") }}>
+{{ err(errors, "fullName") }}
+</div>
+<div class="grid2">
+<div class="field">
+<label for="o-country">Country</label>
+<select id="o-country" name="country" class="input"{{ invalid(errors, "country") }}>
+{% for c in COUNTRIES %}<option value="{{ c.code }}"{% if (v.get("country") or "NG") == c.code %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+</select>
+{{ err(errors, "country") }}
+</div>
+<div class="field">
+<label for="o-city">City (optional)</label>
+<input id="o-city" name="city" class="input" type="text" autocomplete="address-level2" maxlength="80"{{ value("city") }}{{ invalid(errors, "city") }}>
+{{ err(errors, "city") }}
+</div>
+</div>
+<div class="field">
+<label for="o-institution">University or institution (optional)</label>
+<input id="o-institution" name="institution" class="input" type="text" maxlength="120"{{ value("institution") }}{{ invalid(errors, "institution") }}>
+{{ err(errors, "institution") }}
+</div>
+<div class="field">
+<label for="o-graduate">Student or graduate status (optional)</label>
+<input id="o-graduate" name="graduateStatus" class="input" type="text" maxlength="80"{{ value("graduateStatus") }}{{ invalid(errors, "graduateStatus", "o-graduate-hint") }}>
+<p id="o-graduate-hint" class="hint">For example: final-year student, or graduated 2024.</p>
+{{ err(errors, "graduateStatus") }}
+</div>
+<div class="field">
+<label for="o-bio">Short bio (optional)</label>
+<textarea id="o-bio" name="bio" class="input" rows="3" maxlength="600"{{ invalid(errors, "bio") }}>
+{{ v.get("bio", "") }}</textarea>
+{{ err(errors, "bio") }}
+</div>
+
+<h2 class="app-h2" style="margin:12px 0 0">Your venture</h2>
+<div class="field">
+<label for="o-venture">Venture name</label>
+<input id="o-venture" name="ventureName" class="input" type="text" required maxlength="120"{{ value("ventureName") }}{{ invalid(errors, "ventureName") }}>
+{{ err(errors, "ventureName") }}
+</div>
+<div class="grid2">
+<div class="field">
+<label for="o-sector">Sector</label>
+<select id="o-sector" name="sector" class="input"{{ invalid(errors, "sector") }}>
+<option value="" disabled{% if not v.get("sector") %} selected{% endif %}>Choose a sector</option>
+{% for s in SECTORS %}<option value="{{ s }}"{% if v.get("sector") == s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+</select>
+{{ err(errors, "sector") }}
+</div>
+<div class="field">
+<label for="o-stage">Stage</label>
+<select id="o-stage" name="stage" class="input"{{ invalid(errors, "stage") }}>
+{% for s in STAGES %}<option value="{{ s.code }}"{% if (v.get("stage") or "idea") == s.code %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
+</select>
+{{ err(errors, "stage") }}
+</div>
+</div>
+<div class="field">
+<label for="o-description">What it does, in one or two sentences (optional)</label>
+<textarea id="o-description" name="description" class="input" rows="3" maxlength="280"{{ invalid(errors, "description") }}>
+{{ v.get("description", "") }}</textarea>
+{{ err(errors, "description") }}
+</div>
+<div class="field">
+<label for="o-ask">Your ask (optional)</label>
+<input id="o-ask" name="ask" class="input" type="text" maxlength="160"{{ value("ask") }}{{ invalid(errors, "ask", "o-ask-hint") }}>
+<p id="o-ask-hint" class="hint">How much you are raising and what for, in one line. For example: $150,000 to reach 5,000 paying merchants. Investors see it.</p>
+{{ err(errors, "ask") }}
+</div>
+<div class="grid2">
+{% for name, id, label in [("website", "o-website", "Website (optional)"), ("linkedin", "o-linkedin", "LinkedIn (optional)"), ("x", "o-x", "X (optional)"), ("instagram", "o-instagram", "Instagram (optional)")] %}
+<div class="field">
+<label for="{{ id }}">{{ label }}</label>
+<input id="{{ id }}" name="{{ name }}" class="input" type="url" inputmode="url" maxlength="200"{{ value(name) }}{{ invalid(errors, name) }}>
+{{ err(errors, name) }}
+</div>
+{% endfor %}
+</div>
+
+<fieldset class="field">
+<legend>Your choices</legend>
+<p class="hint">Each of these is optional. To change an answer later, write to privacy@ikonetu.com.</p>
+{% for c in OPTIONAL_CONSENTS %}
+<label class="check"><input type="checkbox" name="consent_{{ c.code }}"> <span>{{ c.label }}</span></label>
+{% endfor %}
+</fieldset>
+
+{% if ask_adult %}
+<div>
+<label class="check"><input type="checkbox" name="confirmedAdult"{{ invalid(errors, "confirmedAdult") }}> <span>I am 18 or older.</span></label>
+{{ err(errors, "confirmedAdult") }}
+</div>
+{% endif %}
+<div>
+<label class="check"><input type="checkbox" name="acceptedPrivacy"{{ invalid(errors, "acceptedPrivacy") }}><span>I have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.</span></label>
+{{ err(errors, "acceptedPrivacy") }}
+</div>
+<button type="submit" class="btn btn-f" style="align-self:flex-start" data-pending="Saving…">Create my profile</button>
+</form>
+</div>
+{% endblock %}

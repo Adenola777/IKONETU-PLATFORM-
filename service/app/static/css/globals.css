@@ -1,0 +1,30 @@
+/* The brand colours, copied from packages/ui-tokens before the Next.js app was removed on 17 October 2026. */
+:root {
+  --navy: #0C1E4A;
+  --navy-deep: #071330;
+  --navy-line: #3A4C7A;
+  --orange: #F05C28;
+  --orange-text: #B93E14;
+  --orange-text-hover: #8F2F0F;
+  --ink: #0A0A0A;
+  --text-mid: #4B4B4B;
+  --text-muted: #6B6B6B;
+  --on-navy-muted: #D6DCEB;
+  --line: #E8E8E8;
+  --off: #F8F7F5;
+  --white: #FFFFFF;
+  --success: #1F7A4D;
+  --success-tint: #E6F2EC;
+  --danger: #A12C10;
+  --info-tint: #E6EAF4;
+  --league-early: #9AA3B8;
+  --league-rising: #3A6EA5;
+  --league-investable: #0C1E4A;
+  --league-elite: #F05C28;
+  --font-display: var(--font-serif), Georgia, serif;
+  --font-body: var(--font-sans), system-ui, sans-serif;
+}
+
+/* The website's styles are in site.css and the signed-in pages' in components/app/app.css. */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

@@ -1,12 +1,12 @@
 # Hosting the IkonetU web app
 
-The website and the signed-in app are one Next.js app in `apps/web`. It runs as one web service on Render in Frankfurt, and it uses Supabase for sign-in and the database. This file lists what has to be set up, in order, before the public address serves it.
+The website and the signed-in app are one Python app in `service`. It runs as one web service on Render in Frankfurt, and it uses Supabase for sign-in and the database. This file lists what has to be set up, in order, before the public address serves it.
 
-Written on 15 October 2026. Render's documentation could not be reached from the session that wrote it, so every Render detail below is marked **unverified**. The build and start commands were run as written on Node 22, and the app answered on the port given in `PORT`.
+Written on 15 October 2026 for the Next.js app, and changed on 17 October 2026, when the app was rebuilt in Python. Render's documentation could not be reached from either session, so every Render detail below is marked **unverified**. On 17 October the build command was run as written into a fresh Python 3.13.16 environment and installed exactly the pinned packages, and the start command was run as written and the app answered on the port given in `PORT`.
 
 ## 1. Supabase
 
-1. Apply the four migrations of 15 October to the Supabase project in order, after the three earlier migrations: `20261015000001_investor_interest.sql`, `20261015000002_investor_side.sql`, `20261015000003_venture_ask.sql` and `20261015000004_resilience.sql`. The first creates the `investor_interest` table, which the retired interest form wrote. The second creates the investor side and the private `pitches` storage bucket. The third adds the founder's ask and returns it from `discover_ventures()`. The fourth saves evidence and its files in one transaction, keeps a form sent twice once, holds the daily limit on introduction requests under simultaneous requests, and adds `health()` and the staff list of scores to update. Until the second, third and fourth are applied, the founder, investor and staff pages fail, because they read the tables, columns and functions those create. The SQL checks in `supabase/tests` were run against all seven migrations on a local PostgreSQL 16 on 15 October 2026.
+1. Apply the four migrations of 15 October to the Supabase project in order, after the three earlier migrations: `20261015000001_investor_interest.sql`, `20261015000002_investor_side.sql`, `20261015000003_venture_ask.sql` and `20261015000004_resilience.sql`. The first creates the `investor_interest` table, which the retired interest form wrote. The second creates the investor side and the private `pitches` storage bucket. The third adds the founder's ask and returns it from `discover_ventures()`. The fourth saves evidence and its files in one transaction, keeps a form sent twice once, holds the daily limit on introduction requests under simultaneous requests, and adds `health()` and the staff list of scores to update. Until the second, third and fourth are applied, the founder, investor and staff pages fail, because they read the tables, columns and functions those create. The SQL checks in `supabase/tests` were run against all seven migrations on a local PostgreSQL 16 on 15 October 2026. Then apply `20261017000001_admin.sql`, which adds the admin pages' functions, the hold on a profile and the rules for suspended accounts. Until it is applied, `/admin`, `/admin/founders`, `/admin/people` and `/admin/audit` fail, and founders cannot reach their dashboard, because it reads the new hold columns. Its checks were run against all eight migrations on a local PostgreSQL 16 on 17 October 2026.
 2. Under Authentication, URL Configuration, set the Site URL to the public address, for example `https://ikonetu.com`, and add `<that address>/auth/callback` under Redirect URLs.
 3. The other Supabase Auth settings are listed in the README under "Sign-in".
 4. After the first admin has signed in once, make them an admin with the SQL in the README under "The signed-in app".
@@ -18,14 +18,16 @@ Written on 15 October 2026. Render's documentation could not be reached from the
 
 | Setting | Value |
 |---|---|
-| Service type | Web service, Node |
+| Service type | Web service, Python |
 | Region | Frankfurt |
-| Build command | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ikonetu/web build` |
-| Start command | `pnpm --filter @ikonetu/web start` |
+| Build command | `pip install -r service/requirements.txt` |
+| Start command | `cd service && uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 | Health check path | `/` |
-| Node version | 22, set through `NODE_VERSION` (**unverified** as Render's way of choosing it) |
+| Python version | 3.13.16, set through `PYTHON_VERSION` (**unverified** as Render's way of choosing it) |
 
-`next start` reads the port from `PORT`. Render sets `PORT` for a web service (**unverified**).
+The start command reads the port from `PORT`. Render sets `PORT` for a web service (**unverified**).
+
+A service already created from the Next.js blueprint keeps its old runtime and commands until they are changed in the Render dashboard or the blueprint is applied again (**unverified**: how Render applies a changed blueprint to a service it already runs). Its environment variables keep working, because the Python app reads the same names.
 
 ## 3. Environment variables
 
@@ -43,7 +45,7 @@ Each value is entered in the Render dashboard. None is written in this repositor
 | `SENTRY_DSN` | Error reports from the server | Server only. Leave unset until Sentry is named in the privacy policy; `docs/OPERATIONS.md` has the steps |
 | `SENTRY_ENVIRONMENT` | Error reports | Optional, `production` unless set |
 
-Variables whose names start with `NEXT_PUBLIC_` are written into the browser code when the app is built. A change to one of them therefore needs a new build, not only a restart. `NEXT_PUBLIC_SUPABASE_URL` must be set before the build for another reason too: the Content-Security-Policy allows the browser to upload pitches to that address and to play them from it, and the policy is fixed at build time.
+The names starting with `NEXT_PUBLIC_` are kept from the Next.js app, which wrote them into the browser code when it was built. The Python app reads every variable when it starts, so a change needs a restart rather than a new build. The Content-Security-Policy allows the browser to upload pitches to `NEXT_PUBLIC_SUPABASE_URL` and to play them from it, so that address must be right before pitches can be uploaded.
 
 ## 4. The domain
 
@@ -52,24 +54,24 @@ The domain's DNS records point it at the Render service. Render shows the record
 ## 5. Checks after the first deployment
 
 1. The home page, `/privacy`, `/terms` and `/cookies` load at the public address.
-2. `/robots.txt` and `/sitemap.xml` name the public address, which shows `NEXT_PUBLIC_SITE_URL` was set before the build.
+2. `/robots.txt` and `/sitemap.xml` name the public address, which shows `NEXT_PUBLIC_SITE_URL` was set when the app started.
 3. `/investor-interest` redirects to `/for-investors`.
 4. A test founder uploads a short pitch at `/dashboard/pitch` and it plays back, which shows the browser can reach Supabase Storage under the Content-Security-Policy.
 5. A test investor signs up, an admin approves them at `/admin/investors`, and the investor finds the test founder at `/investor` once the founder has published.
 6. A sign-in at `/signin` sends the email, and its link returns to `/auth/callback` on the public address.
-7. The response headers carry the Content-Security-Policy set in `apps/web/next.config.ts`.
+7. The response headers carry the Content-Security-Policy set in `service/app/security.py`.
 8. The rate limit reads the right address. Send six requests to `POST /api/v1/waitlist` from one computer, each with a different made-up `X-Forwarded-For` value, for example `curl -X POST -H 'content-type: application/json' -H 'x-forwarded-for: 10.0.0.1' -d '{}' <address>/api/v1/waitlist`. The sixth must answer 429. If it does not, the address the app reads is still the one the caller wrote, and `CLIENT_IP_HEADER` must name the header in which Render passes the caller's address. Within ten minutes, send one request from a phone on a different network. It must not answer 429. If it does, every caller shares one count, because the app is reading the address of one of Render's own proxies, and `TRUSTED_PROXY_HOPS` must be raised by one.
 9. `GET /api/health` answers 200 with `"supabase":"ok"`. Point an uptime monitor at it, as `docs/OPERATIONS.md` describes.
 
 ## What the app does not need
 
-- The fonts are downloaded when the app is built and served by the app itself, so no request goes to Google Fonts.
-- The walkthrough video, its poster and the product screens are in `apps/web/public/media` and are served by the app.
+- The fonts are in `service/app/static/fonts` and are served by the app itself, so no request goes to Google Fonts.
+- The walkthrough video, its poster and the product screens are in `service/app/public/media` and are served by the app.
 - The app sets no analytics or advertising cookies.
 
 ## Health checks
 
-Render's health check stays on `/`, which is a static page and does not depend on Supabase. `/api/health` checks Supabase and is meant for an uptime monitor, so an outage at Supabase is reported without making the app look broken to Render.
+Render's health check stays on `/`, which is drawn from a template and makes no call to Supabase. `/api/health` checks Supabase and is meant for an uptime monitor, so an outage at Supabase is reported without making the app look broken to Render.
 
 ## Rate limiting
 

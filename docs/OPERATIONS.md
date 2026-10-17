@@ -19,7 +19,7 @@ The owner is on call until IkonetU has staff. The person on call needs access to
 |---|---|---|
 | `GET /api/health` answers 503 | An uptime monitor pointed at it (not set up yet) | The app runs, but Supabase did not answer within five seconds |
 | `/` does not answer | The same monitor, or Render's own health check | The app itself is down |
-| An error in Sentry | The Sentry project, once `SENTRY_DSN` is set | A server action or route failed. The event names it, for example `evidence.save_failed`, with the error code and the venture's id |
+| An error in Sentry | The Sentry project, once `SENTRY_DSN` is set | A form or a page failed on the server. The event names it, for example `evidence.save_failed`, with the error code and the venture's id |
 | A line with `"level":"error"` | Render's log stream (**unverified**: how long Render keeps logs and how its search works) | The same failures as Sentry, one JSON line each, with the time, the event name and the codes |
 | "Scores to update" on `/admin/evidence` | The staff queue | A decision was saved but the founder's score did not update after three attempts |
 
@@ -60,9 +60,11 @@ The note describes what happened. It does not blame a person.
 
 ## Turning on Sentry
 
-1. Create a Sentry project for a Next.js app. Choose Sentry's EU data region if the account offers it (**unverified**: the regions Sentry offers).
+1. Create a Sentry project for a Python app (the app uses FastAPI). Choose Sentry's EU data region if the account offers it (**unverified**: the regions Sentry offers).
 2. Add Sentry to the privacy policy as a processor of error reports before anything is sent. The policy was adopted on 15 October 2026, so this is the owner's change to make.
 3. Set `SENTRY_DSN` on Render, and optionally `SENTRY_ENVIRONMENT`, then restart the service. A rebuild is not needed, because the server reads both when it starts.
 4. Check it once: make a test founder's action fail and confirm the event arrives with only the event name, the codes, the venture's id, and the request's method and path.
 
-What Sentry receives was checked on 15 October 2026 against a local stand-in for Sentry's endpoint. Without a filter, Sentry's library attached the whole request, including the sign-in cookies and the text of the form, although `sendDefaultPii` was off. `apps/web/lib/sentry-scrub.ts` now removes the request's headers, cookies and body, the user and the breadcrumbs from every event, and the same check found none of them afterwards.
+What Sentry receives was checked on 15 October 2026 against a local stand-in for Sentry's endpoint. Without a filter, Sentry's library attached the whole request, including the sign-in cookies and the text of the form, although `sendDefaultPii` was off. The Next.js app then removed the request's headers, cookies and body, the user and the breadcrumbs from every event, and the same check found none of them afterwards.
+
+The Python app does the same in `scrub()` in `service/app/log.py`. The check was repeated against it on 17 October 2026: a progress update was made to fail, and the one event the stand-in received carried the request's method and path, the event name and the codes, and no cookie, token, email address or form text. The event still says that a cookie header and four breadcrumbs were removed, because Sentry's library notes each removal, without their contents.

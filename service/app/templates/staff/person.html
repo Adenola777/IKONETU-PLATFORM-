@@ -1,0 +1,118 @@
+{% extends "app/shell.html" %}
+{# One account: its details, a role change, a suspension, and its entries in the audit log. Admins only. #}
+{% from "app/ui.html" import field_error, invalid, form_status %}
+{% set role = "admin" %}
+{% set current = "people" %}
+{% macro log_entries(entries) -%}
+<ul class="log">
+{% for e in entries %}
+<li>
+<time datetime="{{ e.created_at }}">{{ date_text(e.created_at) }}</time>
+<div>
+<p>{{ e.actor }} {{ action_text(e.action) }}.</p>
+<ul class="lines">
+{% for l in e.lines %}<li>{{ l }}</li>{% endfor %}
+{% if e.reason %}<li>Reason: {{ e.reason }}</li>{% endif %}
+</ul>
+</div>
+</li>
+{% endfor %}
+</ul>
+{%- endmacro %}
+{% block main %}
+<a class="back" href="/admin/people">Back to people</a>
+<h1 class="app-title">{{ a.full_name }}</h1>
+<p class="app-lede">{{ ROLE_NAME[a.role] }} · {{ ACCOUNT_STATUS_NAME[a.status] }} · {{ a.email if a.email is not none else "No email address" }}</p>
+{% if done %}<p class="status status-ok" role="status" style="margin-bottom:24px">{{ done }}</p>{% endif %}
+
+<div class="side">
+<div class="stack">
+{% if own_account %}
+<p class="status status-info" role="status">This is your own account. Nobody can change their own role or status, so another admin makes any change here.</p>
+{% else %}
+<section class="card" aria-labelledby="role-h">
+<h2 id="role-h" class="app-h2">Role</h2>
+<p class="body2" style="margin-bottom:16px">{{ a.full_name }} is {{ "an admin" if a.role == "admin" else "a " ~ a.role }}. A person becomes a founder only if they have a venture, and an investor only if they have investor details.</p>
+{% if roles %}
+{% set st = states.get("role", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set v = st.get("values", {}) %}
+{# Changes the person's role to one of the roles their account can hold. #}
+<form class="form" method="post" action="/admin/people/{{ a.user_id }}/role" novalidate>
+{{ form_status(st) }}
+<input type="hidden" name="id" value="{{ a.user_id }}">
+<div class="field">
+<label for="r-role">New role</label>
+<select id="r-role" name="role" class="input"{{ invalid(errors, "role") }}>
+<option value=""{% if one(v, 'role') == "" %} selected{% endif %}>Choose a role</option>
+{% for r in roles %}<option value="{{ r }}"{% if one(v, 'role') == r %} selected{% endif %}>{{ ROLE_NAME[r] }}</option>{% endfor %}
+</select>
+{{ field_error(errors, "role") }}
+{% if a.role == "founder" %}<p class="hint">A founder who becomes a reviewer or an admin is taken out of investors' view, so IkonetU staff have no profile in discovery.</p>{% endif %}
+</div>
+<div class="field">
+<label for="r-reason">Reason, for the audit log (optional)</label>
+<textarea id="r-reason" name="reason" class="input" rows="2" maxlength="280"{{ invalid(errors, "reason") }}>
+{{ one(v, "reason") }}</textarea>
+{{ field_error(errors, "reason") }}
+</div>
+<div class="row"><button type="submit" class="btn btn-n" data-pending="Changing the role">Change the role</button></div>
+</form>
+{% else %}
+<p class="body2" style="margin:0">No other role fits this account.</p>
+{% endif %}
+</section>
+
+<section class="card{{ ' hold' if a.status == 'suspended' else '' }}" aria-labelledby="status-h">
+<h2 id="status-h" class="app-h2">Status</h2>
+{% if a.status == "pending" %}
+<p class="body2" style="margin:0">This investor is waiting for approval. <a href="/admin/investors">Approve or decline on the Investors page</a>.</p>
+{% else %}
+{% set suspend = a.status == "active" %}
+{% if suspend %}
+<p class="body2" style="margin-bottom:16px">The account is active. A suspended account can sign in but cannot change anything, and investors cannot see a suspended founder's profile.</p>
+{% else %}
+<p class="body2" style="margin-bottom:16px">The account is suspended. Making it active again does not publish a founder's profile.</p>
+{% endif %}
+{% set st = states.get("status", {}) %}
+{% set errors = st.get("errors", {}) %}
+{# Suspends an active account with a reason, or makes a suspended one active again. #}
+<form class="form" method="post" action="/admin/people/{{ a.user_id }}/status" novalidate>
+{{ form_status(st) }}
+<input type="hidden" name="id" value="{{ a.user_id }}">
+<input type="hidden" name="status" value="{{ 'suspended' if suspend else 'active' }}">
+<div class="field">
+<label for="s-reason">{{ "Why are you suspending this account?" if suspend else "Reason, for the audit log (optional)" }}</label>
+<textarea id="s-reason" name="reason" class="input" rows="2" maxlength="280"{% if suspend %} required{% endif %}{{ invalid(errors, "reason", "s-reason-hint" if suspend else none) }}>
+{{ one(st.get("values", {}), "reason") }}</textarea>
+{% if suspend %}<p id="s-reason-hint" class="hint">The reason goes to the audit log. No email is sent{{ ", and the founder's profile leaves investors' view at once" if a.role == "founder" else "" }}.</p>{% endif %}
+{{ field_error(errors, "reason") }}
+</div>
+<div class="row"><button type="submit" class="{{ 'btn danger' if suspend else 'btn btn-n' }}" data-pending="Saving">{{ "Suspend the account" if suspend else "Make the account active again" }}</button></div>
+</form>
+{% endif %}
+</section>
+{% endif %}
+
+<section class="card" aria-labelledby="log-h">
+<h2 id="log-h" class="app-h2">Changes to this account</h2>
+{% if not entries %}
+<p class="body2" style="margin:0">The audit log holds no change to this account.</p>
+{% else %}
+{{ log_entries(entries) }}
+{% endif %}
+</section>
+</div>
+
+<aside class="card" aria-labelledby="acct-h">
+<h2 id="acct-h" class="app-h3">Account</h2>
+<dl class="kv kv-stack">
+<dt>Email address</dt><dd>{{ a.email if a.email is not none else "None" }}</dd>
+<dt>Joined</dt><dd>{{ date_text(a.created_at) }}</dd>
+<dt>Last signed in</dt><dd>{{ date_text(a.last_sign_in_at) if a.last_sign_in_at else "Not recorded" }}</dd>
+{% if a.venture_id %}<dt>Venture</dt><dd><a href="/admin/founders/{{ a.venture_id }}">{{ a.venture_name }}</a></dd>{% endif %}
+{% if has_investor %}<dt>Investor details</dt><dd>{{ a.firm if a.firm is not none else "No fund or firm given" }}. <a href="/admin/investors">Investors page</a></dd>{% endif %}
+</dl>
+</aside>
+</div>
+{% endblock %}

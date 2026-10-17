@@ -1,0 +1,3 @@
+-r requirements.txt
+# Test-only packages.
+pytest==9.1.1

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{# The frame of the sign-in pages: the lockup, a way back home, and one narrow column. #}
+{% block styles %}<link rel="stylesheet" href="/static/css/sign-in.css">{% endblock %}
+{% block body %}
+<div class="site pg-signin">
+<div class="page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="si-hdr">
+<div class="si-hdr-in">
+<a href="/" aria-label="IkonetU home">{{ logo("default", 34) }}</a>
+<a href="/">Back to the home page</a>
+</div>
+</header>
+<main id="main" class="si-main">
+{% if label %}<p class="si-lbl">{{ label }}</p>{% endif %}
+{% block content %}{% endblock %}
+</main>
+</div>
+</div>
+{% endblock %}

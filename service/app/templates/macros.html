@@ -1,0 +1,14 @@
+{# Field helpers shared by every form. An error sits under its field and is tied to it by id. #}
+{% macro err(errors, name) -%}
+{% if errors.get(name) %}<p id="{{ name }}-err" class="err">{{ errors[name] }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro invalid(errors, name) -%}
+{% if errors.get(name) %} aria-invalid="true" aria-describedby="{{ name }}-err"{% endif %}
+{%- endmacro %}
+
+{# The reply of a form: an error at the top, or a short confirmation. #}
+{% macro status(state) -%}
+{% if state and state.status == "error" %}<p class="status status-err" role="alert">{{ state.message }}</p>
+{% elif state and state.status == "sent" %}<p class="status status-ok" role="status">{{ state.message }}</p>{% endif %}
+{%- endmacro %}

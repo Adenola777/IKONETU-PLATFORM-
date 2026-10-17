@@ -1,0 +1,116 @@
+{% extends "app/shell.html" %}
+{% from "app/ui.html" import field_error, invalid %}
+{% set current = "queue" %}
+{% block scripts %}<script src="/static/js/app/decision-form.js" defer></script>{% endblock %}
+{# One branch of the decision form: what an approval asks, or the reason for the other two decisions. #}
+{% macro approve_fields(values, errors) -%}
+<fieldset class="field">
+<legend>How did you check it?</legend>
+<div class="stack-s">
+{% for l in REVIEW_LANES %}
+<label class="opt opt-tall"><input type="radio" name="lane" value="{{ l.code }}"{% if one(values, 'lane') == l.code %} checked{% endif %}><span><b>{{ l.name }}</b><span class="small">{{ l.hint }}</span></span></label>
+{% endfor %}
+</div>
+{{ field_error(errors, "lane") }}
+</fieldset>
+<div class="field">
+<label for="d-note">What did you compare? Investors read this.</label>
+<textarea id="d-note" name="publicNote" class="input" rows="3" maxlength="280"{{ invalid(errors, "publicNote", "d-note-hint") }}>
+{{ one(values, "publicNote") }}</textarea>
+<p id="d-note-hint" class="hint">For example: compared the stated revenue with twelve months of bank statements. Do not copy figures the founder has not chosen to show.</p>
+{{ field_error(errors, "publicNote") }}
+</div>
+{% if mode == "per_item" %}
+<div class="field">
+<label for="d-count">How many items did you confirm?</label>
+<input id="d-count" name="itemCount" class="input" inputmode="numeric" value="{{ one(values, 'itemCount') }}"{{ invalid(errors, "itemCount") }}>
+{{ field_error(errors, "itemCount") }}
+</div>
+{% elif mode == "months" %}
+<div class="field">
+<label for="d-months">How many months did you confirm?</label>
+<input id="d-months" name="months" class="input" inputmode="numeric" value="{{ one(values, 'months') }}"{{ invalid(errors, "months") }}>
+{{ field_error(errors, "months") }}
+</div>
+{% elif mode == "revenue" %}
+<div class="field">
+<label for="d-rev">Revenue you confirmed over the last 12 months, in US dollars</label>
+<input id="d-rev" name="revenueUsd" class="input" inputmode="decimal" value="{{ one(values, 'revenueUsd') }}"{{ invalid(errors, "revenueUsd", "d-rev-hint") }}>
+<p id="d-rev-hint" class="hint">Used for the founder's score only. Investors do not see it.</p>
+{{ field_error(errors, "revenueUsd") }}
+</div>
+{% elif mode == "stage" %}
+<div class="field">
+<label for="d-stage">Stage you confirmed</label>
+<select id="d-stage" name="stage" class="input">
+<option value=""{% if one(values, 'stage') == "" %} selected{% endif %}>Choose a stage</option>
+{% for s in STAGES %}<option value="{{ s.code }}"{% if one(values, 'stage') == s.code %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
+</select>
+</div>
+{% endif %}
+{%- endmacro %}
+{% macro reason_field(values, errors, decision) -%}
+<div class="field">
+<label for="d-reason">{{ "Why is it not accepted?" if decision == "reject" else "What more do you need?" }} The founder reads this.</label>
+<textarea id="d-reason" name="reason" class="input" rows="4" maxlength="600"{{ invalid(errors, "reason") }}>
+{{ one(values, "reason") }}</textarea>
+{{ field_error(errors, "reason") }}
+</div>
+{%- endmacro %}
+{% block main %}
+<a href="/admin/evidence" class="back">{{ icon("arrow-left", 16) }} Evidence to review</a>
+<p class="lbl" style="margin-bottom:8px">{{ area_label(category) }} · {{ (e.ventures or {}).get("name") or "" }}</p>
+<h1 class="app-title">{{ signal_label(e.signal_code) }}</h1>
+<div class="side">
+<section class="card stack-s" aria-labelledby="what-h">
+<h2 id="what-h" class="app-h2">What the founder sent</h2>
+<p class="body2">{{ e.summary if e.summary is not none else "No description." }}</p>
+<p class="small" style="margin:0">Added on {{ date_text(e.created_at) }}.</p>
+{% if e.source_ref %}<p class="body2">Link: <a href="{{ e.source_ref }}" target="_blank" rel="noopener nofollow noreferrer">{{ e.source_ref }}</a></p>{% endif %}
+{% if not files %}
+<p class="body2">No files.</p>
+{% else %}
+<ul class="ev">
+{% for f in files %}
+<li>
+<span class="what">File {{ loop.index }}, {{ "PDF" if f.mime_type == "application/pdf" else ("PNG" if f.mime_type == "image/png" else "JPEG") }}, {{ f.size_text }} MB</span>
+<p class="small" style="margin:4px 0 0">{% if f.url %}<a href="{{ f.url }}" target="_blank" rel="noopener noreferrer">Open the file</a>{% else %}The file could not be opened.{% endif %} The link lasts five minutes.</p>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if twins %}
+<p class="status status-err" role="note">The same file is attached to {{ twins }} other {{ "piece" if twins == 1 else "pieces" }} of evidence. Check that it belongs to this venture.</p>
+{% endif %}
+</section>
+<aside class="card" aria-labelledby="dec-h">
+<h2 id="dec-h" class="app-h2">Your decision</h2>
+{% if own %}
+<p class="body2">This is evidence on your own venture, so someone else must decide it.</p>
+{% elif not open %}
+<p class="body2">This evidence has already been decided.</p>
+{% else %}
+{% set st = states.get("decision", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set values = st.get("values", {}) if st.get("status") == "error" else {} %}
+{% set decision = one(values, "decision") or "approve" %}
+<form class="form" method="post" action="/admin/evidence/{{ e.id }}" novalidate data-decision-form>
+{% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
+<input type="hidden" name="id" value="{{ e.id }}">
+<fieldset class="field">
+<legend>Decision</legend>
+<div class="opts opts-3">
+{% for v, l in [("approve", "Approve"), ("needs_more", "Ask for more"), ("reject", "Reject")] %}<label class="opt"><input type="radio" name="decision" value="{{ v }}"{% if decision == v %} checked{% endif %}> {{ l }}</label>{% endfor %}
+</div>
+{{ field_error(errors, "decision") }}
+</fieldset>
+{% if decision == "approve" %}{{ approve_fields(values, errors) }}{% else %}{{ reason_field(values, errors, decision) }}{% endif %}
+{# The branches the decision can switch to, drawn as they first appear. decision-form.js swaps them in. #}
+<template data-branch="approve">{{ approve_fields(values, errors) }}</template>
+<template data-branch="reason">{{ reason_field(values, errors, "needs_more") }}</template>
+<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Saving…">Save the decision</button>
+</form>
+{% endif %}
+</aside>
+</div>
+{% endblock %}

@@ -12,3 +12,9 @@ coverage/
 supabase/.temp/
 .DS_Store
 Thumbs.db
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

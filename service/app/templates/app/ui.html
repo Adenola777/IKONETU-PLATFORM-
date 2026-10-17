@@ -1,0 +1,50 @@
+{# The pieces the signed-in pages share. Ported from components/app/ui.tsx. #}
+
+{# One evidence status, as a chip with its icon and name. #}
+{% macro status_chip(status) -%}
+{% set s = STATUS[status] %}<span class="chip {{ s.chip }}">{{ icon(s.icon, 14) }}{{ s.name }}</span>
+{%- endmacro %}
+
+{#
+  The readiness check: eight cells, one per area, strong, building or a gap. The sentence next
+  to it says the same in words, so colour is never the only signal.
+#}
+{% macro area_meter(areas) -%}
+<p class="row small" style="margin:0;gap:10px">
+<span class="ameter" aria-hidden="true">{% for c in area_cells(areas) %}<i class="{{ c.level }}" title="{{ c.label }}: {{ LEVEL[c.level].name }}"></i>{% endfor %}</span>
+<span>Readiness check: {{ meter_sentence(areas) }}</span>
+</p>
+{%- endmacro %}
+
+{% macro meter_legend() -%}
+<ul class="legend" aria-label="What the cells mean">
+<li><span class="ameter" aria-hidden="true"><i class="strong"></i></span>Strong: {{ LEVEL.strong.means | lower }}</li>
+<li><span class="ameter" aria-hidden="true"><i class="building"></i></span>Building: {{ LEVEL.building.means | lower }}</li>
+<li><span class="ameter" aria-hidden="true"><i class="gap"></i></span>Gap: {{ LEVEL.gap.means | lower }}</li>
+</ul>
+{%- endmacro %}
+
+{# The error under a field, tied to it by id. #}
+{% macro field_error(errors, name) -%}
+{% if errors.get(name) %}<p id="{{ name }}-err" class="err">{{ errors[name] }}</p>{% endif %}
+{%- endmacro %}
+
+{#
+  aria-invalid and aria-describedby for a field. A field with an error is described by the
+  error; otherwise by its hint, when it has one, as the React forms did.
+#}
+{% macro invalid(errors, name, hint=none) -%}
+{% if errors.get(name) %} aria-invalid="true" aria-describedby="{{ name }}-err"{% elif hint %} aria-describedby="{{ hint }}"{% endif %}
+{%- endmacro %}
+
+{# The reply to a form: an error at the top, or a short confirmation. #}
+{% macro form_status(state) -%}
+{% if state.status == "error" %}<p class="status status-err" role="alert">{{ state.message }}</p>
+{% elif state.status == "sent" %}<p class="status status-ok" role="status">{{ state.message }}</p>
+{% endif %}
+{%- endmacro %}
+
+{# A hidden field carrying a key made when the form is shown, so sending it twice saves it once. #}
+{% macro request_key(key) -%}
+<input type="hidden" name="requestKey" value="{{ key }}">
+{%- endmacro %}

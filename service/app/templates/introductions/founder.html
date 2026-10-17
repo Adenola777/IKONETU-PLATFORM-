@@ -1,0 +1,53 @@
+{% extends "app/shell.html" %}
+{% set role = "founder" %}
+{% set current = "introductions" %}
+{% macro line(r) %}{{ INVESTOR_TYPE_NAME.get(r.investor_type, r.investor_type) }}{% if r.investor_firm %}, {{ r.investor_firm }}{% endif %}{% endmacro %}
+{% block main %}
+<h1 class="app-title">Introductions</h1>
+<p class="app-lede">An approved investor asks with a short note, and you decide. You do not have to give a reason. Accepting opens a conversation on IkonetU. It does not share your email or phone number, and it does not mean the investor will invest.</p>
+
+<section aria-labelledby="p-h" class="stack">
+<h2 id="p-h" class="app-h2">Waiting for your answer ({{ pending | length }})</h2>
+{% if not pending %}
+<div class="empty"><p>No request is waiting for you.</p></div>
+{% else %}
+<ul class="reqs">
+{% for r in pending %}
+<li class="card">
+<h3 class="app-h3">{{ r.investor_name }}</h3>
+<p class="small" style="margin:0 0 12px">{{ line(r) }} · asked on {{ date_text(r.created_at) }}</p>
+<blockquote class="quote">{{ r.note }}</blockquote>
+<div class="row" style="margin-top:16px">
+<form method="post" action="/dashboard/introductions/answer"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="answer" value="accepted"><button type="submit" class="btn btn-f btn-sm">Accept and open a conversation</button></form>
+<form method="post" action="/dashboard/introductions/answer"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="answer" value="declined"><button type="submit" class="btn btn-n btn-sm">Decline</button></form>
+</div>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+
+<section aria-labelledby="o-h" class="stack" style="margin-top:48px">
+<h2 id="o-h" class="app-h2">Conversations ({{ open | length }})</h2>
+{% if not open %}
+<div class="empty"><p>You have no open conversations.</p></div>
+{% else %}
+<ul class="reqs">
+{% for r in open %}
+<li class="card row" style="justify-content:space-between"><span><strong>{{ r.investor_name }}</strong> <span class="small">{{ line(r) }} · accepted on {{ date_text(r.decided_at) }}</span></span><a class="btn btn-i btn-sm" href="/introductions/{{ r.id }}">Open the conversation</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+
+{% if closed %}
+<section aria-labelledby="c-h" class="stack" style="margin-top:48px">
+<h2 id="c-h" class="app-h2">Closed</h2>
+<ul class="reqs">
+{% for r in closed %}
+<li class="small">{{ r.investor_name }}, {{ line(r) }}: {{ "you declined" if r.status == "declined" else "withdrawn by the investor" }} on {{ date_text(r.decided_at) }}.</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% endblock %}

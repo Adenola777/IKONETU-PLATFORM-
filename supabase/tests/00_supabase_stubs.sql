@@ -4,7 +4,7 @@ do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role; end if;
 end $$;
 create schema auth; create schema storage;
-create table auth.users (id uuid primary key);
+create table auth.users (id uuid primary key, email text, last_sign_in_at timestamptz);
 -- These read the claims the way Supabase's own auth.uid() and auth.role() do:
 -- the single setting first, then the JSON one that PostgREST 10 and later sets.
 create function auth.uid() returns uuid language sql stable as $$
