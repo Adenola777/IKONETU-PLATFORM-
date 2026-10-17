@@ -1,0 +1,2 @@
+# Test-only packages. The app itself has no dependencies yet.
+pytest==9.1.1
