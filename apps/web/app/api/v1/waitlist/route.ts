@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { clientAddress } from "@/lib/client-ip";
 import { createLimiter } from "@/lib/rate-limit";
 import { insertWaitlistRow } from "@/lib/supabase-rest";
 import { parseWaitlist } from "@/lib/waitlist";
@@ -12,8 +13,7 @@ const MAX_BODY_BYTES = 4_096;
 const DONE = { ok: true, message: "You are on the list. We will tell you when Season 1 opens in your country." };
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!allow(ip)) {
+  if (!allow(clientAddress(req.headers))) {
     return NextResponse.json({ ok: false, message: "Too many attempts. Please try again in a few minutes." }, { status: 429 });
   }
   if (!req.headers.get("content-type")?.includes("application/json")) {

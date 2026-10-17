@@ -91,4 +91,11 @@ describe("POST /api/v1/waitlist", () => {
     expect(codes.slice(0, 5).every((c) => c === 422)).toBe(true);
     expect(codes[5]).toBe(429);
   });
+
+  it("cannot be bypassed by writing a new address at the start of X-Forwarded-For", async () => {
+    const { POST } = await load();
+    const codes = [];
+    for (let i = 0; i < 6; i++) codes.push((await POST(req({}, { "x-forwarded-for": `198.51.100.${i}, 203.0.113.77` }))).status);
+    expect(codes[5]).toBe(429);
+  });
 });

@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { parseOnboarding } from "@/lib/account";
 import { createClient } from "@/lib/supabase/server";
 import { type FormState, typedValues } from "../form-state";
+import { logError } from "@/lib/log";
 
 const TEXT_FIELDS = [
   "fullName", "country", "city", "institution", "graduateStatus", "bio",
-  "ventureName", "sector", "stage", "description", "website", "linkedin", "x", "instagram",
+  "ventureName", "sector", "stage", "description", "ask", "website", "linkedin", "x", "instagram",
 ] as const;
 
 const FAILED = { status: "error", message: "We could not save your details. Please try again.", errors: {} } as const;
@@ -49,6 +50,6 @@ export async function completeOnboarding(_prev: FormState, form: FormData): Prom
 }
 
 function logged(step: string, error: { code?: string }, values: Record<string, string>): FormState {
-  console.error(`onboarding: ${step} failed`, error.code);
+  logError("onboarding.founder_failed", { step, code: error.code });
   return { ...FAILED, values };
 }

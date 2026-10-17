@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logWarn } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
   if (code && supabase) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(new URL("/dashboard", request.url));
-    console.error("exchangeCodeForSession failed", error.status, error.code);
+    logWarn("auth.callback_failed", { status: error.status, code: error.code });
   }
   return NextResponse.redirect(new URL("/signin?error=link", request.url));
 }

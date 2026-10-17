@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { COUNTRIES } from "./constants";
+import { SECTORS } from "./product";
 import { normaliseContact, PRIVACY_VERSION } from "./waitlist";
 
 export const STAGES = [
@@ -92,15 +93,16 @@ export const onboardingSchema = z
     graduateStatus: optionalText(80, "Keep this to 80 characters."),
     bio: optionalText(600, "Keep your bio to 600 characters."),
     ventureName: z.string().trim().min(1, "Enter your venture's name.").max(120, "The venture name is too long."),
-    sector: z.string().trim().min(2, "Enter your sector, for example Fintech.").max(60, "The sector is too long."),
+    sector: z.enum(SECTORS, { message: "Choose your sector." }),
     stage: z.enum(STAGE_CODES, { message: "Choose your stage." }),
     description: optionalText(280, "Keep the description to 280 characters."),
+    ask: optionalText(160, "Keep the ask to 160 characters.").refine((v) => v === null || v.length >= 5, { message: "Write at least 5 characters, or leave it empty." }),
     website: optionalUrl("Enter a full web address, for example learnloop.ng."),
     linkedin: optionalUrl("Enter a full LinkedIn address."),
     x: optionalUrl("Enter a full X address."),
     instagram: optionalUrl("Enter a full Instagram address."),
     confirmedAdult: adult,
-    acceptedPrivacy: z.boolean().refine((v) => v, { message: "Please confirm you have read the privacy notice." }),
+    acceptedPrivacy: z.boolean().refine((v) => v, { message: "Please confirm you have read the privacy policy." }),
     consents: z.record(z.boolean()),
   })
   .strict();
@@ -120,10 +122,11 @@ export type OnboardingRows = {
   consents: { consent_type: ConsentCode; granted: boolean; policy_version: string }[];
   venture: {
     name: string;
-    sector: string;
+    sector: (typeof SECTORS)[number];
     stage: (typeof STAGE_CODES)[number];
     country: "NG" | "GH" | "KE";
     description: string | null;
+    ask: string | null;
     website: string | null;
     social_links: Record<string, string>;
   };
@@ -150,6 +153,7 @@ export function parseOnboarding(
     sector: text("sector"),
     stage: text("stage"),
     description: text("description"),
+    ask: text("ask"),
     website: text("website"),
     linkedin: text("linkedin"),
     x: text("x"),
@@ -190,6 +194,7 @@ export function parseOnboarding(
         stage: d.stage,
         country: d.country,
         description: d.description,
+        ask: d.ask,
         website: d.website,
         social_links: social,
       },

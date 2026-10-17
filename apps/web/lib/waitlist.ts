@@ -3,8 +3,8 @@ import { COUNTRIES, ROLES } from "./constants";
 
 export { COUNTRIES, ROLES };
 
-/** Version of the privacy notice a person accepts when they join. */
-export const PRIVACY_VERSION = "2026-10-draft";
+/** Version of the privacy policy a person accepts: the one IkonetU Technology Limited adopted on 15 October 2026. */
+export const PRIVACY_VERSION = "2026-10-15";
 
 const EMAIL = z.string().email();
 
@@ -42,7 +42,7 @@ export const waitlistSchema = z
     country: z.enum(["NG", "GH", "KE"], { message: "Choose your country." }),
     role: z.enum(ROLES, { message: "Choose how you are joining." }),
     confirmedAdult: z.boolean().refine((v) => v, { message: "You must be 18 or older to join." }),
-    acceptedPrivacy: z.boolean().refine((v) => v, { message: "Please confirm you have read the privacy notice." }),
+    acceptedPrivacy: z.boolean().refine((v) => v, { message: "Please confirm you have read the privacy policy." }),
     // Honeypot: people never see this field, so it must stay empty.
     website: z.string().max(0).optional().default(""),
   })

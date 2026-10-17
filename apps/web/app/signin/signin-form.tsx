@@ -50,7 +50,7 @@ export function SignInForm({ phoneEnabled }: { phoneEnabled: boolean }) {
         {err("confirmedAdult")}
       </div>
 
-      <button type="submit" className="btn btn-navy" style={{ alignSelf: "flex-start" }} disabled={pending}>
+      <button type="submit" className="btn btn-f btn-lg" style={{ alignSelf: "flex-start" }} disabled={pending}>
         {pending ? "Sending…" : "Send my code"}
       </button>
 
@@ -60,7 +60,7 @@ export function SignInForm({ phoneEnabled }: { phoneEnabled: boolean }) {
         </button>
       )}
       <p className="hint">
-        By continuing you confirm you have read the <a href="/privacy" target="_blank" rel="noopener">privacy notice</a>.
+        By continuing you agree to the <a href="/terms" target="_blank" rel="noopener">terms</a> and confirm you have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.
       </p>
     </form>
   );

@@ -1,0 +1,40 @@
+# Render blueprint for the IkonetU web app, in Frankfurt.
+#
+# UNVERIFIED: written on 15 October 2026 without access to Render's documentation,
+# which this session could not reach. Render checks the file when the blueprint is
+# created, and the dashboard shows any field it does not accept. The build and start
+# commands were run as written on Node 22 and answered on the port in PORT.
+#
+# Every value marked sync: false is entered in the Render dashboard, never in this file.
+services:
+  - type: web
+    name: ikonetu-web
+    runtime: node
+    region: frankfurt
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ikonetu/web build
+    startCommand: pnpm --filter @ikonetu/web start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # The public address, with https:// and no trailing slash, for example https://ikonetu.com.
+      # Supabase Auth must list <this address>/auth/callback under Redirect URLs.
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      # Server-only. Used by the waitlist endpoint.
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Leave unset until an SMS and WhatsApp provider is set up in Supabase Auth.
+      - key: NEXT_PUBLIC_PHONE_SIGN_IN
+        sync: false
+      # The number of proxies in front of the app, for the waitlist's rate limit.
+      # UNVERIFIED for Render; docs/HOSTING.md has the check to run after the first deploy.
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      # Error tracking. Leave unset until the privacy policy names Sentry (docs/OPERATIONS.md).
+      - key: SENTRY_DSN
+        sync: false

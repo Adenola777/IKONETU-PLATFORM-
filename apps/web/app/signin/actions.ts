@@ -7,6 +7,7 @@ import { CODE_LIFETIME_SECONDS, PENDING_COOKIE, phoneSignInEnabled, type Pending
 import { SITE_URL } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { type FormState, typedValues } from "../form-state";
+import { logError, logWarn } from "@/lib/log";
 
 /**
  * Sends a six-digit sign-in code (PRD A-1, A-2). Supabase creates the account
@@ -48,7 +49,7 @@ export async function sendCode(_prev: FormState, form: FormData): Promise<FormSt
   }
 
   if (error) {
-    console.error("signInWithOtp failed", error.status, error.code);
+    (error.status && error.status < 500 ? logWarn : logError)("auth.code_request_failed", { status: error.status, code: error.code });
     const message =
       error.status === 429
         ? "Too many codes were requested. Please wait a few minutes and try again."

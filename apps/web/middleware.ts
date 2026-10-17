@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabasePublicEnv } from "@/lib/supabase/env";
+import { timedFetch } from "@/lib/timed-fetch";
 
 /**
  * Runs only on the signed-in pages listed in the matcher below. It refreshes
@@ -13,6 +14,7 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(env.url, env.key, {
+    global: { fetch: timedFetch() },
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -34,5 +36,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/investor/:path*", "/introductions/:path*", "/admin/:path*"],
 };

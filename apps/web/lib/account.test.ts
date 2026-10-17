@@ -105,6 +105,7 @@ describe("parseOnboarding", () => {
           sector: "Edtech",
           stage: "mvp",
           country: "NG",
+          ask: null,
           description: null,
           website: "https://learnloop.ng",
           social_links: { instagram: "https://instagram.com/learnloop" },
@@ -125,7 +126,7 @@ describe("parseOnboarding", () => {
     if (!result.ok) expect(result.errors.confirmedAdult).toBe("You must be 18 or older to join.");
   });
 
-  it("requires the privacy notice box", () => {
+  it("requires the privacy policy box", () => {
     const { acceptedPrivacy: _, ...rest } = VALID;
     const result = parseOnboarding(form(rest));
     expect(result.ok).toBe(false);

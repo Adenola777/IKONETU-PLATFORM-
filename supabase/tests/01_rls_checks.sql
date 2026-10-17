@@ -21,6 +21,10 @@ insert into public.evidence (venture_id, signal_code) values ('aaaaaaaa-0000-000
 update public.evidence set status = 'approved';
 \echo T8 waitlist read as signed-in user (expect 0 rows)
 select count(*) as waitlist_rows from public.waitlist;
+\echo T8b investor interest read as signed-in user (expect 0 rows or permission error)
+select count(*) as investor_interest_rows from public.investor_interest;
+\echo T8c investor interest written as signed-in user (expect permission or RLS error)
+insert into public.investor_interest (full_name, email, country, sectors, cheque_size, investor_type, confirmed_adult, confirmed_statement, email_consent, privacy_version) values ('X Y', 'x@example.com', 'NG', array['Fintech'], 'Prefer not to say', 'angel', true, true, true, 'test');
 \echo T9 upload into own folder (expect ok)
 insert into storage.objects (bucket_id, name) values ('evidence', '11111111-1111-1111-1111-111111111111/abc.pdf');
 \echo T10 upload into another user folder (expect RLS error)
@@ -29,7 +33,7 @@ insert into storage.objects (bucket_id, name) values ('evidence', '22222222-2222
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 \echo T11 second user reads first user evidence (expect 0)
 select count(*) as visible_evidence from public.evidence;
-\echo T12 second user can see the venture card (expect 1)
+\echo T12 second user cannot see an unpublished venture (expect 0)
 select count(*) as visible_ventures from public.ventures;
 \echo T13 second user submits evidence on first user venture (expect RLS error)
 insert into public.evidence (venture_id, signal_code) values ('aaaaaaaa-0000-0000-0000-000000000001', 'website_live');
@@ -57,7 +61,7 @@ reset role;
 set role authenticated;
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 set request.jwt.claim.role = 'authenticated';
-\echo T20 signed-in user reads the founder card (expect 1)
+\echo T20 signed-in user who is not an approved investor reads no founder card (expect 0)
 select count(*) as visible_cards from public.public_profiles;
 \echo T21 signed-in user renames another founder through the view (expect permission denied)
 update public.public_profiles set full_name = 'Changed Name';
