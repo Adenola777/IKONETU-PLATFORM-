@@ -173,3 +173,48 @@
 .pg-app .kv-stack{grid-template-columns:minmax(0,1fr);row-gap:2px}
 .pg-app .kv-stack dd{margin-bottom:10px}
 .pg-app .thumb:hover{color:#FFFFFF}
+
+/* Staff pages: overview tiles, counts, the north star, lists and filters */
+.pg-app .tiles{align-items:stretch}
+.pg-app .tile{display:flex;flex-direction:column;gap:6px}
+.pg-app .tile-lbl{margin:0;font-size:15px;font-weight:600;color:#344054}
+.pg-app .tile-num{margin:0;font-family:var(--font-serif),Georgia,serif;font-size:40px;font-weight:600;line-height:1.1;color:#101828;font-variant-numeric:tabular-nums}
+.pg-app .tile-due{background:#FFF8F2;border-color:#FDE3CF}
+.pg-app .counts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin:0}
+.pg-app .count{padding:16px 20px;border:1px solid #E7EAF0;border-radius:16px;background:#FFFFFF}
+.pg-app .count dt{font-size:14px;line-height:1.4;color:#475467}
+.pg-app .count dd{margin:6px 0 0;font-size:24px;font-weight:600;line-height:1.2;color:#101828;font-variant-numeric:tabular-nums}
+.pg-app .count dd a{color:#123C7A}
+.pg-app .ns-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:32px;align-items:end}
+.pg-app .ns-big{margin:0;display:flex;flex-direction:column}
+.pg-app .ns-num{font-family:var(--font-serif),Georgia,serif;font-size:64px;font-weight:600;line-height:1;color:#123C7A;font-variant-numeric:tabular-nums}
+.pg-app .ns-lbl{margin-top:8px;font-size:15px;color:#475467}
+.pg-app .ns-chart{margin:0;max-width:480px}
+.pg-app .ns-chart svg{display:block;width:100%;height:auto}
+.pg-app .ns-bar{fill:#123C7A}
+.pg-app .ns-axis{stroke:#D0D5DD;stroke-width:1}
+.pg-app .ns-val{font-size:14px;font-weight:600;fill:#101828;font-variant-numeric:tabular-nums}
+.pg-app .ns-mon{font-size:14px;fill:#475467}
+.pg-app .tools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:0 0 24px}
+.pg-app .tools .field{flex:1 1 220px;max-width:360px}
+.pg-app .tools .field-s{flex:0 1 220px}
+.pg-app .tbl .chip{white-space:nowrap}
+.pg-app .tbl .sub{display:block;font-weight:400;font-size:14px;color:#475467}
+.pg-app .tbl a{color:#123C7A}
+.pg-app .hold{border-color:#FECDCA;background:#FEF3F2}
+.pg-app .log{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.pg-app .log li{display:grid;grid-template-columns:180px minmax(0,1fr);gap:16px;padding:16px 0;border-top:1px solid #E7EAF0}
+.pg-app .log li:first-child{border-top:0}
+.pg-app .log time{font-size:14px;font-weight:600;color:#475467}
+.pg-app .log p{margin:0}
+.pg-app .log .lines{margin:6px 0 0;padding:0;list-style:none;font-size:14px;color:#475467}
+.pg-app .log .lines li{display:block;padding:0;border:0}
+.pg-app .danger{background:#B42318;border-color:#B42318;color:#FFFFFF}
+.pg-app .danger:hover{background:#912018;border-color:#912018;color:#FFFFFF}
+@media (max-width: 720px){
+  .pg-app .ns-grid{grid-template-columns:minmax(0,1fr);gap:16px}
+  .pg-app .counts{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .pg-app .count{padding:14px 16px}
+  .pg-app .log li{grid-template-columns:minmax(0,1fr);gap:4px}
+  .pg-app .tools .field,.pg-app .tools .field-s{max-width:none;flex-basis:100%}
+}

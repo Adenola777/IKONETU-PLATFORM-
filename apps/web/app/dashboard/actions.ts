@@ -16,7 +16,8 @@ export async function signOut() {
 
 /**
  * Publishes the founder's profile to approved investors, or hides it. The
- * database refuses to publish a venture without a pitch.
+ * database refuses to publish a venture without a pitch, or one that
+ * IkonetU has hidden until an admin lifts the hold.
  */
 export async function setPublished(form: FormData) {
   const { supabase, venture } = await requireFounder();
@@ -25,7 +26,7 @@ export async function setPublished(form: FormData) {
     .from("ventures")
     .update({ published_at: publish ? new Date().toISOString() : null })
     .eq("id", venture.id);
-  if (error) (/add a pitch/.test(error.message) ? logInfo : logError)("venture.publish_failed", { venture: venture.id, code: error.code });
+  if (error) (/add a pitch|lifts the hold/.test(error.message) ? logInfo : logError)("venture.publish_failed", { venture: venture.id, code: error.code });
   revalidatePath("/dashboard");
 }
 

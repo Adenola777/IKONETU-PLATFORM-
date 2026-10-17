@@ -22,19 +22,21 @@ export async function requireViewer() {
 export function homeFor(profile: ViewerProfile | null): string {
   if (!profile) return "/onboarding";
   if (profile.role === "investor") return profile.status === "active" ? "/investor" : "/investor/pending";
-  if (profile.role === "reviewer" || profile.role === "admin") return profile.status === "active" ? "/admin" : "/";
+  // Only investors wait for approval, so any other account that is not active is suspended.
+  if (profile.status !== "active") return "/suspended";
+  if (profile.role === "reviewer" || profile.role === "admin") return "/admin";
   if (profile.role === "founder") return "/dashboard";
   // No pages exist for mentors yet, so they go to the website rather than round a loop.
   return "/";
 }
 
-/** For founder pages. Anyone else goes to their own home. */
+/** For founder pages. Anyone else, and a suspended founder, goes to their own home. */
 export async function requireFounder() {
   const v = await requireViewer();
-  if (!v.profile || v.profile.role !== "founder") redirect(homeFor(v.profile));
+  if (!v.profile || v.profile.role !== "founder" || v.profile.status !== "active") redirect(homeFor(v.profile));
   const venture = await v.supabase
     .from("ventures")
-    .select("id, name, sector, stage, country, description, website, ask, published_at")
+    .select("id, name, sector, stage, country, description, website, ask, published_at, hidden_at, hidden_reason")
     .eq("founder_id", v.user.id)
     .order("created_at", { ascending: true })
     .limit(1)

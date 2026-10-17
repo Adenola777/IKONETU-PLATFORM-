@@ -6,7 +6,7 @@ import "./app.css";
 export type Section =
   | "overview" | "pitch" | "evidence" | "updates" | "introductions" | "preview"
   | "discover" | "requests" | "profile"
-  | "queue" | "investors"
+  | "queue" | "investors" | "founders" | "people" | "audit"
   | "";
 
 const NAV: Record<string, { key: Section; href: string; label: string }[]> = {
@@ -23,10 +23,18 @@ const NAV: Record<string, { key: Section; href: string; label: string }[]> = {
     { key: "requests", href: "/investor/introductions", label: "Introductions" },
     { key: "profile", href: "/investor/profile", label: "Your profile" },
   ],
-  reviewer: [{ key: "queue", href: "/admin/evidence", label: "Evidence to review" }],
+  reviewer: [
+    { key: "overview", href: "/admin", label: "Overview" },
+    { key: "founders", href: "/admin/founders", label: "Founders" },
+    { key: "queue", href: "/admin/evidence", label: "Evidence to review" },
+  ],
   admin: [
+    { key: "overview", href: "/admin", label: "Overview" },
+    { key: "founders", href: "/admin/founders", label: "Founders" },
     { key: "queue", href: "/admin/evidence", label: "Evidence to review" },
     { key: "investors", href: "/admin/investors", label: "Investors" },
+    { key: "people", href: "/admin/people", label: "People and roles" },
+    { key: "audit", href: "/admin/audit", label: "Audit log" },
   ],
 };
 

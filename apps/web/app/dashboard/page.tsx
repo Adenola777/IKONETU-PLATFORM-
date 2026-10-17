@@ -47,6 +47,7 @@ export default async function DashboardPage() {
   const country = COUNTRIES.find((c) => c.code === venture.country)?.name ?? venture.country;
   const stage = STAGES.find((s) => s.code === venture.stage)?.label ?? venture.stage;
   const published = Boolean(venture.published_at);
+  const held = Boolean(venture.hidden_at);
   const hasPitch = Boolean(pitch.data);
   const now = new Date();
 
@@ -66,7 +67,19 @@ export default async function DashboardPage() {
         <div className="stack">
           <section className="card" aria-labelledby="vis-h">
             <h2 id="vis-h" className="app-h2">Who can see your profile</h2>
-            {published ? (
+            {held ? (
+              <>
+                <p className="status status-err" role="status">
+                  IkonetU hid your profile from investors on {dateText(venture.hidden_at)}. You can publish it again once IkonetU
+                  lifts the hold.
+                </p>
+                <p className="body2" style={{ marginTop: 12 }}>The reason IkonetU gave:</p>
+                <blockquote className="quote" style={{ margin: "8px 0 0" }}>{venture.hidden_reason}</blockquote>
+                <p className="body2" style={{ marginTop: 12 }}>
+                  If you have questions, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.
+                </p>
+              </>
+            ) : published ? (
               <p className="body2">
                 Your profile is published. Approved investors have been able to find it since {dateText(venture.published_at)}. Hide
                 it at any time, and it leaves their search at once.
@@ -82,13 +95,13 @@ export default async function DashboardPage() {
               {published ? (
                 <button type="submit" className="btn btn-n">Hide my profile</button>
               ) : (
-                <button type="submit" className="btn btn-f" disabled={!hasPitch} aria-describedby={hasPitch ? undefined : "pub-need"}>
+                <button type="submit" className="btn btn-f" disabled={!hasPitch || held} aria-describedby={hasPitch ? undefined : "pub-need"}>
                   Publish my profile
                 </button>
               )}
               <Link href="/dashboard/preview" className="tlink">See what investors see</Link>
             </form>
-            {!hasPitch && !published && (
+            {!hasPitch && !published && !held && (
               <p id="pub-need" className="hint" style={{ marginTop: 8 }}>Add your one-minute pitch first. A profile cannot be published without one.</p>
             )}
           </section>

@@ -79,10 +79,23 @@ An investor sees three statuses for evidence and nothing else about it: "Founder
 
 | Address | Who | What |
 |---|---|---|
-| `/admin/investors` | Admins | Approve, decline or suspend investor accounts |
+| `/admin` | Reviewers and admins | The overview: evidence waiting and the age of the oldest, investors waiting for approval, scores to update, the north star for the last 30 days and the last six months, introductions by status, and the counts of founders, ventures, investors, staff, suspended accounts and waiting lists |
+| `/admin/founders` | Reviewers and admins | Every venture and its founder, published or not, with search and a filter for published, unpublished and hidden profiles |
+| `/admin/founders/<id>` | Reviewers and admins | Everything one venture holds: who can see it, every piece of evidence in every status, the pitch, the ask, the score, recent updates and introductions by status. An admin hides the profile from investors here with a reason the founder reads, or lifts the hold |
 | `/admin/evidence` | Reviewers and admins | Review evidence, open its files through links that last five minutes, and approve it with a note of what was compared, ask for more, or reject it. An approval recomputes the founder's score with the score engine |
+| `/admin/investors` | Admins | Approve, decline or suspend investor accounts |
+| `/admin/people` | Admins | Every account with its email address and last sign-in, with search and filters for role and status |
+| `/admin/people/<id>` | Admins | Change a person's role, suspend the account with a reason or make it active again, and see that account's entries in the audit log |
+| `/admin/audit` | Admins | Every staff decision, newest first, with who made it, what changed and the reason |
 
-Nobody can make themselves staff. The first admin is set with SQL run as the database owner, after that person has signed in once and created a profile: `update public.profiles set role = 'admin', status = 'active' where user_id = (select id from auth.users where email = '<their email>');`. An admin can then approve investors, and a reviewer is made the same way with `role = 'reviewer'`.
+Nobody can make themselves staff. The first admin is set with SQL run as the database owner, after that person has signed in once and created a profile: `update public.profiles set role = 'admin', status = 'active' where user_id = (select id from auth.users where email = '<their email>');`. After that, an admin makes reviewers and other admins at `/admin/people`. Nobody can change their own role or status, so a second admin is needed to change the first.
+
+What the admin changes do (migration `20261017000001_admin.sql`):
+
+- **Hiding a profile.** The profile leaves investors' view at once, the founder reads the reason on their dashboard, and the founder cannot publish it again until an admin lifts the hold. Lifting the hold does not publish it; the founder does.
+- **Suspending an account.** A suspended founder lands on `/suspended`, their profile leaves investors' view, and the database refuses their writes, their answers to introductions and their messages. Making the account active again does not publish the profile. A suspended investor sees the page that says their account is not approved.
+- **Changing a role.** A person becomes a founder only if they have a venture, and an investor only if they have investor details. A founder made a reviewer or an admin leaves investors' view, so staff have no profile in discovery. The mentor role cannot be given, because mentors have no pages yet.
+- Every change goes to the audit log with the admin who made it. No email is sent, because IkonetU has no email sender yet.
 
 ## Sign-in
 
@@ -127,7 +140,7 @@ Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Sup
 - Every call from the server to Supabase gives up after 15 seconds, or 120 seconds for a file upload (`apps/web/lib/timed-fetch.ts`).
 - Evidence and its file records are saved in one transaction. If saving fails, the files just uploaded are removed.
 - Evidence, progress updates and messages carry a request key made when the form is shown, so a form sent twice is saved once.
-- After a decision, the founder's score is recorded with up to three attempts. A score that still fails appears under "Scores to update" on `/admin/evidence`, with a button to recompute it.
+- After a decision, the founder's score is recorded with up to three attempts. A score that still fails appears under "Scores to update" on `/admin/evidence`, with a button to recompute it, and is counted on the overview at `/admin`.
 - The daily limit on introduction requests takes a lock per investor, so simultaneous requests cannot pass it.
 - Each failure is written as one line of JSON (`apps/web/lib/log.ts`) and, once `SENTRY_DSN` is set, sent to Sentry without cookies, headers, form text or the person's details.
 
@@ -143,3 +156,5 @@ The browser checks of these fixes ran against the local stand-in described below
 - The captions are timed by the length of each sentence of the founder's transcript, not by listening to the video, so they can run a little ahead or behind.
 - The pitch's length is read in the founder's browser before upload. A browser that cannot decode the video cannot upload it, and the page says so.
 - The founder and investor journeys were run in a browser against a local stand-in for Supabase (Postgres 16 with these migrations, PostgREST, and a small stand-in for Supabase Auth and Storage), not against a real Supabase project. That stand-in is not in this repository. The first run against the real project is still to come.
+- The admin pages read email addresses and last sign-in times from Supabase Auth's `auth.users` through `admin_accounts()`. The stand-in's copy of that table has the same column names, but the real project has not been read, so those two columns are **unverified** until the first run there.
+- The admin pages list fifty rows a page. A long list of founders, people or audit entries is read page by page, and nothing exports it yet. The waitlist and the retired investor interest list are counted on the overview, and no page lists their rows.
