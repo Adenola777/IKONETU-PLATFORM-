@@ -12,12 +12,15 @@ import re
 from dataclasses import dataclass, field
 
 from .product import SECTORS, STAGES
-from .score_engine import RUBRIC_V2
+from .score_engine import RUBRIC_V3
 from .validate import Errors, is_web_address, js_len, js_trim
 from .waitlist import COUNTRY_CODES, PRIVACY_VERSION
 
 STAGE_CODES = tuple(s["code"] for s in STAGES)
-SIGNAL_CODES = tuple(s.code for s in RUBRIC_V2.signals)
+# The signals a founder can add evidence for today. Those that need a provider IkonetU does not
+# have yet are left out.
+SIGNAL_CODES = tuple(s.code for s in RUBRIC_V3.signals if s.offered)
+SELF_DECLARED = frozenset(s.code for s in RUBRIC_V3.signals if s.how == "self")
 
 
 @dataclass
@@ -132,10 +135,18 @@ EVIDENCE_FILES_MAX = 3
 
 
 def parse_evidence(signal: str, summary: str, link: str, files: list[dict]) -> Parsed:
+    """A piece of evidence, or the founder's own statement for a self-declared signal.
+
+    A statement is the sentence alone: it takes no file and no link, because nobody reviews it.
+    """
     e = Errors()
     aborted = signal not in SIGNAL_CODES
     if aborted:
         e.add("signal", "Choose what this evidence shows.")
+    if not aborted and signal in SELF_DECLARED:
+        said = _text(e, "summary", summary, 10, "Write your statement in at least 10 characters.", 280,
+                     "Keep the statement to 280 characters.")
+        return _done(e, {"signal": signal, "summary": said, "link": None, "files": [], "statement": True})
     summary_v = _text(e, "summary", summary, 10, "Describe the evidence in at least 10 characters.", 280, "Keep the description to 280 characters.")
     link_v = _web(e, "link", link, 300, "That address is too long.", "Enter a full web address, for example kolapay.ng/press.")
     if len(files) > EVIDENCE_FILES_MAX:
@@ -144,24 +155,25 @@ def parse_evidence(signal: str, summary: str, link: str, files: list[dict]) -> P
         e.add("files", "Add PDF, JPEG or PNG files only.")
     if not all(0 < f["size"] <= EVIDENCE_FILE_MAX for f in files):
         e.add("files", "Each file must be 10 MB or smaller.")
-    # The rule across fields runs only when no field failed outright, as zod's refine on the object did.
+    # The rule across fields runs only when no field failed outright.
     if not aborted and not files and link_v is None:
         e.add("files", "Add a file or a link, so a reviewer can check it.")
-    return _done(e, {"signal": signal, "summary": summary_v, "link": link_v, "files": files})
+    return _done(e, {"signal": signal, "summary": summary_v, "link": link_v, "files": files, "statement": False})
 
 
 def signal_options() -> list[dict]:
-    """The signals a founder can add evidence for, with their area and label."""
-    return [{"code": s.code, "label": s.label, "category": s.category, "mode": s.mode} for s in RUBRIC_V2.signals]
+    """The signals a founder can add evidence for, with their category, label and what to send."""
+    return [{"code": s.code, "label": s.label, "category": s.category, "how": s.how, "hint": s.hint}
+            for s in RUBRIC_V3.signals if s.offered]
 
 
 def signal_label(code: str) -> str:
-    s = RUBRIC_V2.signal(code)
+    s = RUBRIC_V3.signal(code)
     return s.label if s else code
 
 
 def signal_area(code: str) -> str:
-    s = RUBRIC_V2.signal(code)
+    s = RUBRIC_V3.signal(code)
     return s.category if s else ""
 
 
@@ -289,7 +301,7 @@ def parse_venture(name: str, sector: str, stage: str, description: str, website:
 # ---------------------------------------------------------------- staff decisions
 REVIEW_LANES = (
     {"code": "human", "name": "Platform reviewed", "hint": "You compared it with its source, such as a statement, a document or a live product."},
-    {"code": "government", "name": "Third-party evidence: a government record", "hint": "A government registry or authority holds a matching record."},
+    {"code": "government", "name": "Third-party evidence: a government record", "hint": "A government registry or authority holds a matching record, and you found it there yourself or the registry confirmed it."},
     {"code": "source", "name": "Third-party evidence: another outside source", "hint": "An outside source backs it, such as a bank, a customer or a publisher."},
 )
 

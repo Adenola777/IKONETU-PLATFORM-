@@ -124,6 +124,15 @@ class TestEvidence:
         r = parse_evidence("", "Twelve months of statements", "", [])
         assert r.errors == {"signal": "Choose what this evidence shows."}
 
+    def test_takes_a_statement_alone_for_a_self_declared_signal(self):
+        r = parse_evidence("team_diversity", "Two of our five staff are women.", "news.example.com", [PDF])
+        assert r.ok and r.data["statement"] is True
+        assert (r.data["link"], r.data["files"]) == (None, [])
+        assert parse_evidence("team_diversity", "Two", "", []).errors == {"summary": "Write your statement in at least 10 characters."}
+
+    def test_refuses_a_signal_that_needs_a_provider_ikonetu_does_not_have(self):
+        assert parse_evidence("face_match", "A selfie video of me", "", [PDF]).errors == {"signal": "Choose what this evidence shows."}
+
 
 PITCH = {
     "path": "77777777-7777-7777-7777-777777777777/0b6c2f4e-1111-4222-8333-944455556666.mp4",

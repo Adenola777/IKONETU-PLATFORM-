@@ -18,7 +18,7 @@ from ..forms import REVIEW_LANES, parse_decision
 from ..jsfmt import month_long, month_short, number_text, parse_int, search_params, to_fixed
 from ..log import log_error, log_info
 from ..product import days_between
-from ..score_engine import RUBRIC_V2
+from ..score_engine import RUBRIC_V3
 from ..scoring import record_venture_score
 from ..session import require_staff
 from ..staff import (
@@ -196,7 +196,7 @@ async def _review_page(request: Request, v, evidence_id: str, states: dict | Non
     e = res.data
     if not e:
         raise HTTPException(404)
-    signal = RUBRIC_V2.signal(e["signal_code"])
+    signal = RUBRIC_V3.signal(e["signal_code"])
     stored = e.get("evidence_files") or []
     # Files open through links that last five minutes (SRD SEC-E2).
     links = await asyncio.gather(*(v.storage.signed_url("evidence", f["storage_path"], 300) for f in stored))
@@ -208,7 +208,8 @@ async def _review_page(request: Request, v, evidence_id: str, states: dict | Non
             .limit(20).select("evidence_id, sha256")
         twins = len(found.data or [])
     context = {
-        "role": _role(v), "e": e, "category": signal.category if signal else "", "mode": signal.mode if signal else "fixed",
+        "role": _role(v), "e": e, "category": signal.category if signal else "", "mode": "fixed",
+        "how": signal.how if signal else "reviewer", "hint": signal.hint if signal else "",
         "files": files, "twins": twins, "own": (e.get("ventures") or {}).get("founder_id") == v.id,
         "open": e["status"] in WAITING,
     }
@@ -302,6 +303,8 @@ VENTURE_DONE = {
 def evidence_state(e: dict) -> str:
     if e["status"] in WAITING:
         return "Waiting for review"
+    if e["status"] == "approved" and e.get("lane") == "self":
+        return "The founder's own statement"
     if e["status"] == "approved":
         return next((lane["name"] for lane in REVIEW_LANES if lane["code"] == e.get("lane")), "Approved")
     return {"needs_more": "More asked for", "rejected": "Rejected", "expired": "Expired"}.get(e["status"], e["status"])

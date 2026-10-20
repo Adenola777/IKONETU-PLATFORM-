@@ -65,7 +65,7 @@
 </div>
 {% endfor %}
 {% if empty %}
-<p class="small area" style="margin:0">{% if empty | length == 8 %}No evidence has been added yet, so all eight areas are gaps.{% else %}Gap, with no evidence yet: {{ list_text(empty | map(attribute="label") | list) }}.{% endif %}</p>
+<p class="small area" style="margin:0">{% if empty | length == AREAS | length %}No evidence has been added yet, so all eleven areas are gaps.{% else %}Gap, with no evidence yet: {{ list_text(empty | map(attribute="label") | list) }}.{% endif %}</p>
 {% endif %}
 </section>
 </div>

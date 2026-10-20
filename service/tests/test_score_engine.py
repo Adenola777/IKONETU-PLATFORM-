@@ -1,5 +1,4 @@
-"""The score engine's tests, ported case for case from packages/score-engine/src/engine.test.ts
-and rubric-sql.test.ts. The TypeScript file has 47 cases and so does this one."""
+"""The score engine's tests for rubric v3, the specification of March 2026 adopted on 20 October 2026."""
 
 from __future__ import annotations
 
@@ -10,249 +9,185 @@ from datetime import datetime, timezone
 import pytest
 
 from app.score_engine import (
-    CATEGORY_CAPS,
-    RUBRIC_V2,
+    CATEGORIES,
+    LANE_TIER,
+    LANE_WEIGHT,
+    LANES,
+    REGISTRATION_SIGNAL,
+    RUBRIC_V3,
     UNREGISTERED_CAP,
     EvidenceItem,
     calculate_score,
-    convert_to_usd,
     is_countable,
     league_for,
     next_best_actions,
 )
 from app.score_engine.rubric_sql import MIGRATION, rubric_to_sql
 
-NOW = datetime(2026, 10, 5, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 20, 12, 0, 0, tzinfo=timezone.utc)
 _seq = itertools.count(1)
 
 
 def ev(signal_code: str, **fields) -> EvidenceItem:
-    base = EvidenceItem(id=f"e{next(_seq)}", signal_code=signal_code, status="approved", lane="ai")
+    base = EvidenceItem(id=f"e{next(_seq)}", signal_code=signal_code, status="approved", lane="human")
     return replace(base, **fields)
 
 
 def score(evidence: list[EvidenceItem]):
-    return calculate_score(evidence, RUBRIC_V2, NOW)
+    return calculate_score(evidence, RUBRIC_V3, NOW)
 
 
-def signal(result, code: str):
-    return next(s for s in result.signals if s.code == code)
+def codes(category: str) -> list[str]:
+    return [s.code for s in RUBRIC_V3.signals if s.category == category]
 
 
-def category(result, name: str):
-    return next(c for c in result.categories if c.category == name)
+def every(lane: str, leave: tuple[str, ...] = ()) -> list[EvidenceItem]:
+    return [ev(s.code, lane=lane) for s in RUBRIC_V3.signals if s.category not in leave]
 
 
-# ---------------------------------------------------------------- rubric v2
-def test_category_caps_add_up_to_1000():
-    assert sum(CATEGORY_CAPS.values()) == 1000
+class TestRubric:
+    def test_holds_the_specifications_eleven_categories_and_the_non_tech_pathway(self):
+        assert [c.code for c in CATEGORIES] == [
+            "identity", "business", "infrastructure", "team", "financial", "academic", "technical", "operations",
+            "traction", "awards", "governance", "media",
+        ]
+        assert sum(c.weight for c in CATEGORIES if not c.alternative_to) == 100
+        assert RUBRIC_V3.category("operations").alternative_to == "technical"
+
+    def test_holds_175_signals_with_distinct_codes(self):
+        assert len(RUBRIC_V3.signals) == 175
+        assert len({s.code for s in RUBRIC_V3.signals}) == 175
+
+    def test_gives_each_category_its_maximum_except_the_non_tech_pathway_whose_rows_add_to_270(self):
+        for c in CATEGORIES:
+            total = sum(s.points for s in RUBRIC_V3.signals if s.category == c.code)
+            assert total == (270 if c.code == "operations" else c.max_points), c.code
+
+    def test_tells_the_founder_what_to_send_for_every_signal(self):
+        assert all(0 < len(s.hint) <= 200 for s in RUBRIC_V3.signals)
+
+    def test_keeps_the_registration_signal(self):
+        assert RUBRIC_V3.signal(REGISTRATION_SIGNAL) is not None
+
+    def test_maps_every_lane_to_one_of_the_four_tiers(self):
+        assert set(LANE_TIER) == set(LANES)
+        assert LANE_WEIGHT == {"government": 1.0, "source": 0.95, "ai": 0.85, "human": 0.85, "human_confirmed": 0.95, "self": 0.60}
+
+    def test_offers_today_every_signal_except_those_that_need_a_provider(self):
+        later = {s.code for s in RUBRIC_V3.signals if not s.offered}
+        assert {"face_match", "phone_verified", "bvn", "credit_score", "google_workspace"} <= later
+        assert len(later) == 19
 
 
-def test_every_category_can_be_filled_by_its_signals():
-    for cat, cap in CATEGORY_CAPS.items():
-        top = sum(s.max_points for s in RUBRIC_V2.signals if s.category == cat)
-        assert top >= cap, cat
-
-
-def test_signal_codes_are_unique():
-    codes = [s.code for s in RUBRIC_V2.signals]
-    assert len(set(codes)) == len(codes)
-
-
-# ---------------------------------------------------------------- league boundaries
-@pytest.mark.parametrize("total,league", [
-    (0, "EARLY"), (300, "EARLY"), (301, "RISING"), (600, "RISING"),
-    (601, "INVESTABLE"), (850, "INVESTABLE"), (851, "ELITE"), (1000, "ELITE"),
-])
-def test_league_for_boundaries(total, league):
-    assert league_for(total) == league
-
-
-# ---------------------------------------------------------------- what counts
-def test_an_empty_profile_scores_0_in_early():
-    r = score([])
-    assert r.total == 0
-    assert r.league == "EARLY"
-
-
-def test_self_declared_claims_earn_nothing():
-    assert score([ev("tax_registration", lane="self")]).total == 0
-
-
-@pytest.mark.parametrize("status", ["submitted", "checking", "needs_review", "needs_more", "rejected", "expired"])
-def test_evidence_that_is_not_approved_earns_nothing(status):
-    assert score([ev("tax_registration", status=status)]).total == 0
-
-
-def test_expired_evidence_stops_counting_on_its_expiry_date():
-    assert is_countable(ev("government_id", expires_at="2026-10-05T12:00:00Z"), NOW) is False
-    assert is_countable(ev("government_id", expires_at="2026-10-06T00:00:00Z"), NOW) is True
-
-
-def test_an_unparseable_expiry_date_does_not_count():
-    assert is_countable(ev("government_id", expires_at="not a date"), NOW) is False
-
-
-def test_unknown_signal_codes_are_ignored():
-    assert score([ev("google_maps_listing", lane="source")]).total == 0
-
-
-# ---------------------------------------------------------------- lane weights
-@pytest.mark.parametrize("lane,points", [
-    ("government", 50), ("source", 47), ("human_confirmed", 47), ("ai", 42), ("human", 42),
-])
-def test_tax_registration_through_each_lane(lane, points):
-    assert score([ev("tax_registration", lane=lane)]).total == points
-
-
-# ---------------------------------------------------------------- signal modes and caps
-def test_fixed_signals_count_the_best_single_item_only():
-    r = score([ev("government_id", lane="ai"), ev("government_id", lane="source")])
-    assert signal(r, "government_id").capped == 28.5
-
-
-def test_per_item_signals_add_up_across_submissions_and_stop_at_the_cap():
-    r = score([ev("customer_evidence", item_count=3), ev("customer_evidence", item_count=2)])
-    assert signal(r, "customer_evidence").capped == 42.5
-    capped = score([ev("customer_evidence", item_count=20)])
-    assert signal(capped, "customer_evidence").weighted == 170
-    assert signal(capped, "customer_evidence").capped == 70
-
-
-def test_per_item_evidence_without_a_count_counts_as_one_item():
-    assert signal(score([ev("press_coverage")]), "press_coverage").capped == 8.5
-
-
-def test_revenue_earns_1_point_per_usd_100_up_to_80():
-    assert signal(score([ev("revenue", lane="human", revenue_usd=4_250)]), "revenue").capped == 35.7
-    assert signal(score([ev("revenue", lane="human", revenue_usd=50_000)]), "revenue").capped == 80
-
-
-def test_revenue_counts_the_best_item_not_the_sum():
-    r = score([ev("revenue", lane="human", revenue_usd=2_000), ev("revenue", lane="human", revenue_usd=3_000)])
-    assert signal(r, "revenue").capped == 25.5
-
-
-def test_months_signals_use_the_best_item():
-    r = score([ev("financial_records", months=6), ev("financial_records", months=9)])
-    assert signal(r, "financial_records").capped == 30.6
-
-
-def test_product_stage_uses_the_stage_points_table():
-    assert signal(score([ev("product_stage", stage="idea")]), "product_stage").capped == 0
-    assert signal(score([ev("product_stage", stage="mvp")]), "product_stage").capped == 42.5
-    assert signal(score([ev("product_stage", stage="scaling", lane="government")]), "product_stage").capped == 130
-
-
-def test_categories_stop_at_their_cap():
-    r = score([
-        ev("customer_interviews", item_count=20, lane="government"),
-        ev("pilot_letters", item_count=10, lane="government"),
-        ev("market_research", lane="government"),
+class TestLeagues:
+    @pytest.mark.parametrize("total,league", [
+        (0, "EARLY"), (300, "EARLY"), (301, "RISING"), (600, "RISING"), (601, "INVESTABLE"), (850, "INVESTABLE"),
+        (851, "ELITE"), (1000, "ELITE"),
     ])
-    assert category(r, "market").uncapped == 100
-    assert category(r, "market").earned == 100
+    def test_places_a_total_in_its_league(self, total, league):
+        assert league_for(total) == league
 
 
-# ---------------------------------------------------------------- registration and the unregistered cap
-def strong_unregistered() -> list[EvidenceItem]:
-    return [
-        ev("government_id", lane="government"),
-        ev("operating_tenure", months=30, lane="government"),
-        ev("tax_registration", lane="government"),
-        ev("legal_documents", item_count=5, lane="government"),
-        ev("revenue", revenue_usd=100_000, lane="government"),
-        ev("financial_records", months=12, lane="government"),
-        ev("business_account", lane="government"),
-        ev("product_stage", stage="scaling", lane="government"),
-        ev("customer_evidence", item_count=7, lane="government"),
-        ev("team_members", item_count=8, lane="government"),
-        ev("team_credentials", item_count=4, lane="government"),
-        ev("website_live", lane="government"),
-        ev("pitch_deck", lane="government"),
-    ]
+class TestCalculation:
+    def test_gives_nothing_for_no_evidence(self):
+        r = score([])
+        assert (r.total, r.league, r.pathway) == (0, "EARLY", "technical")
+
+    @pytest.mark.parametrize("status", ["submitted", "checking", "needs_review", "needs_more", "rejected", "expired"])
+    def test_counts_approved_evidence_only(self, status):
+        assert score([ev("revenue", status=status)]).total == 0
+
+    def test_matches_the_specifications_example_of_a_perfect_financial_category(self):
+        # Page 16: 300 of 300 in Financial, and nothing else, gives 140.
+        assert score([ev(c, lane="government") for c in codes("financial")]).total == 140
+
+    @pytest.mark.parametrize("lane,points", [("government", 30), ("source", 28.5), ("human", 25.5), ("ai", 25.5), ("self", 18)])
+    def test_weights_a_signal_by_its_lane(self, lane, points):
+        assert next(s for s in score([ev("revenue", lane=lane)]).signals if s.code == "revenue").effective == points
+
+    def test_counts_a_signal_once_at_its_best_lane(self):
+        r = score([ev("revenue", lane="human"), ev("revenue", lane="government"), ev("revenue", lane="self")])
+        s = next(s for s in r.signals if s.code == "revenue")
+        assert (s.effective, s.lane, len(s.evidence_ids)) == (30, "government", 3)
+
+    def test_caps_a_category_at_its_maximum(self):
+        r = score([ev(c, lane="government") for c in codes("operations")])
+        c = r.category("operations")
+        assert (c.uncapped, c.earned, c.share, c.contribution) == (270, 250, 1, 120)
+
+    def test_counts_the_higher_of_technical_output_and_business_operations(self):
+        r = score([ev(c, lane="government") for c in codes("technical")[:3]] + [ev(c, lane="government") for c in codes("operations")[:6]])
+        assert r.pathway == "operations"
+        assert r.category("technical").counted is False and r.category("technical").contribution == 0
+        assert r.category("operations").counted is True
+        assert r.total == int(r.category("operations").contribution)
+
+    def test_prefers_technical_output_when_the_two_pathways_tie(self):
+        assert score([ev("github_account"), ev("whatsapp_business")]).pathway == "technical"
+
+    def test_caps_an_unregistered_venture_at_600(self):
+        r = score([e for e in every("government") if e.signal_code != REGISTRATION_SIGNAL])
+        assert (r.total, r.unregistered_cap_applied, r.is_registered) == (UNREGISTERED_CAP, True, False)
+
+    def test_gives_1000_for_every_signal_from_a_government_record(self):
+        r = score(every("government"))
+        assert (r.total, r.league, r.unregistered_cap_applied) == (1000, "ELITE", False)
+
+    def test_reaches_at_most_850_when_every_signal_is_reviewed_from_a_document(self):
+        assert score(every("human", leave=("operations",))).total == 850
+
+    def test_passes_850_through_the_non_tech_pathway_whose_rows_exceed_its_maximum(self):
+        # 270 points at 0.85 is 229.5 of a maximum of 250, a share of 0.918 where every other category stops at 0.85.
+        r = score(every("human", leave=("technical",)))
+        assert (r.pathway, r.total, r.league) == ("operations", 858, "ELITE")
+
+    def test_rounds_the_total_down(self):
+        # 15 of 200 in Identity at 0.85 is 12.75 points, which adds 5.74 to the 1,000.
+        assert score([ev("passport")]).total == 5
+
+    @pytest.mark.parametrize("expires,counts", [("2027-01-01", True), ("2026-10-20T11:00:00Z", False), ("not a date", False), (None, True)])
+    def test_counts_unexpired_evidence_only(self, expires, counts):
+        assert is_countable(ev("revenue", expires_at=expires), NOW) is counts
+
+    def test_gives_the_tier_mix_of_the_counted_points(self):
+        r = score([ev("revenue", lane="government"), ev("team_diversity", lane="self")])
+        mix = r.tier_mix()
+        assert mix["T1"] == pytest.approx(30 / 36 * 100, abs=0.01) and mix["T4"] == pytest.approx(6 / 36 * 100, abs=0.01)
+        assert score([]).tier_mix() == {"T1": 0.0, "T2": 0.0, "T3": 0.0, "T4": 0.0}
+
+    def test_records_each_category_with_its_maximum_weight_share_and_contribution(self):
+        record = score([ev(c, lane="government") for c in codes("financial")]).category("financial").as_record()
+        assert record == {"category": "financial", "max": 300, "weight": 14, "uncapped": 300, "earned": 300, "share": 100,
+                          "contribution": 140, "counted": True}
 
 
-def test_caps_an_unregistered_venture_at_600_the_top_of_rising():
-    r = score(strong_unregistered())
-    assert r.is_registered is False
-    assert r.unregistered_cap_applied is True
-    assert r.total == UNREGISTERED_CAP
-    assert r.league == "RISING"
+class TestNextBestActions:
+    def test_suggests_the_signals_that_add_most_first(self):
+        actions = next_best_actions(score([]), RUBRIC_V3, 5)
+        assert len(actions) == 5
+        gains = [a.estimated_gain for a in actions]
+        assert gains == sorted(gains, reverse=True)
+        # Customer count: 30 points at 0.85 in Traction, which has 300 points worth 14% of the 1,000.
+        assert actions[0].estimated_gain == pytest.approx(30 * 0.85 / 300 * 140, abs=0.01)
+
+    def test_never_suggests_a_signal_that_needs_a_provider(self):
+        offered = {s.code for s in RUBRIC_V3.signals if s.offered}
+        assert all(a.code in offered for a in next_best_actions(score([]), RUBRIC_V3, 200))
+
+    def test_leaves_out_what_the_caller_asks_and_what_is_already_earned(self):
+        first = next_best_actions(score([]), RUBRIC_V3, 1)[0].code
+        assert first not in [a.code for a in next_best_actions(score([]), RUBRIC_V3, 200, leave_out={first})]
+        assert first not in [a.code for a in next_best_actions(score([ev(first, lane="government")]), RUBRIC_V3, 200)]
+
+    def test_values_a_self_declared_signal_at_the_self_declared_weight(self):
+        a = next(a for a in next_best_actions(score([]), RUBRIC_V3, 200) if a.code == "team_diversity")
+        assert a.estimated_gain == pytest.approx(10 * 0.60 / 200 * 90, abs=0.01)
+
+    def test_values_the_pathway_that_does_not_count_by_how_far_it_would_pass_the_other(self):
+        r = score([ev(c, lane="government") for c in codes("technical")])
+        assert r.pathway == "technical"
+        assert all(a.category != "operations" for a in next_best_actions(r, RUBRIC_V3, 200))
 
 
-def test_lifts_the_cap_once_registration_is_approved():
-    r = score([*strong_unregistered(), ev("company_registration", lane="source")])
-    assert r.is_registered is True
-    assert r.unregistered_cap_applied is False
-    assert r.total > UNREGISTERED_CAP
-    assert r.league == "INVESTABLE"
-
-
-def test_does_not_treat_registration_under_review_as_registered():
-    assert score([ev("company_registration", status="needs_review")]).is_registered is False
-
-
-# ---------------------------------------------------------------- maximum score
-def everything(lane: str) -> list[EvidenceItem]:
-    return [
-        ev(s.code, lane=lane, item_count=100, months=100, revenue_usd=1_000_000, stage="scaling")
-        for s in RUBRIC_V2.signals
-    ]
-
-
-def test_reaches_exactly_1000_only_when_everything_is_verified_at_government_level():
-    r = score(everything("government"))
-    assert r.total == 1000
-    assert r.league == "ELITE"
-
-
-def test_stays_below_1000_when_the_best_evidence_comes_through_source_checks():
-    assert score(everything("source")).total < 1000
-
-
-# ---------------------------------------------------------------- worked example from the screens
-def test_adds_up_the_founder_home_examples_quick_wins():
-    assert score([ev("company_registration", lane="source")]).total == 47
-    assert score([ev("business_account", lane="source")]).total == 47
-    assert score([ev("customer_evidence", item_count=2)]).total == 17
-    assert score([ev("website_live", lane="source")]).total == 19
-    assert score([ev("student_status")]).total == 17
-
-
-# ---------------------------------------------------------------- convert_to_usd
-def test_converts_with_the_stated_rate_and_rounds_to_cents():
-    assert convert_to_usd(1_140_000, 0.0077) == 8778
-
-
-def test_rejects_a_missing_or_non_positive_rate():
-    with pytest.raises(ValueError):
-        convert_to_usd(100, 0)
-    with pytest.raises(ValueError):
-        convert_to_usd(float("nan"), 0.01)
-
-
-# ---------------------------------------------------------------- next best actions
-def test_puts_the_largest_quick_wins_first_for_an_empty_profile():
-    actions = next_best_actions(score([]), RUBRIC_V2, 3)
-    assert [a.code for a in actions] == ["business_account", "company_registration", "product_stage"]
-    assert actions[0].estimated_gain == 47
-
-
-def test_drops_signals_that_are_already_full():
-    r = score([ev("company_registration", lane="government")])
-    assert not any(a.code == "company_registration" for a in next_best_actions(r, RUBRIC_V2, 50))
-
-
-def test_respects_the_room_left_in_a_category():
-    r = score([
-        ev("customer_interviews", item_count=8, lane="government"),
-        ev("pilot_letters", item_count=4, lane="government"),
-        ev("market_research", lane="government"),
-    ])
-    assert not any(a.category == "market" for a in next_best_actions(r, RUBRIC_V2, 50))
-
-
-# ---------------------------------------------------------------- the rubric seed migration
-def test_the_rubric_seed_migration_matches_the_rubric_the_engine_uses():
-    assert MIGRATION.read_text() == rubric_to_sql(RUBRIC_V2)
+def test_the_rubric_v3_migration_matches_the_rubric():
+    assert MIGRATION.read_text() == rubric_to_sql(RUBRIC_V3)

@@ -30,7 +30,7 @@ The app was built and tested with Python 3.13.16. Older versions were not tried.
 cd service
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest          # 201 tests
+.venv/bin/python -m pytest          # 213 tests
 .venv/bin/uvicorn app.main:app --port 3000
 ```
 

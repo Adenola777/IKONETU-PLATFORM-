@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-from .product import AREAS, RANK, is_shown_status
+from .product import AREAS, RANK, area_of, is_shown_status
 from .supabase import Database, Storage
 
 
@@ -58,7 +58,7 @@ def profile_areas(evidence: list[dict]) -> list[dict]:
     """Each area that holds evidence, with its best status and count, in rubric order."""
     out = []
     for a in AREAS:
-        items = [e for e in evidence if e["category"] == a["code"]]
+        items = [e for e in evidence if area_of(e["category"]) == a["code"]]
         if not items:
             continue
         best = items[0]

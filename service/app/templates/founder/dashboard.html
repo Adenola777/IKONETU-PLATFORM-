@@ -17,6 +17,49 @@
 
 <div class="side">
 <div class="stack">
+<section class="card" aria-labelledby="score-h">
+<h2 id="score-h" class="app-h2">Your IkonetU Score</h2>
+<div class="sc-top">
+<p style="margin:0"><span class="sc-num">{{ score.total }}</span><span class="sc-of">of 1,000</span></p>
+<p style="margin:0"><span class="chip chip-i">{{ league }} league</span> <span class="small">{{ next_league }}</span></p>
+</div>
+{% set bands = [("EARLY", "Early, 0 to 300"), ("RISING", "Rising, 301 to 600"), ("INVESTABLE", "Investable, 601 to 850"), ("ELITE", "Elite, 851 to 1,000")] %}
+{% set order = ["EARLY", "RISING", "INVESTABLE", "ELITE"] %}
+<div class="bands" aria-hidden="true">{% for code, _ in bands %}<i class="{{ 'here' if code == score.league else ('reached' if order.index(code) < order.index(score.league) else '') }}"></i>{% endfor %}</div>
+<div class="band-lbl" aria-hidden="true">{% for _, name in bands %}<span>{{ name }}</span>{% endfor %}</div>
+<p class="body2" style="margin:12px 0 0">The score counts evidence an IkonetU reviewer or an outside source has checked, and a few things you state yourself, which count at 60%. Investors do not see your score.</p>
+{% if score.unregistered_cap_applied %}<p class="status status-info" role="note" style="margin-top:12px">Your score stops at 600 until a reviewer approves your company registration.</p>{% endif %}
+<div class="sc-grid">
+<svg class="radar" viewBox="{{ chart.view }}" role="img" aria-labelledby="radar-t">
+<title id="radar-t">How much of each area's points you have earned. The list beside the chart gives the same figures.</title>
+{% for r in chart.rings %}<polygon class="ring" points="{{ r }}"></polygon>{% endfor %}
+{% for a in chart.axes %}<line class="axis" x1="{{ chart.centre }}" y1="{{ chart.centre }}" x2="{{ a.x }}" y2="{{ a.y }}"></line>{% endfor %}
+<polygon class="shape" points="{{ chart.shape }}"></polygon>
+{% for l in chart.labels %}<text x="{{ l.x }}" y="{{ l.y }}" text-anchor="{{ l.anchor }}">{{ l.text }}</text>{% endfor %}
+</svg>
+<ul class="shares" aria-label="Each area's share of its points">
+{% for s in shares %}
+<li><span title="{{ s.full_label }}, {{ s.weight }}% of the score">{{ s.label }}</span><span class="bar" aria-hidden="true"><i style="width:{{ s.percent }}%"></i></span><span class="pc">{{ s.percent }}%</span></li>
+{% endfor %}
+</ul>
+</div>
+<p class="small" style="margin:12px 0 0">Each area counts for a fixed share of the 1,000. {{ "Business operations counts for your product area, because it is higher than technical output." if score.pathway == "operations" else "Technical output counts for your product area. If business operations becomes higher, it counts instead." }}</p>
+</section>
+
+<section class="card" aria-labelledby="steps-h">
+<h2 id="steps-h" class="app-h2">Your next three steps</h2>
+{% if not steps %}
+<p class="body2">Every piece of evidence you can add today is added or waiting for a reviewer.</p>
+{% else %}
+<ol class="todo">
+{% for s in steps %}
+<li><span class="ico open" aria-hidden="true" style="font-weight:600;font-size:13px">{{ loop.index }}</span><span><a href="/dashboard/evidence?signal={{ s.code }}">{{ s.label }}</a><span class="gain">about +{{ s.gain }}</span> <span class="small">({{ area_label(s.category) }})</span><span class="small" style="display:block">What to send: {{ lower_first(s.hint) }}</span><span class="small" style="display:block">Why it matters: {{ lower_first(s.why) }}</span></span></li>
+{% endfor %}
+</ol>
+{% endif %}
+<p class="small" style="margin:12px 0 0">The steps add most to your score next, counted at the weight a reviewed document earns. Evidence already waiting for a reviewer is left out.</p>
+</section>
+
 <section class="card" aria-labelledby="vis-h">
 <h2 id="vis-h" class="app-h2">Who can see your profile</h2>
 {% if held %}
@@ -47,22 +90,12 @@
 <h2 id="ready-h" class="app-h2">Readiness check</h2>
 {{ area_meter(areas) }}
 <div style="margin:12px 0 16px">{{ meter_legend() }}</div>
-<ul class="todo" aria-label="The eight areas">
+<ul class="todo" aria-label="The eleven areas">
 {% for c in area_cells(areas) %}
 <li><span class="chip {{ LEVEL[c.level].chip }}" style="min-width:84px;justify-content:center">{{ LEVEL[c.level].name }}</span><span>{{ c.label }}{% if c.count %} · {{ c.count }} {{ "piece" if c.count == 1 else "pieces" }} of evidence{% endif %}</span></li>
 {% endfor %}
 </ul>
-<h3 class="app-h3" style="margin-top:24px">Your next three steps</h3>
-{% if not steps %}
-<p class="body2">Every area is as strong as your evidence can make it. Keep it current as things change.</p>
-{% else %}
-<ol class="todo">
-{% for s in steps %}
-<li><span class="ico open" aria-hidden="true" style="font-weight:600;font-size:13px">{{ loop.index }}</span><span><a href="/dashboard/evidence?signal={{ s.code }}">{{ s.label }}</a> <span class="small">({{ area_label(s.category) }})</span><span class="small" style="display:block">Why it matters: {{ lower_first(AREA_WHY[s.category]) }}</span></span></li>
-{% endfor %}
-</ol>
-{% endif %}
-<p class="small" style="margin:12px 0 0">The steps come from the evidence that would strengthen your profile most. Evidence already waiting for a reviewer is left out. Investors see the same readiness check.</p>
+<p class="small" style="margin:12px 0 0">Investors see the same readiness check on your profile. It shows evidence by area and leaves your score out.</p>
 </section>
 
 <section class="card" aria-labelledby="venture-h">
@@ -126,6 +159,20 @@
 {{ todo(evidence_count > 0, "/dashboard/evidence", (evidence_count ~ " " ~ ("piece" if evidence_count == 1 else "pieces") ~ " of evidence added, " ~ reviewed ~ " reviewed.") if evidence_count else "Add your first piece of evidence.") }}
 {{ todo(last_update, "/dashboard/updates", ("Last progress update: " ~ activity_text(last_update, now).replace("Updated ", "") ~ ".") if last_update else "Post your first progress update.") }}
 </ul>
+</section>
+<section class="card" aria-labelledby="rec-h">
+<h2 id="rec-h" class="app-h2">Your monthly record</h2>
+{% if not record %}
+<p class="body2">IkonetU keeps your score for each month once a reviewer decides your first evidence, or you add a statement. A month's figure stops changing when the month ends.</p>
+{% else %}
+<table class="rec">
+<thead><tr><th scope="col">Month</th><th scope="col">League</th><th scope="col" class="n" style="text-align:right">Score</th><th scope="col" class="n" style="text-align:right">Change</th></tr></thead>
+<tbody>
+{% for r in record %}<tr><td>{{ r.month }}</td><td>{{ r.league }}</td><td class="n">{{ r.total }}</td><td class="n">{{ "" if r.change is none else ("+" ~ r.change if r.change > 0 else r.change) }}</td></tr>{% endfor %}
+</tbody>
+</table>
+<p class="small" style="margin:12px 0 0">A month's figure stops changing when the month ends.</p>
+{% endif %}
 </section>
 </aside>
 </div>

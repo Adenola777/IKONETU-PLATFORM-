@@ -1,8 +1,13 @@
 """The IkonetU Score: calculation, league placement and the next best actions.
 
-Ported on 17 October 2026 from packages/score-engine/src/engine.ts. Both
-engines give the same result on the same evidence, which
-tests/test_score_engine_parity.py checks by running them side by side.
+Rubric v3 uses the specification's weighted normalisation (page 16):
+
+    IkonetU Score = ( sum of (category effective / category maximum) x category weight ) x 1,000
+
+where a category's effective points are the sum of each signal's points times the weight of the
+lane it was verified in. A category counts at most its maximum, so no category can give more than
+its weight. Technical Output and Business Operations fill the same slot, and the higher of the two
+counts (page 36).
 """
 
 from __future__ import annotations
@@ -12,24 +17,24 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from .rubric import (
+    LANE_TIER,
     LANE_WEIGHT,
     LEAGUE_THRESHOLDS,
     REGISTRATION_SIGNAL,
     UNREGISTERED_CAP,
     Category,
+    CategoryDef,
     EvidenceStatus,
     Lane,
     League,
-    ProductStage,
     Rubric,
-    SignalDef,
 )
 
 EPSILON = 1e-9
 
 
 def round2(n: float) -> float:
-    """Rounds to cents the way JavaScript's Math.round does, half up, not to even."""
+    """Rounds to two places, half up, not to even."""
     return math.floor(n * 100 + 0.5) / 100
 
 
@@ -41,36 +46,42 @@ class EvidenceItem:
     lane: Lane
     # An ISO date. Evidence past this date no longer counts.
     expires_at: str | None = None
-    # per_item: the number of verified items in this submission.
-    item_count: int | None = None
-    # months: the number of verified months.
-    months: int | None = None
-    # revenue: verified revenue over the last 12 months, already in US dollars.
-    revenue_usd: float | None = None
-    # stage: the verified product stage.
-    stage: ProductStage | None = None
 
 
 @dataclass(frozen=True)
 class SignalResult:
     code: str
     category: Category
-    weighted: float
-    capped: float
-    max_points: int
+    points: int
+    # The points times the weight of the best lane among the signal's countable evidence.
+    effective: float
+    lane: Lane | None
     evidence_ids: list[str]
 
 
 @dataclass(frozen=True)
 class CategoryResult:
     category: Category
-    earned: float
-    cap: int
+    label: str
+    max_points: int
+    weight: int
+    # The signals' effective points added up, before the maximum.
     uncapped: float
+    earned: float
+    # earned as a share of the maximum, from 0 to 1.
+    share: float
+    # What the category adds to the 1,000.
+    contribution: float
+    # False for the pathway that lost to its alternative, which adds nothing.
+    counted: bool
 
     def as_record(self) -> dict:
-        """The shape record_score() stores in scores.categories."""
-        return {"category": self.category, "uncapped": self.uncapped, "cap": self.cap, "earned": self.earned}
+        """The shape record_score() stores in scores.categories and score_snapshots.categories."""
+        return {
+            "category": self.category, "max": self.max_points, "weight": self.weight, "uncapped": self.uncapped,
+            "earned": self.earned, "share": round2(self.share * 100), "contribution": self.contribution,
+            "counted": self.counted,
+        }
 
 
 @dataclass(frozen=True)
@@ -80,8 +91,23 @@ class ScoreResult:
     league: League
     is_registered: bool
     unregistered_cap_applied: bool
+    # The pathway that counted for the shared slot: "technical" or "operations".
+    pathway: Category
     categories: list[CategoryResult] = field(default_factory=list)
     signals: list[SignalResult] = field(default_factory=list)
+
+    def category(self, code: str) -> CategoryResult | None:
+        return next((c for c in self.categories if c.category == code), None)
+
+    def tier_mix(self) -> dict[str, float]:
+        """The share of the counted effective points from each tier, in per cent (page 29)."""
+        counted = {c.category for c in self.categories if c.counted}
+        by_tier = {"T1": 0.0, "T2": 0.0, "T3": 0.0, "T4": 0.0}
+        for s in self.signals:
+            if s.lane and s.category in counted:
+                by_tier[LANE_TIER[s.lane]] += s.effective
+        total = sum(by_tier.values())
+        return {t: round2(v / total * 100) if total else 0.0 for t, v in by_tier.items()}
 
 
 @dataclass(frozen=True)
@@ -89,7 +115,8 @@ class NextAction:
     code: str
     label: str
     category: Category
-    estimated_gain: int
+    # The points the signal would add to the 1,000 at the lane a founder can get today.
+    estimated_gain: float
 
 
 def league_for(total: float) -> League:
@@ -104,7 +131,7 @@ def league_for(total: float) -> League:
 
 
 def parse_instant(value: str) -> datetime | None:
-    """Reads an ISO date or timestamp as JavaScript's Date does for the forms this app stores."""
+    """Reads an ISO date or timestamp, as the database and the forms write them."""
     text = value.strip()
     if not text:
         return None
@@ -115,7 +142,7 @@ def parse_instant(value: str) -> datetime | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        # A date alone is UTC midnight in JavaScript, and so is a timestamp without a zone here.
+        # A date alone is read as UTC midnight, and so is a timestamp without a zone.
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed
 
@@ -135,134 +162,107 @@ def is_countable(item: EvidenceItem, now: datetime) -> bool:
     return True
 
 
-def _weighted_points(definition: SignalDef, item: EvidenceItem) -> float:
-    """The points one evidence item earns for its signal before the signal cap, already lane-weighted."""
-    w = LANE_WEIGHT[item.lane]
-    mode = definition.mode
-    if mode == "fixed":
-        return definition.points * w
-    if mode == "per_item":
-        count = 1 if item.item_count is None else item.item_count
-        return max(0, math.floor(count)) * definition.points * w
-    if mode == "months":
-        return max(0, math.floor(item.months or 0)) * definition.points * w
-    if mode == "revenue":
-        per_point = definition.usd_per_point or 100
-        usd = max(0, item.revenue_usd or 0)
-        return math.floor(usd / per_point) * definition.points * w
-    if mode == "stage":
-        points = (definition.stage_points or {}).get(item.stage, 0) if item.stage else 0
-        return points * w
-    raise ValueError(f"unknown signal mode {mode}")
-
-
-def _combine(definition: SignalDef, values: list[float]) -> float:
-    """per_item evidence adds up. Every other mode counts the single best item."""
-    if not values:
-        return 0
-    if definition.mode == "per_item":
-        total = 0.0
-        for v in values:
-            total += v
-        return total
-    return max(values)
+def _contribution(definition: CategoryDef, earned: float) -> float:
+    return round2(earned / definition.max_points * definition.weight * 10)
 
 
 def calculate_score(evidence: list[EvidenceItem], rubric: Rubric, now: datetime | None = None) -> ScoreResult:
     """Calculates the IkonetU Score from approved evidence only (PRD S-1).
 
-    The rules follow the TRD: lane weight, then the signal cap, then the
-    category cap, then the unregistered cap of 600, and then the total is
-    rounded down.
+    Each signal earns its points once, at the weight of the best lane among its countable
+    evidence. Then each category is capped at its maximum and weighted, the higher pathway
+    fills the shared slot, the total is rounded down, and the cap of 600 applies to a venture
+    without approved company registration (PRD S-6).
     """
     moment = now or datetime.now(timezone.utc)
     countable = [e for e in evidence if is_countable(e, moment)]
-    codes = {s.code for s in rubric.signals}
 
     signals: list[SignalResult] = []
     for definition in rubric.signals:
         items = [e for e in countable if e.signal_code == definition.code]
-        weighted = _combine(definition, [_weighted_points(definition, i) for i in items])
+        best = max(items, key=lambda i: LANE_WEIGHT[i.lane], default=None)
         signals.append(SignalResult(
-            code=definition.code,
-            category=definition.category,
-            weighted=round2(weighted),
-            capped=round2(min(weighted, definition.max_points)),
-            max_points=definition.max_points,
-            evidence_ids=[i.id for i in items],
+            code=definition.code, category=definition.category, points=definition.points,
+            effective=round2(definition.points * LANE_WEIGHT[best.lane]) if best else 0.0,
+            lane=best.lane if best else None, evidence_ids=[i.id for i in items],
         ))
 
+    raw: dict[str, tuple[float, float]] = {}
+    for c in rubric.categories:
+        uncapped = round2(sum(s.effective for s in signals if s.category == c.code))
+        raw[c.code] = (uncapped, round2(min(uncapped, c.max_points)))
+
+    def slot(c: CategoryDef) -> str:
+        return c.alternative_to or c.code
+
+    # In each slot the category that adds most counts. On a tie the first in rubric order counts.
+    winners: dict[str, str] = {}
+    for c in rubric.categories:
+        held = winners.get(slot(c))
+        if held is None or _contribution(c, raw[c.code][1]) > _contribution(rubric.category(held), raw[held][1]) + EPSILON:
+            winners[slot(c)] = c.code
+
     categories: list[CategoryResult] = []
-    for category, cap in rubric.category_caps.items():
-        uncapped = 0.0
-        for s in signals:
-            if s.category == category:
-                uncapped += s.capped
-        categories.append(CategoryResult(category=category, uncapped=round2(uncapped), cap=cap, earned=round2(min(uncapped, cap))))
+    for c in rubric.categories:
+        uncapped, earned = raw[c.code]
+        counted = winners[slot(c)] == c.code
+        categories.append(CategoryResult(
+            category=c.code, label=c.label, max_points=c.max_points, weight=c.weight, uncapped=uncapped, earned=earned,
+            share=earned / c.max_points, contribution=_contribution(c, earned) if counted else 0.0, counted=counted,
+        ))
 
-    is_registered = REGISTRATION_SIGNAL in codes and any(e.signal_code == REGISTRATION_SIGNAL for e in countable)
-
-    earned = 0.0
-    for c in categories:
-        earned += c.earned
-    total = math.floor(earned + EPSILON)
+    is_registered = any(e.signal_code == REGISTRATION_SIGNAL for e in countable) and rubric.signal(REGISTRATION_SIGNAL) is not None
+    total = math.floor(sum(c.contribution for c in categories) + EPSILON)
     unregistered_cap_applied = False
     if not is_registered and total > UNREGISTERED_CAP:
         total = UNREGISTERED_CAP
         unregistered_cap_applied = True
 
+    technical = next((c for c in rubric.categories if c.alternative_to), None)
+    pathway = winners[technical.alternative_to] if technical else "technical"
     return ScoreResult(
-        rubric_version=rubric.version,
-        total=total,
-        league=league_for(total),
-        is_registered=is_registered,
-        unregistered_cap_applied=unregistered_cap_applied,
-        categories=categories,
-        signals=signals,
+        rubric_version=rubric.version, total=total, league=league_for(total), is_registered=is_registered,
+        unregistered_cap_applied=unregistered_cap_applied, pathway=pathway, categories=categories, signals=signals,
     )
 
 
-def convert_to_usd(amount: float, usd_per_unit: float) -> float:
-    """Converts revenue in a local currency to US dollars with one stated rate (TRD rule 4).
+def next_best_actions(result: ScoreResult, rubric: Rubric, limit: int = 5, leave_out: set[str] | None = None) -> list[NextAction]:
+    """Suggests the evidence that would add the most to the Score next (PRD P-3, O-4).
 
-    `usd_per_unit` is the value of one unit of the local currency in US dollars
-    on the evidence date. The caller stores the rate with the result.
+    Each signal a founder can add today is valued at the lane they can get for it, within the
+    room its category has left. A signal in the pathway that does not count is valued by how far
+    it would lift that pathway above the one that does. The cap of 600 is not considered.
     """
-    if not math.isfinite(amount) or not math.isfinite(usd_per_unit) or usd_per_unit <= 0:
-        raise ValueError("convert_to_usd needs a finite amount and a positive rate")
-    return round2(amount * usd_per_unit)
-
-
-def next_best_actions(result: ScoreResult, rubric: Rubric, limit: int = 5) -> list[NextAction]:
-    """Suggests the evidence that would add the most points next (PRD P-3, O-4).
-
-    It uses each signal's expected lane and the room left under the signal and
-    category caps.
-    """
-    room_by_category = {c.category: c.cap - c.earned for c in result.categories}
+    leave_out = leave_out or set()
     by_signal = {s.code: s for s in result.signals}
+    by_category = {c.category: c for c in result.categories}
+
+    def slot_of(code: str) -> str:
+        definition = rubric.category(code)
+        return definition.alternative_to or definition.code
+
+    def slot_value(slot: str, changed: str | None = None, earned: float = 0.0) -> float:
+        best = 0.0
+        for c in rubric.categories:
+            if (c.alternative_to or c.code) != slot:
+                continue
+            e = earned if c.code == changed else by_category[c.code].earned
+            best = max(best, _contribution(c, min(e, c.max_points)))
+        return best
 
     actions: list[NextAction] = []
     for definition in rubric.signals:
-        current = by_signal[definition.code].capped if definition.code in by_signal else 0
-        w = LANE_WEIGHT[definition.expected_lane]
-        mode = definition.mode
-        if mode == "fixed":
-            step = definition.points * w - current
-        elif mode == "per_item":
-            step = definition.points * w
-        elif mode == "months":
-            step = definition.points * 3 * w
-        elif mode == "revenue":
-            step = 10 * definition.points * w
-        else:
-            values = sorted((definition.stage_points or {}).values())
-            following = next((v for v in values if v * w > current + EPSILON), None)
-            step = 0 if following is None else following * w - current
-        room = min(definition.max_points - current, room_by_category.get(definition.category, 0))
-        gain = math.floor(min(step, room) + EPSILON)
-        if gain > 0:
-            actions.append(NextAction(definition.code, definition.label, definition.category, gain))
+        if not definition.offered or definition.code in leave_out:
+            continue
+        current = by_signal[definition.code].effective
+        step = definition.points * LANE_WEIGHT[definition.expected_lane] - current
+        if step <= EPSILON:
+            continue
+        category = by_category[definition.category]
+        slot = slot_of(definition.category)
+        gain = slot_value(slot, definition.category, category.uncapped + step) - slot_value(slot)
+        if gain > EPSILON:
+            actions.append(NextAction(definition.code, definition.label, definition.category, round2(gain)))
 
     actions.sort(key=lambda a: (-a.estimated_gain, a.code))
     return actions[:limit]

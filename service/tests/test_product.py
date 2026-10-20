@@ -57,15 +57,24 @@ AREAS_SEEN = [
 class TestEvidenceByArea:
     def test_gives_one_cell_per_area_in_rubric_order(self):
         cells = area_cells(AREAS_SEEN)
-        assert [c["code"] for c in cells] == ["identity", "legal", "financial", "product", "market", "team", "media", "operations"]
+        assert [c["code"] for c in cells] == [
+            "identity", "business", "infrastructure", "team", "financial", "academic", "output", "traction", "awards",
+            "governance", "media",
+        ]
         assert cells[0]["level"] == "strong"
         assert cells[1]["level"] == "gap"
-        assert cells[2]["count"] == 2
-        assert cells[5]["level"] == "building"
+        assert cells[4]["count"] == 2
+        assert cells[3]["level"] == "building"
+
+    def test_puts_both_pathways_in_the_product_area_with_the_better_status(self):
+        cells = area_cells([{"category": "technical", "status": "submitted", "count": 2},
+                            {"category": "operations", "status": "reviewed", "count": 1}])
+        output = next(c for c in cells if c["code"] == "output")
+        assert (output["level"], output["count"]) == ("strong", 3)
 
     def test_says_the_readiness_check_in_words(self):
-        assert readiness_text(AREAS_SEEN) == "Strong in 2 of 8 areas, building in 1, with a gap in 5."
-        assert readiness_text([]) == "No evidence yet, so all eight areas are gaps."
+        assert readiness_text(AREAS_SEEN) == "Strong in 2 of 11 areas, building in 1, with a gap in 8."
+        assert readiness_text([]) == "No evidence yet, so all eleven areas are gaps."
 
     def test_calls_an_area_strong_only_with_reviewed_or_third_party_evidence(self):
         assert level_of("third_party") == "strong"
@@ -138,16 +147,16 @@ class TestMomentum:
             return {"category": category, "createdAt": created_at}
         assert evidence_added_text([], NOW) == "None in 90 days"
         assert evidence_added_text([e("financial", "2026-10-01T00:00:00Z"), e("financial", "2026-09-01T00:00:00Z"),
-                                    e("legal", "2026-06-01T00:00:00Z")], NOW) == "2 pieces in 90 days, in 1 of 8 areas"
-        assert evidence_added_text([e("team", "2026-10-14T00:00:00Z")], NOW) == "1 piece in 90 days, in 1 of 8 areas"
+                                    e("business", "2026-06-01T00:00:00Z")], NOW) == "2 pieces in 90 days, in 1 of 11 areas"
+        assert evidence_added_text([e("technical", "2026-10-14T00:00:00Z"), e("operations", "2026-10-14T00:00:00Z")],
+                                   NOW) == "2 pieces in 90 days, in 1 of 11 areas"
 
     def test_gives_every_area_a_reason_it_matters(self):
         assert all(len(AREA_WHY[a["code"]]) > 20 for a in AREAS)
 
 
 def row(signal_code: str, status: str, lane: str | None = None) -> dict:
-    return {"id": signal_code, "signal_code": signal_code, "status": status, "lane": lane, "expires_at": None,
-            "item_count": None, "months": None, "revenue_usd": None, "stage": None}
+    return {"id": signal_code, "signal_code": signal_code, "status": status, "lane": lane, "expires_at": None}
 
 
 class TestNextSteps:
@@ -160,6 +169,11 @@ class TestNextSteps:
         first = next_steps([])[0]
         assert first.code not in [s.code for s in next_steps([row(first.code, "submitted")])]
 
-    def test_leaves_out_a_fixed_signal_that_is_already_approved(self):
-        steps = next_steps([row("company_registration", "approved", "government")], 30)
+    def test_leaves_out_a_signal_that_is_already_approved(self):
+        steps = next_steps([row("company_registration", "approved", "government")], 200)
         assert "company_registration" not in [s.code for s in steps]
+
+    def test_counts_a_founders_own_statement_at_the_self_declared_weight(self):
+        from app.scoring import venture_score
+        r = venture_score([row("team_diversity", "approved", "self")])
+        assert next(s for s in r.signals if s.code == "team_diversity").effective == 6

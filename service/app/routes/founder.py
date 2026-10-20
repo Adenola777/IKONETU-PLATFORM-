@@ -33,16 +33,17 @@ from ..forms import (
 )
 from ..guards import is_repeat, request_key
 from ..log import log_error, log_info
-from ..product import country_name, stage_label, summarise_areas
-from ..score_engine import RUBRIC_V2
-from ..scoring import EVIDENCE_COLUMNS, next_steps
+from ..product import country_name, stage_label, summarise_areas, why_it_matters
+from ..score_engine import RUBRIC_V3
+from ..score_view import area_shares, league_name, monthly_record, next_league_text, radar
+from ..scoring import EVIDENCE_COLUMNS, next_steps, record_venture_score, venture_score
 from ..session import RedirectTo, current_user, home_for, require_founder, require_viewer
 from ..venture_profile import load_venture_profile
 from ..web import Meta, failed, form_data, one, redirect, render, sent, set_flash
 
 router = APIRouter()
 
-SIGNAL_CODES = {s.code for s in RUBRIC_V2.signals}
+SIGNAL_CODES = {s.code for s in RUBRIC_V3.signals if s.offered}
 UPDATE_ID = re.compile(r"[0-9a-f-]{36}")
 
 
@@ -163,7 +164,7 @@ async def suspended(request: Request):
 # ---------------------------------------------------------------- dashboard
 async def _dashboard(request: Request, v, venture: dict, states: dict | None = None):
     db = v.db
-    pitch, evidence, updates, requests, shown = await asyncio.gather(
+    pitch, evidence, updates, requests, shown, snapshots = await asyncio.gather(
         db.table("pitches").eq("venture_id", venture["id"]).maybe_single("duration_seconds, updated_at"),
         db.table("evidence").eq("venture_id", venture["id"]).select(EVIDENCE_COLUMNS),
         db.table("venture_updates").eq("venture_id", venture["id"]).order("created_at", ascending=False).limit(1)
@@ -171,8 +172,19 @@ async def _dashboard(request: Request, v, venture: dict, states: dict | None = N
         db.table("introductions").eq("founder_id", v.id).eq("status", "pending").select("id"),
         # The readiness check reads the evidence the way investors see it, so the two always agree.
         db.rpc("venture_evidence", {"p_venture": venture["id"]}),
+        db.table("score_snapshots").eq("venture_id", venture["id"]).order("month", ascending=False).limit(12)
+        .select("month, total, league"),
     )
     own = evidence.data or []
+    # The score is worked out here from the founder's evidence, with the same engine and rules
+    # record_venture_score uses, so the dashboard is current even when a recording is late.
+    score = venture_score(own)
+    shares = area_shares(score)
+    steps = [
+        {"code": a.code, "label": a.label, "category": a.category, "gain": max(1, int(a.estimated_gain + 0.5)),
+         "hint": RUBRIC_V3.signal(a.code).hint, "why": why_it_matters(a.category)}
+        for a in next_steps(own)
+    ]
     context = {
         "profile": v.profile,
         "venture": venture,
@@ -181,7 +193,13 @@ async def _dashboard(request: Request, v, venture: dict, states: dict | None = N
         "published": bool(venture.get("published_at")),
         "has_pitch": bool(pitch.data),
         "areas": summarise_areas(shown.data or []),
-        "steps": next_steps(own),
+        "score": score,
+        "league": league_name(score.league),
+        "next_league": next_league_text(score.total),
+        "shares": shares,
+        "chart": radar(shares),
+        "record": monthly_record(snapshots.data or []),
+        "steps": steps,
         "evidence_count": len(own),
         "reviewed": sum(1 for e in own if e["status"] == "approved"),
         "last_update": (updates.data or [{}])[0].get("created_at") if updates.data else None,
@@ -343,6 +361,9 @@ async def remove_pitch(request: Request):
 def founder_status(r: dict) -> dict:
     """What the founder sees about each item. Investors see less: venture_evidence decides that."""
     status = r["status"]
+    if status == "approved" and r.get("lane") == "self":
+        return {"text": "Your own statement. It counts at 60% of its points without a review, and investors do not see it.",
+                "investors": None}
     if status == "approved":
         if r.get("lane") in ("government", "source"):
             return {"text": "Approved from an outside source.", "investors": "third_party"}
@@ -371,7 +392,8 @@ async def _evidence_page(request: Request, v, venture: dict, states: dict | None
         {**r, "shown": founder_status(r), "area": signal_area(r["signal_code"]), "label": signal_label(r["signal_code"])}
         for r in (result.data or [])
     ]
-    context = {"rows": rows, "signal": signal, "signal_options": signal_options(), "new_key": str(uuid.uuid4())}
+    context = {"rows": rows, "signal": signal, "signal_options": signal_options(), "new_key": str(uuid.uuid4()),
+               "categories": RUBRIC_V3.categories}
     if states:
         context["states"] = states
     return render(request, "founder/evidence.html", context, _meta("Your evidence"))
@@ -384,6 +406,7 @@ async def evidence_page(request: Request):
 
 
 EVIDENCE_ADDED = "Your evidence is added. A reviewer will look at it, and its status shows below."
+STATEMENT_ADDED = "Your statement is added, and your score includes it."
 
 
 @router.post("/dashboard/evidence")
@@ -407,6 +430,8 @@ async def submit_evidence(request: Request):
                             [{"name": f.filename, "type": f.content_type or "", "size": f.size or 0} for f in files])
     if not parsed.ok:
         return await _evidence_page(request, v, venture, failed("evidence", "Please check the form.", parsed.errors, values))
+    if parsed.data["statement"]:
+        return await _declare(request, v, venture, parsed.data, key, here, values)
 
     if key:
         seen = await v.db.table("evidence").eq("venture_id", venture["id"]).eq("request_key", key).maybe_single("id")
@@ -446,6 +471,29 @@ async def submit_evidence(request: Request):
         return await _evidence_page(request, v, venture,
                                     failed("evidence", "We could not save the evidence. Please try again.", values=values))
     return sent(here, "evidence", EVIDENCE_ADDED)
+
+
+async def _declare(request: Request, v, venture: dict, data: dict, key: str | None, here: str, values: dict):
+    """Adds the founder's own statement for a self-declared signal through declare_evidence(), which
+    approves it at once in the self lane. The score is then recorded by the server's own service
+    role, because a founder may not record a score. If that fails, the venture stays on the staff
+    list of scores to update, and the founder's dashboard already counts the statement."""
+    made = await v.db.rpc("declare_evidence", {
+        "p_venture": venture["id"], "p_signal": data["signal"], "p_summary": data["summary"], "p_request_key": key,
+    })
+    if not made.ok:
+        if is_repeat(made.error):
+            return sent(here, "evidence", STATEMENT_ADDED)
+        log_error("evidence.declare_failed", {"venture": venture["id"], "code": made.error.code})
+        return await _evidence_page(request, v, venture,
+                                    failed("evidence", "We could not save the statement. Please try again.", values=values))
+    supabase = request.app.state.supabase
+    server = supabase.as_service() if supabase else None
+    if server is None:
+        log_error("score.record_failed", {"venture": venture["id"], "attempts": 0, "code": "no_service_role"})
+    else:
+        await record_venture_score(server, venture["id"], made.data if isinstance(made.data, str) else None)
+    return sent(here, "evidence", STATEMENT_ADDED)
 
 
 # ---------------------------------------------------------------- updates

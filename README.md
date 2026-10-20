@@ -50,7 +50,7 @@ After sign-in, a new person chooses at `/onboarding` whether they are a founder 
 
 | Address | What the founder does |
 |---|---|
-| `/dashboard` | Publishes or hides the profile, sees the readiness check and the next three steps, and edits the venture's details and its ask. The dashboard shows no score |
+| `/dashboard` | Sees the IkonetU Score with its league, a chart of the eleven areas, the next three steps and the monthly record; publishes or hides the profile; sees the readiness check investors see; and edits the venture's details and its ask. Investors do not see the score |
 | `/dashboard/pitch` | Uploads a pitch of up to 90 seconds and 50 MB, with a typed transcript. The video goes from the browser straight to the founder's folder in the private `pitches` bucket. The captions are made from the transcript |
 | `/dashboard/evidence` | Adds evidence with up to three files or a link, and sees each item's status and the reviewer's note or reason |
 | `/dashboard/updates` | Posts and removes progress updates |
@@ -122,7 +122,7 @@ The app was built and tested with Python 3.13.16.
 cd service
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest          # 201 tests, 47 of them in the score engine
+.venv/bin/python -m pytest          # 213 tests, 49 of them in the score engine
 .venv/bin/uvicorn app.main:app --port 3000    # http://localhost:3000
 ```
 
@@ -130,7 +130,7 @@ Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Sup
 
 ## Rules the code enforces
 
-- A score only counts approved evidence. Self-reported claims add nothing.
+- A score only counts approved evidence and the founder's own statements for the three self-declared signals, which count at 60% of their points. The rules are rubric v3, from the Scoring System Specification of March 2026.
 - Founders cannot approve their own evidence, change its status or give themselves staff roles. The database blocks these even if the app has a bug.
 - Score history and the audit log cannot be edited after they are written.
 - The waitlist and the investor interest list cannot be read or written by any signed-in user or visitor. Only the server writes to the waitlist, and nothing writes to the interest list since its form was retired.
