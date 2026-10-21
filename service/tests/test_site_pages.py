@@ -237,3 +237,16 @@ def test_the_founder_terms_and_the_privacy_policy_state_the_student_founder_rule
     assert "IkonetU is for student founders." in terms and "You can be in any country." in terms
     assert "based in Nigeria, Ghana or Kenya" not in terms
     assert "when you confirmed being a student founder" in _text(client, "/privacy")
+
+
+# The owner chose IBM Plex Sans on 21 October 2026 in place of Fraunces and Plus Jakarta Sans.
+def test_every_font_the_site_names_is_ibm_plex_sans_and_is_served(client):
+    css = re.sub(r"/\*.*?\*/", "", client.get("/static/css/fonts.css").text, flags=re.DOTALL)
+    assert "Fraunces" not in css and "Jakarta" not in css
+    assert set(re.findall(r'font-family:"([^"]+)"', css)) == {"IBM Plex Sans", "IBM Plex Sans Fallback"}
+    for path in set(re.findall(r"url\((/static/fonts/[^)]+)\)", css)):
+        assert client.get(path).status_code == 200, path
+    preloads = re.findall(r'<link rel="preload" href="(/static/fonts/[^"]+)"', client.get("/").text)
+    assert preloads == ["/static/fonts/ibm-plex-sans-latin-400-normal.woff2", "/static/fonts/ibm-plex-sans-latin-600-normal.woff2"]
+    assert all(client.get(p).status_code == 200 for p in preloads)
+    assert "SIL OPEN FONT LICENSE" in client.get("/static/fonts/IBM-Plex-Sans-LICENSE.txt").text.upper()
