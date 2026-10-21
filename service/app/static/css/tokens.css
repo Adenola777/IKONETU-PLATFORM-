@@ -1,0 +1,104 @@
+/* The design tokens the owner approved on 21 October 2026 (the design review, steps 2 and 4). Every
+   stylesheet reads its colours, sizes, corners, shadows and timings from here. docs/DESIGN_SYSTEM.md
+   explains each token, its contrast and the component states that use it. */
+:root {
+  /* Shared chrome */
+  --ink: #101828;
+  --text-2: #475467;
+  --text-3: #344054;
+  --text-disabled: #667085;
+  --line: #E7EAF0;
+  --line-control: #858FA1;
+  --line-strong: #475467;
+  --fill: #F2F4F7;
+  --fill-pressed: #E4E7EC;
+  --fill-panel: #F9FAFB;
+  --canvas: #FFFFFF;
+  --footer: #0B1A33;
+  --footer-text: #B9C4D6;
+  --footer-line: #1E3150;
+
+  /* Founder context. The orange is a fill only: as text it measures 3.05:1 on white. */
+  --founder: #F26B1D;
+  --founder-hover: #E05A0E;
+  --founder-text: #B54708;
+  --founder-tint: #FFF1E6;
+  --founder-rule: #F9C9AA;
+
+  /* Investor context */
+  --investor: #123C7A;
+  --investor-hover: #0B2A55;
+  --investor-press: #081F40;
+  --investor-tint: #EEF4FF;
+  --investor-tint-press: #D9E3F5;
+
+  /* Status, kept apart from the two contexts */
+  --verified: #067647;
+  --verified-tint: #ECFDF3;
+  --third-party: #5925DC;
+  --third-party-tint: #F4F3FF;
+  --error: #B42318;
+  --error-hover: #912018;
+  --error-tint: #FEF3F2;
+  --error-line: #FECDCA;
+  --warning: #93370D;
+  --warning-tint: #FFFAEB;
+
+  /* Measures: the readiness meter and the dated progress strip */
+  --mark-on: #344054;
+  --mark-mid: #858FA1;
+  --mark-off: #FFFFFF;
+  --mark-edge: #858FA1;
+
+  /* Type: IBM Plex Sans at 400 and 600, seven sizes */
+  --t-display: clamp(34px, 2.4vw + 25px, 56px);
+  --t-title: clamp(27px, 1.4vw + 21px, 38px);
+  --t-heading: clamp(20px, 0.25vw + 19px, 22px);
+  --t-lead: clamp(18px, 0.25vw + 17px, 20px);
+  --t-body: 17px;
+  --t-small: 15px;
+  --t-label: 13px;
+  /* Three fixed sizes for text inside components: captions on thumbnails, hints and errors, and inputs */
+  --t-ui-xs: 12px;
+  --t-ui-s: 14px;
+  --t-ui: 16px;
+
+  /* Widths */
+  --w-page: 1200px;
+  --w-wide: 960px;
+  --w-read: 680px;
+  --w-intro: 640px;
+  --w-title: 20ch;
+
+  /* Spacing on a 4px base */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --s-10: 128px;
+
+  /* Corners and shadows */
+  --r-control: 12px;
+  --r-panel: 16px;
+  --r-frame: 24px;
+  --r-pill: 999px;
+  --r-mark: 3px; /* the cells of the readiness meter and the progress strip */
+  --shadow-raised: 0 1px 3px rgba(16, 24, 40, 0.10);
+  --shadow-frame: 0 24px 48px rgba(16, 24, 40, 0.10);
+
+  /* Focus */
+  --focus: 3px solid #123C7A;
+  --focus-on-dark: 3px solid #FFFFFF;
+
+  /* Motion. Every duration is 0ms under the reduced motion setting. */
+  --m-quick: 150ms;
+  --m-open: 200ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --m-quick: 0ms; --m-open: 0ms; }
+}

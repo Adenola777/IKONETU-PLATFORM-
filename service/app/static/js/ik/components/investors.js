@@ -23,7 +23,7 @@ const GROUPS = [
 
 const NO_FILTERS = { sector: [], stage: [], geo: [], evidence: [], momentum: [] };
 const STATUS_NAME = { reviewed: "Platform reviewed", third: "Third-party evidence", submitted: "Founder submitted" };
-const STATUS_CLASS = { reviewed: "chip-i", third: "chip-io", submitted: "chip-n" };
+const STATUS_CLASS = { reviewed: "chip-ok", third: "chip-3p", submitted: "chip-n" };
 const PREVIEW_SECONDS = 5;
 
 function stopPreview(ctx) {
@@ -78,7 +78,7 @@ export default {
         cells: Array.from({ length: 11 }, (_, i) => ({ c: i < f.lv[0] ? "s" : i < f.lv[0] + f.lv[1] ? "b" : "" })),
         meta: `${f.city}, ${f.country} · ${f.sector} · ${f.stage} · ${f.length} pitch · ${f.n90} ${f.n90 === 1 ? "update" : "updates"} in 90 days`,
         momText: `Updated ${f.days} days ago`,
-        momCls: f.days <= 30 ? "chip-f" : "chip-n",
+        momCls: "chip-n",
         momDot: f.days <= 30 ? "#F26B1D" : "#858FA1",
         watchLabel: `Watch the ${f.name} pitch, ${f.length}`,
         evidence: f.ev.map(([area, status]) => ({

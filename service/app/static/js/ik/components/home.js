@@ -28,7 +28,7 @@ const MODULES = [
 ];
 
 const EVIDENCE_NAME = { reviewed: "Platform reviewed", third: "Third-party evidence available", submitted: "Founder submitted", none: "Not added yet" };
-const EVIDENCE_CLASS = { reviewed: "chip-i", third: "chip-io", submitted: "chip-n", none: "chip-none" };
+const EVIDENCE_CLASS = { reviewed: "chip-ok", third: "chip-3p", submitted: "chip-n", none: "chip-none" };
 const PROGRESS_NAME = { done: "Complete", progress: "In progress", action: "Action needed" };
 const PROGRESS_CLASS = { done: "chip-n", progress: "chip-n", action: "chip-f" };
 

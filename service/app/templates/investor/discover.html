@@ -60,7 +60,7 @@
 <div class="res-body">
 <div class="row" style="justify-content:space-between;align-items:flex-start">
 <h3 class="res-name"><a href="/investor/ventures/{{ r.venture_id }}">{{ r.name }}</a></h3>
-<span class="chip {{ 'chip-f' if recent else 'chip-n' }}"><span class="dot" aria-hidden="true"{% if not recent %} style="background:#858FA1"{% endif %}></span>{{ activity_text(r.last_activity, now) }}</span>
+<span class="chip chip-n"><span class="dot" aria-hidden="true"{% if not recent %} style="background:var(--mark-mid)"{% endif %}></span>{{ activity_text(r.last_activity, now) }}</span>
 </div>
 <p class="small" style="margin:0">{{ r.founder_name }}{% if r.city %}, {{ r.city }}{% endif %}, {{ country_name(r.country) }} · {{ r.sector }} · {{ stage_label(r.stage) }}{% if length %} · {{ length }} pitch{% endif %} · {{ consistency(r.updates_90d) }}</p>
 {% if r.description %}<p class="body2" style="margin:0">{{ r.description }}</p>{% endif %}

@@ -58,7 +58,7 @@ export default {
       const notes = WEEK_NOTES[i] || [];
       return {
         name: `Week of ${weekLabel(i)}${notes.length ? `, ${notes.length} ${notes.length === 1 ? "update" : "updates"}` : ", no update"}`,
-        bg: notes.length ? "#F26B1D" : "#E7EAF0",
+        bg: notes.length ? "var(--mark-on)" : "var(--mark-off)",
         on: s.week === i,
         pick: () => set((now) => ({ ...now, week: i })),
       };

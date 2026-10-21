@@ -64,11 +64,11 @@ def area_label(code: str) -> str:
 # and submitted for evidence nobody has decided yet.
 STATUS = {
     "third_party": {
-        "name": "Third-party evidence available", "chip": "chip-io", "icon": "link",
+        "name": "Third-party evidence available", "chip": "chip-3p", "icon": "link",
         "means": "An outside source backs it. The outside source has not assessed the company.",
     },
     "reviewed": {
-        "name": "Platform reviewed", "chip": "chip-i", "icon": "shield-check",
+        "name": "Platform reviewed", "chip": "chip-ok", "icon": "shield-check",
         "means": "An IkonetU reviewer compared it with its source. A review is not an audit, a valuation or an endorsement.",
     },
     "submitted": {
@@ -87,7 +87,7 @@ def is_shown_status(v: object) -> bool:
 # holds platform-reviewed or third-party evidence, building when it holds founder-submitted
 # evidence only, and a gap when it holds none. The owner set this on 15 October 2026.
 LEVEL = {
-    "strong": {"name": "Strong", "chip": "chip-i", "means": "Platform-reviewed or third-party evidence"},
+    "strong": {"name": "Strong", "chip": "chip-ok", "means": "Platform-reviewed or third-party evidence"},
     "building": {"name": "Building", "chip": "chip-n", "means": "Founder-submitted evidence only"},
     "gap": {"name": "Gap", "chip": "chip-none", "means": "No evidence yet"},
 }
