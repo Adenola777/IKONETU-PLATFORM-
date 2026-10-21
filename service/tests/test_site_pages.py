@@ -1,4 +1,4 @@
-"""The nine website pages: each answers with its own title, description and canonical address."""
+"""The ten website pages: each answers with its own title, description and canonical address."""
 
 from __future__ import annotations
 
@@ -168,7 +168,7 @@ def _script_text(name):
     return " ".join(re.findall(r'"((?:[^"\\]|\\.){12,})"', (APP / f"static/js/ik/components/{name}.js").read_text()))
 
 
-@pytest.mark.parametrize("key", MARKETING)
+@pytest.mark.parametrize("key", [*MARKETING, "pricing"])
 def test_no_marketing_page_promises_a_reviewer_check_or_uses_a_contrast_sentence(client, key):
     text = _text(client, PUBLIC_PAGES[key]["path"])
     assert "reviewer" not in text.lower()
@@ -182,13 +182,30 @@ def test_no_page_script_promises_a_reviewer_check_or_uses_a_contrast_sentence(na
     assert CONTRAST.findall(text) == []
 
 
-def test_the_website_states_the_pricing_model_without_an_amount(client):
-    home = _text(client, "/")
-    assert "Verification is the part you pay for." in home and "Nobody is charged today." in home
-    for path in ("/for-founders", "/for-investors"):
-        assert "Nobody is charged today." in _text(client, path)
-    for key in MARKETING:
-        assert re.findall(r"[£$€]\s?\d+(?:\.\d\d)? (?:a|per) (?:month|year)", _text(client, PUBLIC_PAGES[key]["path"])) == []
+# The owner set the prices on 21 October 2026. Every page that states a price states one of these two.
+PRICES = {"$5 a month", "$29 a month"}
+
+
+@pytest.mark.parametrize("key", [*MARKETING, "pricing", "terms"])
+def test_every_page_that_states_a_price_states_the_owners_prices(client, key):
+    text = _text(client, PUBLIC_PAGES[key]["path"])
+    assert set(re.findall(r"[£$€]\s?\d+(?:\.\d\d)? (?:a|per) (?:month|year)", text)) <= PRICES
+
+
+def test_the_pricing_page_has_two_plans_for_each_side_and_says_premium_is_not_on_sale(client):
+    text = _text(client, "/pricing")
+    for plan in ("Founder Free", "Founder Premium", "Investor Free", "Investor Premium"):
+        assert plan in text
+    assert "$5 a month" in text and "$29 a month" in text
+    assert "Premium is not on sale yet." in text and "nobody is charged today" in text
+    for path in ("/", "/for-founders", "/for-investors", "/trust-and-safety", "/terms"):
+        assert "Premium is not on sale yet" in _text(client, path), path
+
+
+@pytest.mark.parametrize("key", list(PUBLIC_PAGES))
+def test_every_header_links_to_pricing(client, key):
+    body = client.get(PUBLIC_PAGES[key]["path"]).text
+    assert '<a class="navlink" href="/pricing"' in body and '<a class="flink" href="/pricing">Pricing</a>' in body
 
 
 def test_the_tour_music_waits_for_the_visitor(client):

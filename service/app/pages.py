@@ -32,6 +32,11 @@ PUBLIC_PAGES = {
         "title": "Readiness self-check",
         "description": "Answer eleven questions, one for each area of the IkonetU Score, and see what to add first. You need no account, and nothing is saved.",
     },
+    "pricing": {
+        "path": "/pricing",
+        "title": "Pricing",
+        "description": "Founders and investors each have two plans. Free covers the pitch, search and introductions, and Premium adds verification.",
+    },
     "privacy": {
         "path": "/privacy",
         "title": "Privacy policy",

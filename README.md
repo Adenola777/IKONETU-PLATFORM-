@@ -24,6 +24,7 @@ The public pages were built from the design boards of October 2026 and are serve
 | `/for-founders` | For founders |
 | `/for-investors` | For investors |
 | `/readiness-check` | Readiness self-check. The answers stay in the browser and are never sent |
+| `/pricing` | Pricing: Free and Premium for founders and for investors |
 | `/trust-and-safety` | Trust and safety |
 | `/privacy` | Privacy policy |
 | `/terms` | Terms |
