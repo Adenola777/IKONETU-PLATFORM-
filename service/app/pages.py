@@ -2,7 +2,8 @@
 
 Each description is the page's own opening line, and the site map lists exactly these pages.
 Copied on 17 October 2026 from apps/web/lib/pages.ts. How it works, About and Questions were removed on
-21 October 2026, and their addresses redirect (routes/system.py).
+21 October 2026, and their addresses redirect (routes/system.py). Reporting and complaints was added the same day,
+with the legal pack.
 """
 
 PUBLIC_PAGES = {
@@ -34,16 +35,21 @@ PUBLIC_PAGES = {
     "privacy": {
         "path": "/privacy",
         "title": "Privacy policy",
-        "description": "How IkonetU Technology Limited collects, uses and keeps personal data. Adopted on 15 October 2026.",
+        "description": "How IkonetU Technology Limited collects, uses, shares and keeps personal data, and the rights you have. This version is dated 21 October 2026.",
     },
     "terms": {
         "path": "/terms",
         "title": "Terms",
-        "description": "The website terms, founder terms, investor terms, acceptable use policy and pitch licence of IkonetU. Adopted on 15 October 2026.",
+        "description": "The terms of use, founder terms, investor terms, acceptable use policy and investment risk warning of IkonetU. This version is dated 21 October 2026.",
     },
     "cookies": {
         "path": "/cookies",
         "title": "Cookie policy",
-        "description": "The cookies and browser storage IkonetU uses, and how long each item lasts. Adopted on 15 October 2026.",
+        "description": "Every cookie and item of browser storage that IkonetU uses, what each one does and how long it lasts. This version is dated 21 October 2026.",
+    },
+    "complaints": {
+        "path": "/complaints",
+        "title": "Reporting and complaints",
+        "description": "How to report content or a user on IkonetU, how to ask for a decision to be reviewed and how to complain. This policy is dated 21 October 2026.",
     },
 }

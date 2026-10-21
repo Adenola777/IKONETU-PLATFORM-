@@ -53,7 +53,7 @@ The domain's DNS records point it at the Render service. Render shows the record
 
 ## 5. Checks after the first deployment
 
-1. The home page, `/privacy`, `/terms` and `/cookies` load at the public address.
+1. The home page, `/privacy`, `/terms`, `/cookies` and `/complaints` load at the public address.
 2. `/robots.txt` and `/sitemap.xml` name the public address, which shows `NEXT_PUBLIC_SITE_URL` was set when the app started.
 3. `/investor-interest` redirects to `/for-investors`.
 4. A test founder uploads a short pitch at `/dashboard/pitch` and it plays back, which shows the browser can reach Supabase Storage under the Content-Security-Policy.

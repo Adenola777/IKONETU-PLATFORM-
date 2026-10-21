@@ -1,15 +1,17 @@
-"""The eight website pages: each answers with its own title, description and canonical address."""
+"""The nine website pages: each answers with its own title, description and canonical address."""
 
 from __future__ import annotations
 
 import html
 import re
+from pathlib import Path
 
 import pytest
 
 from app.pages import PUBLIC_PAGES
 
 INTERACTIVE = {"home", "founders", "investors", "readiness"}
+APP = Path(__file__).resolve().parents[1] / "app"
 
 
 @pytest.mark.parametrize("key", list(PUBLIC_PAGES))
@@ -83,3 +85,73 @@ def test_the_self_check_and_the_samples_count_the_eleven_areas_of_the_score(clie
 def test_trust_and_safety_says_what_the_score_is_and_that_investors_do_not_see_it(client):
     body = client.get("/trust-and-safety").text
     assert "The IkonetU Score is a number from 0 to 1,000" in body and "Investors do not see it." in body
+
+
+# The legal pack of 21 October 2026.
+LEGAL = ["privacy", "terms", "cookies", "complaints"]
+
+
+def _text(client, path):
+    return html.unescape(re.sub(r"<[^>]+>", " ", client.get(path).text))
+
+
+def test_the_cookie_policy_names_every_cookie_and_storage_item_the_code_sets(client):
+    # Read from the code, so a new cookie fails this test until the policy names it.
+    from app.session import ACCESS_COOKIE, REFRESH_COOKIE
+    from app.signin import PENDING_COOKIE, VERIFIER_COOKIE
+    from app.web import FLASH_COOKIE
+    side = re.search(r'const KEY = "([^"]+)"', (APP / "static/js/ik/side.js").read_text()).group(1)
+    body = client.get("/cookies").text
+    for name in (ACCESS_COOKIE, REFRESH_COOKIE, PENDING_COOKIE, VERIFIER_COOKIE, FLASH_COOKIE, side, "__cf_bm"):
+        assert f"<td>{name}</td>" in body, name
+    assert "pixels" not in body
+
+
+def test_the_privacy_policy_names_a_privacy_contact_and_the_processors_the_app_uses(client):
+    text = _text(client, "/privacy")
+    assert "Data Protection Officer" not in text and "We have not appointed a data protection officer." in text
+    assert "Supabase" in text and "Render" in text
+    # Sentry is named in the policy before SENTRY_DSN is set (app/log.py), and it is not set yet.
+    assert "Sentry" not in text
+    for gone in ("buttons clicked", "payment providers", "pixels"):
+        assert gone not in text
+
+
+def test_the_privacy_policy_explains_the_score_as_profiling(client):
+    text = _text(client, "/privacy")
+    assert "Data protection law calls this profiling." in text and "Investors do not see it" in text
+
+
+@pytest.mark.parametrize("anchor", ["terms-use", "terms-founder", "terms-investor", "terms-aup", "risk"])
+def test_the_terms_keep_the_anchors_other_pages_link_to(client, anchor):
+    assert f'id="{anchor}"' in client.get("/terms").text
+
+
+def test_the_investor_terms_set_the_condition_for_investors_in_the_united_kingdom(client):
+    text = _text(client, "/terms")
+    assert "If you are in the United Kingdom, we approve your account only after you give us one of the following." in text
+    assert "Statement for investors in the United Kingdom" in text
+
+
+def test_founders_opt_in_before_their_pitch_is_used_in_marketing(client):
+    assert "only if you agree to that use in writing" in _text(client, "/terms")
+
+
+@pytest.mark.parametrize("key", LEGAL)
+def test_each_legal_page_links_to_the_other_three(client, key):
+    body = client.get(PUBLIC_PAGES[key]["path"]).text
+    nav = re.search(r'<nav aria-label="Legal pages" class="legalnav">(.*?)</nav>', body).group(1)
+    assert re.findall(r'href="([^"]+)"', nav) == ["/privacy", "/terms", "/cookies", "/complaints"]
+    assert f'href="{PUBLIC_PAGES[key]["path"]}" aria-current="page"' in nav
+
+
+@pytest.mark.parametrize("key", list(PUBLIC_PAGES))
+def test_every_footer_links_to_reporting_and_complaints(client, key):
+    assert '<a class="flink" href="/complaints">Complaints</a>' in client.get(PUBLIC_PAGES[key]["path"]).text
+
+
+@pytest.mark.parametrize("key", LEGAL)
+def test_no_legal_page_uses_a_dash(client, key):
+    text = _text(client, PUBLIC_PAGES[key]["path"])
+    main = text[text.index("Skip to content"):]
+    assert re.findall("[\u2012\u2013\u2014\u2015]", main) == []

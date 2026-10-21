@@ -12,7 +12,7 @@ router = APIRouter()
 # The template of each page, named after the page class its board gives it (pg-home and so on).
 TEMPLATES = {
     "home": "home", "founders": "founders", "investors": "investors", "trust": "trust",
-    "readiness": "readiness", "privacy": "privacy", "terms": "terms", "cookies": "cookies",
+    "readiness": "readiness", "privacy": "privacy", "terms": "terms", "cookies": "cookies", "complaints": "complaints",
 }
 
 

@@ -64,7 +64,7 @@ def test_builds_a_database_row_from_a_valid_form():
     assert r["ok"] is True
     assert r["row"] == {
         "full_name": "Amara Okafor", "contact": "+2348031234567", "contact_type": "phone", "country": "NG",
-        "role": "founder", "confirmed_adult": True, "privacy_version": "2026-10-15", "source": "landing",
+        "role": "founder", "confirmed_adult": True, "privacy_version": "2026-10-21", "source": "landing",
     }
 
 

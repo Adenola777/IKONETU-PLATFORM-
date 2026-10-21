@@ -28,6 +28,7 @@ The public pages were built from the design boards of October 2026 and are serve
 | `/privacy` | Privacy policy |
 | `/terms` | Terms |
 | `/cookies` | Cookie policy |
+| `/complaints` | Reporting and complaints |
 
 The investor interest form was retired on 15 October 2026, when investor accounts opened. Every investor button on the website now leads to account sign-up, and the old address `/investor-interest` redirects to `/for-investors`. The `investor_interest` table keeps the rows it already holds.
 

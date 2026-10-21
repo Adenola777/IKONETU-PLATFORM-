@@ -16,8 +16,8 @@ COUNTRIES = (
 COUNTRY_CODES = tuple(c["code"] for c in COUNTRIES)
 ROLES = ("founder", "investor", "mentor")
 
-# The version of the privacy policy a person accepts: the one IkonetU Technology Limited adopted on 15 October 2026.
-PRIVACY_VERSION = "2026-10-15"
+# The version of the privacy policy a person accepts: the one dated 21 October 2026, which replaced that of 15 October 2026.
+PRIVACY_VERSION = "2026-10-21"
 
 FIELDS = ("fullName", "contact", "country", "role", "confirmedAdult", "acceptedPrivacy", "website")
 
