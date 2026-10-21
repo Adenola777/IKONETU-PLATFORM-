@@ -66,7 +66,7 @@ The domain's DNS records point it at the Render service. Render shows the record
 ## What the app does not need
 
 - The fonts are in `service/app/static/fonts` and are served by the app itself, so no request goes to Google Fonts.
-- The walkthrough video, its poster and the product screens are in `service/app/public/media` and are served by the app.
+- The product screens are in `service/app/public/media` and are served by the app.
 - The app sets no analytics or advertising cookies.
 
 ## Health checks

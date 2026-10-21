@@ -23,22 +23,21 @@ The public pages were built from the design boards of October 2026 and are serve
 | `/` | Home |
 | `/for-founders` | For founders |
 | `/for-investors` | For investors |
-| `/how-it-works` | How it works |
 | `/readiness-check` | Readiness self-check. The answers stay in the browser and are never sent |
 | `/trust-and-safety` | Trust and safety |
-| `/about` | About |
-| `/questions` | Questions |
 | `/privacy` | Privacy policy |
 | `/terms` | Terms |
 | `/cookies` | Cookie policy |
 
 The investor interest form was retired on 15 October 2026, when investor accounts opened. Every investor button on the website now leads to account sign-up, and the old address `/investor-interest` redirects to `/for-investors`. The `investor_interest` table keeps the rows it already holds.
 
-The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label. The picture of the next three steps was captured again on 17 October 2026, after the dashboard's wording changed.
+The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label. On 21 October 2026 five of them (the score card, the next three steps, founder search, a piece of evidence and the momentum card) were captured again on the same sample founders, served through a stand-in for Supabase built the way the route tests build theirs, because the IkonetU Score changed what those screens show.
+
+On 21 October 2026 the owner approved the website copy audit. How it works, About and Questions were removed: `/how-it-works` and `/about` redirect to the home page and `/questions` to For founders. The walkthrough video was taken off the website.
 
 IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `service/app/pages.py`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
 
-The page markup lives in `service/app/templates/site/pages` and the styles in `service/app/static/css/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the readiness self-check, is in `service/app/static/js/ik`. The signed-in pages use the same shared styles, with their own additions in `service/app/static/css/app.css`.
+The page markup lives in `service/app/templates/site/pages` and the styles in `service/app/static/css/site.css`. The behaviour of each page, such as the menu, the pitch player and the readiness self-check, is in `service/app/static/js/ik`. The signed-in pages use the same shared styles, with their own additions in `service/app/static/css/app.css`.
 
 The fonts are kept in `service/app/static/fonts` and served by the app, so no visitor's browser asks Google for them.
 

@@ -13,7 +13,7 @@ until the last batch removed it.
 | `app/routes/` | One module per part: `site.py` (the website), `auth.py` (sign-in), `founder.py`, `investor.py`, `introductions.py`, `staff.py`, and `system.py` (`/api/health`, the waitlist, `robots.txt` and the site map) |
 | `app/templates/` | The pages, in Jinja2. `app/shell.html` is the frame of every signed-in page |
 | `app/static/` | Styles, fonts and the browser scripts. `js/ik/` runs the website's pages and `js/app/` the signed-in pages' few scripts |
-| `app/public/media/` | The website's pictures and walkthrough video |
+| `app/public/media/` | The website's pictures of the app |
 | `app/score_engine/` | The IkonetU Score rules (rubric v2), the score, league placement and the next best actions |
 | `app/supabase.py` | The calls to Supabase Auth, its database and Storage |
 | `app/session.py` | The session cookies, and who may open which page |

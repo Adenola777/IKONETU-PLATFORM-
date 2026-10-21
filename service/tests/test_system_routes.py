@@ -114,7 +114,7 @@ def test_robots_and_the_site_map_list_what_they_did(client):
     robots = client.get("/robots.txt").text
     assert "Disallow: /admin\nDisallow: /suspended\n\nSitemap: http://localhost:3000/sitemap.xml" in robots
     sitemap = client.get("/sitemap.xml").text
-    assert sitemap.count("<loc>") == 11 and "<loc>http://localhost:3000</loc>" in sitemap
+    assert sitemap.count("<loc>") == 8 and "<loc>http://localhost:3000</loc>" in sitemap
 
 
 def test_the_retired_interest_address_goes_to_for_investors(client):

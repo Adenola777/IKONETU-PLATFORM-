@@ -99,3 +99,18 @@ async def sitemap():
 async def investor_interest():
     """The investor interest form was retired on 15 October 2026, when investor accounts opened."""
     return RedirectResponse("/for-investors", status_code=308)
+
+
+# Pages removed on 21 October 2026. How it works repeated the home page, About held placeholders for the
+# team, and the Questions answers moved onto For founders and For investors.
+RETIRED_PAGES = {"/how-it-works": "/", "/about": "/", "/questions": "/for-founders"}
+
+
+def _retired(target: str):
+    async def redirect():
+        return RedirectResponse(target, status_code=308)
+    return redirect
+
+
+for _old, _new in RETIRED_PAGES.items():
+    router.add_api_route(_old, _retired(_new), methods=["GET"], include_in_schema=False)

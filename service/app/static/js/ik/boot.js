@@ -8,10 +8,9 @@ import player from "./components/player.js";
 import home from "./components/home.js";
 import founders from "./components/founders.js";
 import investors from "./components/investors.js";
-import how from "./components/how.js";
 import readiness from "./components/readiness.js";
 
-const COMPONENTS = { header, player, home, founders, investors, how, readiness };
+const COMPONENTS = { header, player, home, founders, investors, readiness };
 const registry = {};
 
 const roots = [...document.querySelectorAll("[data-component]")];

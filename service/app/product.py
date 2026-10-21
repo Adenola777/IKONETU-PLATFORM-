@@ -211,7 +211,7 @@ AREA_WHY = {
     "business": "A registered company with a tax number can sign contracts and take investment.",
     "infrastructure": "Working business tools show that the company runs day to day.",
     "team": "Investors back people, so they want to see who is building the company.",
-    "financial": "Recorded numbers can be reviewed. Remembered numbers cannot.",
+    "financial": "Investors can check numbers that are written down.",
     "academic": "Study and training show the skills the founder brings.",
     "output": "A product or a working operation is easier to believe than a description.",
     "traction": "Customers and partners show that the market wants what the company sells.",
@@ -238,7 +238,7 @@ def momentum(update_dates: list[str], now: datetime) -> dict:
     """Momentum, as the website describes it: recency, consistency and evidence added.
 
     Consistency counts progress updates in the last 90 days, and the strip marks each of
-    the last 13 weeks that had an update. There are no streaks, points or ranks.
+    the last 13 weeks that had an update. Momentum has no streaks or points of its own.
     """
     days = [days_between(d, now) for d in update_dates]
     in90 = sum(1 for d in days if d <= 90)
