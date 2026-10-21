@@ -4,7 +4,7 @@
 import { navVals } from "../side.js";
 
 const AREAS = [
-  ["Identity", 3, "Who the founder is, checked against a government ID.", "A national ID number or passport, and your full legal name and address."],
+  ["Identity", 3, "Who the founder is, verified against a government ID.", "A national ID number or passport, and your full legal name and address."],
   ["Registration", 3, "Whether the business is registered and can trade.", "A registration certificate, a tax identification number and any operating licence."],
   ["Business tools", 2, "Whether the company runs on professional tools.", "An email address on your own domain, your website and your process documents."],
   ["Team", 2, "Who is building the company.", "Staff on payroll, co-founders, advisers and the founders' backgrounds."],
@@ -26,7 +26,7 @@ const WEEK_NOTES = {
   7: ["Reached 1,000 active traders."],
   8: ["Hired a field agent for a second market."],
   11: ["Added two merchant references."],
-  12: ["Revenue evidence reviewed by IkonetU.", "Shipped receipt sharing on WhatsApp."],
+  12: ["Revenue evidence verified by IkonetU.", "Shipped receipt sharing on WhatsApp."],
 };
 const MONDAY = Date.UTC(2026, 6, 20);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

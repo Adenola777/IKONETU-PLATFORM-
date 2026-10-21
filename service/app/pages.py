@@ -10,7 +10,7 @@ PUBLIC_PAGES = {
     "home": {
         "path": "/",
         "title": "IkonetU | Connecting early-stage founders to investors",
-        "description": "Record a one-minute pitch and upload your proof. IkonetU reviewers check it against the source, and investors can ask to meet you.",
+        "description": "Record a one-minute pitch, add your proof, and let investors ask to meet you.",
     },
     "founders": {
         "path": "/for-founders",
@@ -20,12 +20,12 @@ PUBLIC_PAGES = {
     "investors": {
         "path": "/for-investors",
         "title": "For investors",
-        "description": "Search founders in Nigeria, Ghana and Kenya by sector, stage and evidence. See what our reviewers checked, then ask for an introduction.",
+        "description": "Search founders in Nigeria, Ghana and Kenya by sector, stage and evidence, watch their pitches, and ask for an introduction.",
     },
     "trust": {
         "path": "/trust-and-safety",
         "title": "Trust and safety",
-        "description": "IkonetU explains how it checks evidence, who sees what, what the IkonetU Score is and how to raise a concern.",
+        "description": "IkonetU explains how it verifies evidence, who sees what, what the IkonetU Score is and how to raise a concern.",
     },
     "readiness": {
         "path": "/readiness-check",

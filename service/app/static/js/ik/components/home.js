@@ -1,29 +1,30 @@
 // The home page: the sample profile with its investor and founder views, the guided tour and the notes.
 // Ported on 17 October 2026 from apps/web/components/site/pages/home.tsx. The walkthrough video was taken
-// off the page on 21 October 2026, and the profile moved to the eleven areas of the IkonetU Score.
+// off the page on 21 October 2026, and the profile moved to the eleven areas of the IkonetU Score. The tour has music
+// the same day, composed for IkonetU (docs/media/compose_tour_music.py), which plays only after the visitor turns it on.
 import { navVals, readStoredSide } from "../side.js";
 
 const TOUR = [
   ["pitch", "The pitch", "Every profile starts with a one-minute pitch. Investors watch it first, with captions."],
   ["details", "The details and the ask", "Stage, location, sector, what the founder is raising, and the readiness check across eleven areas."],
-  ["evidence", "The evidence", "Eleven areas show what the founder has added, who supplied each piece and whether IkonetU reviewed it."],
-  ["revenue", "How one piece of evidence was reviewed", "Revenue is open as an example. It shows what was submitted, how it was reviewed and when."],
+  ["evidence", "The evidence", "Eleven areas show what the founder has added, who supplied each piece and whether IkonetU has verified it."],
+  ["revenue", "What verification shows", "Revenue is open as an example. Verification shows what was submitted, what IkonetU compared it with and when. Paid investor access will show these details."],
   ["intro", "The introduction", "An investor who wants to talk asks for an introduction, and the founder decides."],
 ];
 
 // id, name, summary, evidence status, founder status, submitted, review, date, who can see
 const MODULES = [
-  ["identity", "Identity", "Founder's national ID", "reviewed", "done", "Amara Okafor's national identity number and passport.", "A reviewer matched the name and photograph with the passport.", "24 September 2026", "Investors see your description, this status and what was compared. Your identity documents stay with you and the reviewer."],
-  ["registration", "Registration", "Company registration", "third", "done", "A certificate of incorporation naming Amara Okafor as a director.", "The registration matches the record in the CAC public registry.", "25 September 2026", "Investors see your description, this status and what was compared. The certificate stays with you and the reviewer."],
-  ["tools", "Business tools", "Company email and website", "submitted", "progress", "Email addresses on the company's own domain and a link to the website.", "Not reviewed by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
-  ["team", "Team", "4 team members", "submitted", "progress", "The roles and experience of the four people building Market Day Pay.", "Not reviewed by IkonetU yet.", "Added 30 September 2026", "Investors see your description and this status. Identity documents are never shown."],
-  ["revenue", "Financial", "Revenue, last 12 months", "reviewed", "done", "Management accounts and 12 months of business bank statements.", "A reviewer compared the reported revenue with the bank statements. This is not an audit.", "3 October 2026", "Investors see your description, this status and what was compared. The statements stay with you and the reviewer."],
-  ["academic", "Academic", "Degree and courses", "none", "action", "Nothing yet.", "Nothing to review yet.", "Not added", "Investors will see your description and its status once you add it."],
-  ["product", "Product or operations", "Live on Android and USSD", "reviewed", "done", "A link to the Android app, the USSD short code and a test account.", "A reviewer opened both and made a test payment.", "28 September 2026", "Investors see your description, this status and what was compared. The test account stays private."],
-  ["traction", "Traction", "3 signed letters of intent", "third", "done", "Signed letters of intent from three market associations in Lagos.", "A reviewer confirmed each letter with the association that signed it.", "1 October 2026", "Investors see your description, this status and what was compared. The signatories’ contact details stay private."],
-  ["recognition", "Recognition", "Awards and endorsements", "none", "action", "Nothing yet.", "Nothing to review yet.", "Not added", "Investors will see your description and its status once you add it."],
-  ["governance", "Governance", "Privacy policy and terms", "submitted", "progress", "Links to the privacy policy and the terms on the website.", "Not reviewed by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
-  ["media", "Pitch and media", "Pitch video and deck", "submitted", "progress", "The one-minute pitch, a pitch deck and the app store page.", "Not reviewed by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
+  ["identity", "Identity", "Founder's national ID", "reviewed", "done", "Amara Okafor's national identity number and passport.", "IkonetU matched the name and photograph with the passport.", "24 September 2026", "Investors see your description, this status and what was compared. Your identity documents stay with you and IkonetU."],
+  ["registration", "Registration", "Company registration", "third", "done", "A certificate of incorporation naming Amara Okafor as a director.", "The registration matches the record in the CAC public registry.", "25 September 2026", "Investors see your description, this status and what was compared. The certificate stays with you and IkonetU."],
+  ["tools", "Business tools", "Company email and website", "submitted", "progress", "Email addresses on the company's own domain and a link to the website.", "Not verified by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
+  ["team", "Team", "4 team members", "submitted", "progress", "The roles and experience of the four people building Market Day Pay.", "Not verified by IkonetU yet.", "Added 30 September 2026", "Investors see your description and this status. Identity documents are never shown."],
+  ["revenue", "Financial", "Revenue, last 12 months", "reviewed", "done", "Management accounts and 12 months of business bank statements.", "IkonetU compared the reported revenue with the bank statements.", "3 October 2026", "Investors see your description, this status and what was compared. The statements stay with you and IkonetU."],
+  ["academic", "Academic", "Degree and courses", "none", "action", "Nothing yet.", "Nothing to verify yet.", "Not added", "Investors will see your description and its status once you add it."],
+  ["product", "Product or operations", "Live on Android and USSD", "reviewed", "done", "A link to the Android app, the USSD short code and a test account.", "IkonetU opened both and made a test payment.", "28 September 2026", "Investors see your description, this status and what was compared. The test account stays private."],
+  ["traction", "Traction", "3 signed letters of intent", "third", "done", "Signed letters of intent from three market associations in Lagos.", "IkonetU confirmed each letter with the association that signed it.", "1 October 2026", "Investors see your description, this status and what was compared. The signatories’ contact details stay private."],
+  ["recognition", "Recognition", "Awards and endorsements", "none", "action", "Nothing yet.", "Nothing to verify yet.", "Not added", "Investors will see your description and its status once you add it."],
+  ["governance", "Governance", "Privacy policy and terms", "submitted", "progress", "Links to the privacy policy and the terms on the website.", "Not verified by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
+  ["media", "Pitch and media", "Pitch video and deck", "submitted", "progress", "The one-minute pitch, a pitch deck and the app store page.", "Not verified by IkonetU yet.", "Added 2 October 2026", "Investors see your description and this status."],
 ];
 
 const EVIDENCE_NAME = { reviewed: "Platform reviewed", third: "Third-party evidence available", submitted: "Founder submitted", none: "Not added yet" };
@@ -47,17 +48,28 @@ function reducedMotion() {
 }
 
 export default {
-  initial: () => ({ view: "investor", module: "", step: 0, introNote: false, cardNote: false }),
+  initial: () => ({ view: "investor", module: "", step: 0, introNote: false, cardNote: false, sound: false }),
   // A remembered founder opens the profile in the founder view.
   mounted(_ctx, component) {
     if (readStoredSide() === "founder") component.set((s) => ({ ...s, view: "founder" }));
   },
-  // Starting the tour scrolls to the profile and moves focus to the tour panel.
-  after(prev, next, ctx) {
+  // Starting the tour scrolls to the profile and moves focus to the tour panel. The music plays only while the
+  // tour runs and only after the visitor turns it on, so it never starts by itself.
+  after(prev, next, ctx, component) {
     if (prev.step === 0 && next.step > 0) {
       if (ctx.profileEl) ctx.profileEl.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
       if (ctx.tourEl) ctx.tourEl.focus({ preventScroll: true });
     }
+    const audio = ctx.audioEl;
+    if (!audio) return;
+    const wanted = next.step > 0 && next.sound;
+    if (wanted && audio.paused) {
+      audio.volume = 0.35;
+      audio.play().catch(() => component.set((now) => ({ ...now, sound: false })));
+    } else if (!wanted && !audio.paused) {
+      audio.pause();
+    }
+    if (next.step === 0 && prev.step > 0) audio.currentTime = 0;
   },
   vals(s, set, ctx) {
     const nav = navVals();
@@ -127,6 +139,11 @@ export default {
       tourBack: () => set((now) => ({ ...now, step: now.step > 1 ? now.step - 1 : now.step })),
       tourNext: () => set((now) => ({ ...now, step: now.step >= 5 ? 0 : now.step + 1 })),
       endTour: () => set((now) => ({ ...now, step: 0 })),
+      soundLabel: s.sound ? "Stop music" : "Play music",
+      toggleSound: () => set((now) => ({ ...now, sound: !now.sound })),
+      audioRef: (el) => {
+        ctx.audioEl = el;
+      },
       tourRef: (el) => {
         ctx.tourEl = el;
       },

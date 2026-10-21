@@ -155,3 +155,45 @@ def test_no_legal_page_uses_a_dash(client, key):
     text = _text(client, PUBLIC_PAGES[key]["path"])
     main = text[text.index("Skip to content"):]
     assert re.findall("[\u2012\u2013\u2014\u2015]", main) == []
+
+
+# The owner's ruling of 21 October 2026: the website runs from pitch to introduction, verification is the paid part,
+# no line promises that a reviewer will check something, and no sentence takes the form "it is this, it is not that".
+MARKETING = ["home", "founders", "investors", "trust", "readiness"]
+SCRIPTS = ["home", "founders", "investors", "readiness"]
+CONTRAST = re.compile(r"\b(it is not|this is not|is not an?|isn't|does not mean|rather than|instead of|says nothing)\b", re.IGNORECASE)
+
+
+def _script_text(name):
+    return " ".join(re.findall(r'"((?:[^"\\]|\\.){12,})"', (APP / f"static/js/ik/components/{name}.js").read_text()))
+
+
+@pytest.mark.parametrize("key", MARKETING)
+def test_no_marketing_page_promises_a_reviewer_check_or_uses_a_contrast_sentence(client, key):
+    text = _text(client, PUBLIC_PAGES[key]["path"])
+    assert "reviewer" not in text.lower()
+    assert CONTRAST.findall(text) == []
+
+
+@pytest.mark.parametrize("name", SCRIPTS)
+def test_no_page_script_promises_a_reviewer_check_or_uses_a_contrast_sentence(name):
+    text = _script_text(name)
+    assert "reviewer" not in text.lower()
+    assert CONTRAST.findall(text) == []
+
+
+def test_the_website_states_the_pricing_model_without_an_amount(client):
+    home = _text(client, "/")
+    assert "Verification is the part you pay for." in home and "Nobody is charged today." in home
+    for path in ("/for-founders", "/for-investors"):
+        assert "Nobody is charged today." in _text(client, path)
+    for key in MARKETING:
+        assert re.findall(r"[£$€]\s?\d+(?:\.\d\d)? (?:a|per) (?:month|year)", _text(client, PUBLIC_PAGES[key]["path"])) == []
+
+
+def test_the_tour_music_waits_for_the_visitor(client):
+    body = client.get("/").text
+    assert '<audio data-ref="audioRef" src="/media/tour-music.mp3" preload="none" loop></audio>' in body
+    assert "autoplay" not in body
+    r = client.get("/media/tour-music.mp3")
+    assert r.status_code == 200 and r.headers["content-type"] == "audio/mpeg"
