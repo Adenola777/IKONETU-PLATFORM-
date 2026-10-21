@@ -66,6 +66,14 @@ def test_no_marketing_page_carries_the_copy_the_audit_removed(client, key):
     assert [line for line in RETIRED_COPY if line.lower() in text.lower()] == []
 
 
+@pytest.mark.parametrize("key", list(PUBLIC_PAGES))
+def test_no_page_shows_a_placeholder(client, key):
+    # The privacy policy showed "ICO registration number [TO CONFIRM]" until 21 October 2026, when the owner
+    # removed the line.
+    text = html.unescape(re.sub(r"<[^>]+>", " ", client.get(PUBLIC_PAGES[key]["path"]).text))
+    assert re.findall(r"\[(?:TO CONFIRM|NAME|ROLE)[^\]]*\]", text) == []
+
+
 def test_the_self_check_and_the_samples_count_the_eleven_areas_of_the_score(client):
     assert "of 11</p>" in client.get("/readiness-check").text
     assert client.get("/for-investors").text.count(" of 11 areas, building in") == 7
