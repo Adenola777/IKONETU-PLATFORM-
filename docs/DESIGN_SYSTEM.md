@@ -1,8 +1,8 @@
 # The IkonetU design system
 
 The owner approved this system on 21 October 2026, in the design review's steps 2 and 4. It applies to the
-website and the signed-in app. The page compositions it serves are a separate step, and they are not built
-yet (see the end of this file).
+website and the signed-in app. The home page was rebuilt to the approved composition on 21 October 2026, and
+the other pages wait on the owner's approval (see the end of this file).
 
 ## Where it lives
 
@@ -100,7 +100,16 @@ hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones 
 | Header menu on a phone | `menubtn`, `hdr-nav` | `aria-expanded` and `aria-controls`. Escape closes the menu and returns focus to the button |
 | Pitch dialog | `dialog.pd` | It fades in over 150ms with its backdrop. The website's player plays captions only, so it has no loading or video error state |
 | Pitch video in the app | `pitch_video.html` | A video that cannot play shows "The pitch could not be played. Try again, or read the transcript below." |
-| Meter and progress strip | `rmeter`, `meter`, `ameter`, `weeks`, `wk` | Filled `--mark-on`, building `--mark-mid`, empty white with a `--mark-edge` outline. The words beside each one carry the same count |
+| Meter and progress strip | `rmeter`, `meter`, `ameter`, `weeks`, `wk`, `weeks-row` | Filled `--mark-on`, building `--mark-mid`, empty white with a `--mark-edge` outline. The words beside each one carry the same count |
+| Product frame | `frame` | The home page's sample profile sits in it, with `--r-frame` and `--shadow-frame`. When the view changes, its status chips fade across |
+| Step tabs | `tabs`, `tab`, `stage`, `shot` | A tab list over four app screens. A click or the arrow keys, Home and End choose a step, focus moves to the chosen tab, and its screen fades in over the last. On a phone the tabs sit two by two and each screen is the phone capture |
+| Founder and investor panels | `side side-f`, `side side-i` | The founder tint or the investor tint, each with an app screen. Hover lifts a panel 2px with `--shadow-raised`, and under reduced motion it does not move |
+| Plans table | `tbl plans` | On a phone each plan becomes one block, with its name and price on a line and what it adds below. The column headings stay for screen readers, and the roles are written into the markup, because a change of display drops a table's own |
+
+An icon appears for one of two reasons: it marks a status, as on the status chips and the captions mark on a
+pitch preview, or it is a control's only visible label, as with the play mark, a closing cross or the chevron
+of a row that opens. A control that carries its own words, such as Play, Captions or Transcript, has no icon.
+The home page keeps to this, and the other pages follow it when they are rebuilt.
 
 ## Motion
 
@@ -109,10 +118,14 @@ hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones 
 | Button, link and control colours | `--m-quick`, 150ms |
 | Opening a row, the chevron, the readiness bar | `--m-open`, 200ms |
 | The pitch dialog and its backdrop | `--m-quick`, a fade |
+| A status chip when the sample profile changes view | `--m-quick`, a fade |
+| A row's panel as it opens | `--m-open`, a fade and 4px slide |
+| A step's screen replacing the last | `--m-quick`, a fade |
+| A founder or investor panel under the pointer | `--m-quick`, a 2px lift |
 
 Nothing animates when a page loads, and nothing waits for the visitor to scroll. Under the reduced motion
-setting both durations are 0ms, so every change happens at once. A test allows one keyframe animation, the
-dialog's fade.
+setting both durations are 0ms, so every change happens at once. A test allows three keyframe animations:
+the dialog's fade (`pd-in`), a changed status's fade (`fade-in`) and an opened row's slide (`row-in`).
 
 ## Adding to the system
 
@@ -122,7 +135,15 @@ or writes a colour out.
 
 ## What is not built yet
 
-The page compositions of the design review (a centred hero with the product showcase beneath it, the label
-legend, the timeline, the context panels and the plans table) are step 6, and they wait on the owner's approval.
-Until then, two headlines keep their old sizes: the home page's headline is set to 69px inside its own
-template, and the readiness check's headline uses a style of its own.
+Step 6 rebuilt the home page on 21 October 2026. For founders, For investors, Trust and safety, Pricing, the
+readiness check and the legal pages keep their earlier compositions until the owner approves them, and the
+readiness check's headline still uses a style of its own.
+
+On the home page itself, three things are not built:
+
+- The progress strip is drawn filled. It does not fill as it comes into view, because nothing on the site waits
+  for the visitor to scroll.
+- A pitch preview does not play on hover. The website's sample pitch is captions over a drawn figure, with no
+  video to play.
+- The shared header's Menu button still carries an icon beside its word. The header serves every page, so it
+  changes when the other pages do.

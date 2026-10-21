@@ -2,6 +2,7 @@
 // Ported on 17 October 2026 from apps/web/components/site/pages/home.tsx. The walkthrough video was taken
 // off the page on 21 October 2026, and the profile moved to the eleven areas of the IkonetU Score. The tour has music
 // the same day, composed for IkonetU (docs/media/compose_tour_music.py), which plays only after the visitor turns it on.
+// Rebuilt the same day to the approved composition: the four steps are tabs over the app screens they describe.
 import { navVals, readStoredSide } from "../side.js";
 
 const TOUR = [
@@ -48,7 +49,7 @@ function reducedMotion() {
 }
 
 export default {
-  initial: () => ({ view: "investor", module: "", step: 0, introNote: false, cardNote: false, sound: false }),
+  initial: () => ({ view: "investor", module: "", step: 0, introNote: false, cardNote: false, sound: false, shot: 0 }),
   // A remembered founder opens the profile in the founder view.
   mounted(_ctx, component) {
     if (readStoredSide() === "founder") component.set((s) => ({ ...s, view: "founder" }));
@@ -56,6 +57,12 @@ export default {
   // Starting the tour scrolls to the profile and moves focus to the tour panel. The music plays only while the
   // tour runs and only after the visitor turns it on, so it never starts by itself.
   after(prev, next, ctx, component) {
+    // A change of view fades the statuses across, so the visitor sees what changed.
+    if (prev.view !== next.view && ctx.profileEl) {
+      ctx.profileEl.classList.remove("swap");
+      void ctx.profileEl.offsetWidth;
+      ctx.profileEl.classList.add("swap");
+    }
     if (prev.step === 0 && next.step > 0) {
       if (ctx.profileEl) ctx.profileEl.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
       if (ctx.tourEl) ctx.tourEl.focus({ preventScroll: true });
@@ -126,6 +133,27 @@ export default {
       requestProfile: () => set((now) => ({ ...now, introNote: !now.introNote })),
       modules,
       nextSteps: NEXT_STEPS,
+
+      // The four steps: one tab is selected and in the Tab order, and the arrow keys move between them.
+      shotSel: [0, 1, 2, 3].map((i) => s.shot === i),
+      shotTab: [0, 1, 2, 3].map((i) => (s.shot === i ? 0 : -1)),
+      shotCls: [0, 1, 2, 3].map((i) => (s.shot === i ? "" : "shot-off")),
+      pickShot0: () => set((now) => ({ ...now, shot: 0 })),
+      pickShot1: () => set((now) => ({ ...now, shot: 1 })),
+      pickShot2: () => set((now) => ({ ...now, shot: 2 })),
+      pickShot3: () => set((now) => ({ ...now, shot: 3 })),
+      shotKey: (event) => {
+        const moves = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+        let next;
+        if (event.key in moves) next = (s.shot + moves[event.key] + 4) % 4;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = 3;
+        else return;
+        event.preventDefault();
+        const tabs = event.currentTarget.parentElement.querySelectorAll('[role="tab"]');
+        set((now) => ({ ...now, shot: next }));
+        if (tabs[next]) tabs[next].focus();
+      },
 
       touring: s.step > 0,
       notTouring: s.step === 0,

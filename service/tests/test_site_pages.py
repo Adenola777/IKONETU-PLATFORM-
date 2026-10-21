@@ -250,3 +250,48 @@ def test_every_font_the_site_names_is_ibm_plex_sans_and_is_served(client):
     assert preloads == ["/static/fonts/ibm-plex-sans-latin-400-normal.woff2", "/static/fonts/ibm-plex-sans-latin-600-normal.woff2"]
     assert all(client.get(p).status_code == 200 for p in preloads)
     assert "SIL OPEN FONT LICENSE" in client.get("/static/fonts/IBM-Plex-Sans-LICENSE.txt").text.upper()
+
+
+# The owner's answers of 21 October 2026 on the rebuilt home page: centred openings, larger app screens as the only
+# pictures, and icons only where they mark a status or are a control's only label.
+HOME_ICONS = {"shield-check", "link", "upload", "circle-dashed", "circle-check", "circle-alert", "clock", "captions", "play",
+              "chevron-down", "x", "menu"}
+
+
+def test_the_home_page_centres_its_hero_and_the_opening_of_each_section(client):
+    body = client.get("/").text
+    assert '<section aria-labelledby="hero-title" class="hero-c">' in body
+    assert '<div class="wrap intro-c"><h2 id="why-title" class="h2">Investors back what they can check.</h2>' in body
+    css = (APP / "static" / "css" / "site.css").read_text()
+    assert ".pg-home .hero-c{padding-top:clamp(40px,6vw,88px);text-align:center}" in css
+    assert ".pg-home .intro-c{display:flex;flex-direction:column;align-items:center;text-align:center}" in css
+
+
+def test_the_home_page_pictures_are_app_screens_with_a_phone_capture_for_each(client):
+    body = client.get("/").text
+    pictures = re.findall(r'<picture><source media="\(max-width: 599px\)" srcset="(/media/phone-[a-z]+\.webp)"[^>]*>'
+                          r'<img src="(/media/screen-[a-z]+\.webp)"', body)
+    assert [p[0].split("-")[1] for p in pictures] == [p[1].split("-")[1] for p in pictures]
+    assert {p[0][len("/media/phone-"):-len(".webp")] for p in pictures} == {"pitch", "evidence", "score", "intro", "next", "discover"}
+    for phone, desktop in pictures:
+        assert client.get(phone).headers["content-type"] == "image/webp", phone
+        assert client.get(desktop).headers["content-type"] == "image/webp", desktop
+    assert body.count("<img ") == len(pictures)
+
+
+def test_the_home_page_has_no_decorative_icons(client):
+    body = client.get("/").text
+    assert set(re.findall(r'class="lucide lucide-([a-z-]+)"', body)) <= HOME_ICONS
+    for label in ("Captions", "Transcript"):
+        assert f'</svg>{label}</button>' not in body, label
+    assert '<button type="button" class="ctrl" data-on="click:togglePlay"><ik-t data-t="playLabel">Play</ik-t></button>' in body
+
+
+def test_the_home_page_explains_the_evidence_labels_once(client):
+    assert _text(client, "/").count("The founder added it, and IkonetU has not verified it yet.") == 1
+
+
+def test_the_home_page_plans_keep_their_table_roles_when_a_phone_stacks_them(client):
+    body = client.get("/").text
+    assert '<table class="tbl plans" role="table"><thead role="rowgroup">' in body
+    assert body.count('<th scope="row" role="rowheader">') == 4 and body.count('<td role="cell"') == 8

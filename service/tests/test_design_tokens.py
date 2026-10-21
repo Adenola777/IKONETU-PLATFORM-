@@ -96,7 +96,8 @@ def test_evidence_statuses_have_colours_apart_from_the_founder_and_investor_cont
 
 def test_motion_marks_a_change_of_state_and_stops_under_reduced_motion():
     css = "".join((CSS / s).read_text() for s in ["site.css", "app.css"])
-    assert re.findall(r"@keyframes ([a-z-]+)", css) == ["pd-in"]
+    # The dialog fades in, a changed status fades across, and an opened row slides down a few pixels.
+    assert sorted(re.findall(r"@keyframes ([a-z-]+)", css)) == ["fade-in", "pd-in", "row-in"]
     reduced = (CSS / "tokens.css").read_text().split("@media (prefers-reduced-motion: reduce)", 1)[1]
     assert "--m-quick: 0ms" in reduced and "--m-open: 0ms" in reduced
 
