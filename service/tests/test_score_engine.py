@@ -22,7 +22,13 @@ from app.score_engine import (
     league_for,
     next_best_actions,
 )
-from app.score_engine.rubric_sql import MIGRATION, rubric_to_sql
+from app.score_engine.rubric_sql import (
+    HINT_MIGRATION,
+    MIGRATION,
+    SEEDED_HINTS,
+    _q,
+    rubric_to_sql,
+)
 
 NOW = datetime(2026, 10, 20, 12, 0, 0, tzinfo=timezone.utc)
 _seq = itertools.count(1)
@@ -189,5 +195,13 @@ class TestNextBestActions:
         assert all(a.category != "operations" for a in next_best_actions(r, RUBRIC_V3, 200))
 
 
-def test_the_rubric_v3_migration_matches_the_rubric():
-    assert MIGRATION.read_text() == rubric_to_sql(RUBRIC_V3)
+def test_the_rubric_v3_migration_matches_the_rubric_with_the_hints_it_seeded():
+    assert MIGRATION.read_text() == rubric_to_sql(RUBRIC_V3, SEEDED_HINTS)
+
+
+def test_the_any_country_migration_sets_each_replaced_hint_to_the_rubrics_own():
+    sql = HINT_MIGRATION.read_text()
+    for code in SEEDED_HINTS:
+        hint = RUBRIC_V3.signal(code).hint
+        assert hint != SEEDED_HINTS[code]
+        assert f"update public.rubric_signals set hint = {_q(hint)} where rubric_version = 'v3' and code = {_q(code)};" in sql

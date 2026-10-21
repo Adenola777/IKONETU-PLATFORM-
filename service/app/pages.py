@@ -9,7 +9,7 @@ with the legal pack.
 PUBLIC_PAGES = {
     "home": {
         "path": "/",
-        "title": "IkonetU | Connecting early-stage founders to investors",
+        "title": "IkonetU | Connecting student founders to investors",
         "description": "Record a one-minute pitch, add your proof, and let investors ask to meet you.",
     },
     "founders": {
@@ -20,7 +20,7 @@ PUBLIC_PAGES = {
     "investors": {
         "path": "/for-investors",
         "title": "For investors",
-        "description": "Search founders in Nigeria, Ghana and Kenya by sector, stage and evidence, watch their pitches, and ask for an introduction.",
+        "description": "Search student founders by sector, stage, country and evidence, watch their pitches, and ask for an introduction.",
     },
     "trust": {
         "path": "/trust-and-safety",

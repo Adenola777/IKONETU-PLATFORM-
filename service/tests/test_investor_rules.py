@@ -20,7 +20,7 @@ class Params(dict):
 
 
 BASE = {
-    "fullName": "Ife Investor", "basedIn": "other", "investorType": "angel", "sectors": ["Fintech", "Health"],
+    "fullName": "Ife Investor", "basedIn": "GB", "investorType": "angel", "sectors": ["Fintech", "Health"],
     "stages": "revenue", "countries": "NG", "chequeSize": "Prefer not to say", "confirmedStatement": "on",
     "acceptedPrivacy": "on",
 }
@@ -30,10 +30,10 @@ class TestInvestorSignUp:
     def test_makes_a_pending_investor_profile_with_the_consents_recorded(self):
         r = parse_investor_signup(BASE, True)
         assert r.ok
-        assert r.data["profile"] == {"full_name": "Ife Investor", "country": None, "role": "investor", "status": "pending",
+        assert r.data["profile"] == {"full_name": "Ife Investor", "country": "GB", "role": "investor", "status": "pending",
                                      "confirmed_adult": True}
         assert r.data["investor"]["sectors"] == ["Fintech", "Health"]
-        assert r.data["investor"]["based_in"] == "other"
+        assert r.data["investor"]["based_in"] == "GB"
         assert [(c["consent_type"], c["granted"]) for c in r.data["consents"]] == [("profile", True), ("notifications", False)]
 
     def test_asks_a_fund_investor_for_the_funds_name(self):
@@ -100,3 +100,27 @@ def test_the_report_link_names_the_conversation_with_spaces_written_as_percent_2
     query = parse_qs(urlsplit(link).query)
     assert query["subject"] == ["Report about conversation 6f1c1a3e-1111-4222-8333-944455556666"]
     assert query["body"] == ["Conversation reference: 6f1c1a3e-1111-4222-8333-944455556666\n\nWhat happened:\n"]
+
+
+class TestInvestorCountries:
+    """Investors can be based in, and invest in, any country since 21 October 2026."""
+
+    def test_takes_an_investor_based_in_any_country(self):
+        for code in ("GB", "US", "NG", "AE"):
+            assert parse_investor_signup({**BASE, "basedIn": code}, True).ok, code
+
+    def test_refuses_a_base_outside_iso_3166(self):
+        assert "basedIn" in parse_investor_signup({**BASE, "basedIn": "other"}, True).errors
+
+    def test_ignores_a_country_menu_left_on_no_country(self):
+        r = parse_investor_signup({**BASE, "countries": ["GB", "", "KE"]}, True)
+        assert r.ok and r.data["investor"]["countries"] == ["GB", "KE"]
+
+    def test_refuses_more_than_three_countries(self):
+        r = parse_investor_signup({**BASE, "countries": ["GB", "KE", "NG", "US"]}, True)
+        assert r.errors["countries"] == "Choose up to three countries."
+
+    def test_discovery_filters_by_any_country(self):
+        f = parse_filters(Params({"country": "GB"}))
+        assert f["country"] == ["GB"] and rpc_args(f)["p_countries"] == ["GB"]
+        assert parse_filters(Params({"country": "XX"}))["country"] == []

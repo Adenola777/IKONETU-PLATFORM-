@@ -62,7 +62,7 @@ templates.env.lstrip_blocks = True
 
 FLASH_COOKIE = "ik_flash"
 SITE_NAME = "IkonetU"
-HOME_TITLE = "IkonetU | Connecting early-stage founders to investors"
+HOME_TITLE = "IkonetU | Connecting student founders to investors"
 HOME_DESCRIPTION = (
     "Upload a one-minute pitch, build a verifiable venture profile, and connect with investors looking for real progress."
 )

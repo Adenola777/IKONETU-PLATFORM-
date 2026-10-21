@@ -134,7 +134,8 @@ async def complete_onboarding(request: Request):
     if not existing.ok:
         return logged("read profile", existing.error)
     if not existing.data:
-        created = await db.table("profiles").insert({"user_id": user["id"], **rows["profile"]})
+        # The founder confirmed being a student founder on this form, so the profile records when.
+        created = await db.table("profiles").insert({"user_id": user["id"], **rows["profile"], "student_declared_at": now_iso()})
         if not created.ok:
             return logged("insert profile", created.error)
         agreed = await db.table("consents").insert([{"user_id": user["id"], **c} for c in rows["consents"]])

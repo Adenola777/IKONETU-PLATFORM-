@@ -6,6 +6,10 @@ the migration and this rubric differ.
 
 Rubric v2's seed, migration 20261005000002, was written by the TypeScript script removed on
 17 October 2026. It is applied and is never edited, so this module no longer writes it.
+
+Rubric v3's seed is applied too, so it is never edited either. Five of its hints named documents of Nigeria,
+Ghana and Kenya only, and migration 20261021000001 replaced them when IkonetU opened to every country.
+SEEDED_HINTS keeps the hints the seed holds, so the seed can still be compared with the rubric.
 """
 
 from __future__ import annotations
@@ -15,13 +19,24 @@ import pathlib
 from .rubric import RUBRIC_V3, Rubric
 
 MIGRATION = pathlib.Path(__file__).resolve().parents[3] / "supabase" / "migrations" / "20261020000002_rubric_v3.sql"
+HINT_MIGRATION = MIGRATION.with_name("20261021000001_any_country.sql")
+
+SEEDED_HINTS = {
+    "government_id": "A photo of your NIN slip, Ghana Card or Huduma card.",
+    "company_registration": "Your CAC, ORC or BRS certificate.",
+    "directors_listed": "Form CAC 7 or the registry's list of directors and shareholders.",
+    "tax_registration": "Your TIN or KRA PIN certificate.",
+    "data_protection": "Your NDPC, ODPC or DPC registration certificate.",
+}
 
 
 def _q(s: str) -> str:
     return "'" + s.replace("'", "''") + "'"
 
 
-def rubric_to_sql(rubric: Rubric) -> str:
+def rubric_to_sql(rubric: Rubric, hints: dict[str, str] | None = None) -> str:
+    """The seed for a rubric. `hints` replaces the hint of the signals it names, to rebuild a seed as applied."""
+    hints = hints or {}
     categories = [
         f"  ({_q(rubric.version)}, {_q(c.code)}, {_q(c.label)}, {c.max_points}, {c.weight}, "
         f"{_q(c.alternative_to) if c.alternative_to else 'null'}, {i})"
@@ -29,7 +44,7 @@ def rubric_to_sql(rubric: Rubric) -> str:
     ]
     signals = [
         f"  ({_q(rubric.version)}, {_q(s.code)}, {_q(s.category)}, {_q(s.label)}, 'fixed', {s.points}, {s.points}, "
-        f"{_q(s.how)}, {_q(s.hint)})"
+        f"{_q(s.how)}, {_q(hints.get(s.code, s.hint))})"
         for s in rubric.signals
     ]
     return "\n".join([
@@ -56,5 +71,5 @@ def rubric_to_sql(rubric: Rubric) -> str:
 
 
 if __name__ == "__main__":
-    MIGRATION.write_text(rubric_to_sql(RUBRIC_V3))
+    MIGRATION.write_text(rubric_to_sql(RUBRIC_V3, SEEDED_HINTS))
     print(f"Wrote {MIGRATION}")

@@ -4,19 +4,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+# Founders and investors can be in any country since 21 October 2026.
+from .countries import COUNTRIES
 from .score_engine.engine import parse_instant
 
 # The sectors a venture and an investor choose from. Discovery filters on them.
 SECTORS = ("Fintech", "Agritech", "Edtech", "Health", "Other")
-INTEREST_COUNTRIES = ("NG", "GH", "KE", "other")
 CHEQUE_SIZES = ("Under $25,000", "$25,000 to $100,000", "$100,000 to $500,000", "Over $500,000", "Prefer not to say")
 INVESTOR_TYPES = ("individual", "angel", "fund")
-
-COUNTRIES = (
-    {"code": "NG", "name": "Nigeria", "dial": "234"},
-    {"code": "GH", "name": "Ghana", "dial": "233"},
-    {"code": "KE", "name": "Kenya", "dial": "254"},
-)
 
 STAGES = (
     {"code": "idea", "label": "Idea"},

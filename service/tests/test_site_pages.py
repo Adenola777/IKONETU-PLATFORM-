@@ -214,3 +214,26 @@ def test_the_tour_music_waits_for_the_visitor(client):
     assert "autoplay" not in body
     r = client.get("/media/tour-music.mp3")
     assert r.status_code == 200 and r.headers["content-type"] == "audio/mpeg"
+
+
+# The owner's ruling of 21 October 2026: IkonetU is for student founders in any country.
+@pytest.mark.parametrize("key", [*MARKETING, "pricing"])
+def test_no_marketing_page_limits_founders_to_three_countries(client, key):
+    text = _text(client, PUBLIC_PAGES[key]["path"])
+    assert "Nigeria, Ghana and Kenya" not in text and "Nigeria, Ghana or Kenya" not in text
+
+
+def test_the_website_says_ikonetu_is_for_student_founders_in_any_country(client):
+    assert "For student founders" in _text(client, "/")
+    assert "<title>IkonetU | Connecting student founders to investors</title>" in client.get("/").text
+    founders = _text(client, "/for-founders")
+    assert "Student founders aged 18 or over can join from any country." in founders
+    assert "or graduated from one in the last three years." in founders
+    assert "It is free for student founders aged 18 or over, in any country." in _text(client, "/pricing")
+
+
+def test_the_founder_terms_and_the_privacy_policy_state_the_student_founder_rule(client):
+    terms = _text(client, "/terms")
+    assert "IkonetU is for student founders." in terms and "You can be in any country." in terms
+    assert "based in Nigeria, Ghana or Kenya" not in terms
+    assert "when you confirmed being a student founder" in _text(client, "/privacy")

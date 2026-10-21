@@ -16,7 +16,7 @@ VALID = {
     "fullName": "  Amara Okafor ",
     "country": "NG",
     "city": "Lagos",
-    "institution": "",
+    "institution": "University of Lagos",
     "graduateStatus": "Final-year student",
     "bio": "",
     "ventureName": "LearnLoop",
@@ -27,6 +27,7 @@ VALID = {
     "linkedin": "",
     "x": "",
     "instagram": "https://instagram.com/learnloop",
+    "studentFounder": "on",
     "confirmedAdult": "on",
     "acceptedPrivacy": "on",
     "consent_evidence_processing": "on",
@@ -43,7 +44,7 @@ class TestOnboarding:
         assert result.ok
         assert result.data == {
             "profile": {
-                "full_name": "Amara Okafor", "country": "NG", "city": "Lagos", "institution": None,
+                "full_name": "Amara Okafor", "country": "NG", "city": "Lagos", "institution": "University of Lagos",
                 "graduate_status": "Final-year student", "bio": None, "confirmed_adult": True,
             },
             "consents": [
@@ -71,9 +72,26 @@ class TestOnboarding:
         assert not result.ok
         assert "acceptedPrivacy" in result.errors
 
-    def test_refuses_a_country_outside_nigeria_ghana_and_kenya(self):
-        result = parse_onboarding({**VALID, "country": "ZA"})
+    # Founders can be in any country since 21 October 2026, so only a code outside ISO 3166-1 is refused.
+    @pytest.mark.parametrize("country", ["GB", "US", "ZA", "IN"])
+    def test_takes_a_founder_in_any_country(self, country):
+        result = parse_onboarding({**VALID, "country": country})
+        assert result.ok
+        assert result.data["profile"]["country"] == result.data["venture"]["country"] == country
+
+    @pytest.mark.parametrize("country", ["", "XX", "gb", "Nigeria", "other"])
+    def test_refuses_a_country_code_outside_iso_3166(self, country):
+        result = parse_onboarding({**VALID, "country": country})
         assert result.errors["country"] == "Choose your country."
+
+    def test_requires_a_student_founder_to_confirm_it(self):
+        result = parse_onboarding(without("studentFounder"))
+        assert not result.ok
+        assert result.errors["studentFounder"].startswith("IkonetU is for student founders.")
+
+    @pytest.mark.parametrize("key", ["institution", "graduateStatus"])
+    def test_requires_the_institution_and_the_student_or_graduate_status(self, key):
+        assert key in parse_onboarding({**VALID, key: " "}).errors
 
     def test_refuses_a_stage_the_database_does_not_hold(self):
         result = parse_onboarding({**VALID, "stage": "unicorn"})
@@ -97,7 +115,8 @@ class TestOnboarding:
 
     def test_names_each_missing_answer_of_an_empty_form(self):
         result = parse_onboarding({"country": "NG", "stage": "idea"})
-        assert set(result.errors) == {"fullName", "ventureName", "sector", "confirmedAdult", "acceptedPrivacy"}
+        assert set(result.errors) == {"fullName", "institution", "graduateStatus", "ventureName", "sector", "studentFounder",
+                                      "confirmedAdult", "acceptedPrivacy"}
 
 
 PDF = {"name": "statements.pdf", "type": "application/pdf", "size": 2_000_000}

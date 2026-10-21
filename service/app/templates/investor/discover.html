@@ -22,7 +22,10 @@
 <fieldset class="fgroup">
 <legend class="flabel">{{ g.label }}</legend>
 <div class="fchips">
-{% for o in g.options %}<label class="fchip"><input type="checkbox" name="{{ g.key }}" value="{{ o.value }}"{% if o.value in filters[g.key] %} checked{% endif %}>{{ o.label }}</label>{% endfor %}
+{% if g.key == "country" %}<select name="country" class="input" aria-label="Country" style="max-width:280px">
+<option value="">Any country</option>
+{% for o in g.options %}<option value="{{ o.value }}"{% if o.value in filters.country %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+</select>{% else %}{% for o in g.options %}<label class="fchip"><input type="checkbox" name="{{ g.key }}" value="{{ o.value }}"{% if o.value in filters[g.key] %} checked{% endif %}>{{ o.label }}</label>{% endfor %}{% endif %}
 </div>
 </fieldset>
 {% endfor %}
