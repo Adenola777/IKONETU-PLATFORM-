@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import mimetypes
 import re
 from pathlib import Path
 
@@ -214,6 +215,22 @@ def test_the_tour_music_waits_for_the_visitor(client):
     assert "autoplay" not in body
     r = client.get("/media/tour-music.mp3")
     assert r.status_code == 200 and r.headers["content-type"] == "audio/mpeg"
+
+
+def test_screens_and_fonts_carry_their_types_without_the_systems_list(client, monkeypatch):
+    # On Vercel, Python 3.12 runs with no /etc/mime.types, so only Python's own table and the app's names apply.
+    from app import main
+
+    monkeypatch.setattr(mimetypes, "knownfiles", [])
+    mimetypes.init()
+    try:
+        main.name_file_types()
+        assert client.get("/media/screen-pitch.webp").headers["content-type"] == "image/webp"
+        assert client.get("/static/fonts/ibm-plex-sans-latin-400-normal.woff2").headers["content-type"] == "font/woff2"
+    finally:
+        monkeypatch.undo()
+        mimetypes.init()
+        main.name_file_types()
 
 
 # The owner's ruling of 21 October 2026: IkonetU is for student founders in any country.

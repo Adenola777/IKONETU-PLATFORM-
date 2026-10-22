@@ -5,6 +5,7 @@ Run it with `uvicorn app.main:app` from the service folder.
 
 from __future__ import annotations
 
+import mimetypes
 from contextlib import asynccontextmanager
 
 import httpx
@@ -78,6 +79,15 @@ async def on_error(request: Request, exc: Exception):
     return render(request, "error.html", {}, Meta(title="Something went wrong", noindex=True), status_code=500)
 
 
+def name_file_types() -> None:
+    """Python 3.12's own table of file types has no .webp or .woff2, and Vercel's machines have no
+    /etc/mime.types to add them, so on Vercel the product screens went out as application/octet-stream
+    (found on 22 October 2026). The app names both itself."""
+    mimetypes.add_type("image/webp", ".webp")
+    mimetypes.add_type("font/woff2", ".woff2")
+
+
+name_file_types()
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 MEDIA = HERE / "public" / "media"
 app.mount("/media", StaticFiles(directory=str(MEDIA)), name="media")
