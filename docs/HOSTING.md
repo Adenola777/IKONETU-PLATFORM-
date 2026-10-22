@@ -76,3 +76,18 @@ Render's health check stays on `/`, which is drawn from a template and makes no 
 ## Rate limiting
 
 The waitlist endpoint limits each IP address in memory. It reads the address the nearest proxy added to `X-Forwarded-For`, because the start of that header is whatever the caller wrote; reading the start let a caller choose a new address for every request, which a test on 15 October 2026 confirmed. Each running instance keeps its own count, so the limit only slows casual abuse. SRD SEC-W4 asks for a limit in front of the app as well. Which of Render's features can provide it is **unverified**.
+
+## Vercel
+
+On 22 October 2026 the owner chose to have Vercel build the Python app as well, beside Render. The Vercel project `ikonetu-platform` was still set up for the Next.js app removed on 17 October, so every build after that failed with "The specified Root Directory "apps/web" does not exist." The same day its Root Directory was set to `service` and its Framework to FastAPI.
+
+`service/vercel.json` holds the two settings the build needs. Both were found by running `vercel build` from Vercel CLI 65.0.0 on commit ea89564 on 22 October 2026. That command builds locally and deploys nothing.
+
+- `installCommand` installs `requirements.txt`. Without it, Vercel installed from `pyproject.toml`, which lists no packages, so the bundle held no FastAPI, Starlette, Jinja2 or httpx and the app could not start.
+- `includeFiles` keeps `app/public` in the bundle. Without it, Vercel left out all 14 files in that folder, and the app stopped at start with "Directory '.../app/public/media' does not exist", because it serves `/media` from there.
+
+With both settings the bundle was rebuilt and run locally under Python 3.12, which Vercel chose from `requires-python`. Every website page, the stylesheet, a product screen, the tour music and the icon answered 200, and an unknown path answered 404. All 401 tests pass under Python 3.12. Render runs Python 3.13.16.
+
+Vercel holds `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SERVICE_ROLE_KEY` for production and preview, and `NEXT_PUBLIC_SITE_URL` for production alone, as listed on 22 October 2026. Vercel Authentication covers the project's preview deployments, so a preview asks for a Vercel sign-in first.
+
+**Unverified** until a deployment on Vercel answers: the build on Vercel's own machines; sign-in on a Vercel address, which needs `<that address>/auth/callback` under Supabase's Redirect URLs; and the waitlist's rate limit, which reads `TRUSTED_PROXY_HOPS` and was set for Render's proxies, so the check in step 8 above has to be repeated on Vercel.
