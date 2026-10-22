@@ -16,7 +16,7 @@
 <p class="body2" style="margin:0 0 12px"><strong style="color:#101828">Ask:</strong> {{ p.venture.ask }}</p>
 {% endif %}
 <div class="row">
-<span class="chip {{ 'chip-f' if is_recent(p.lastActivity, now) else 'chip-n' }}"><span class="dot" aria-hidden="true"></span>{{ activity_text(p.lastActivity, now) }}</span>
+<span class="chip chip-n"><span class="dot" aria-hidden="true"></span>{{ activity_text(p.lastActivity, now) }}</span>
 {% if p.venture.website %}<a href="{{ p.venture.website }}" target="_blank" rel="noopener nofollow">{{ bare_url(p.venture.website) }}</a>{% endif %}
 {{ jump }}
 </div>
@@ -65,7 +65,7 @@
 </div>
 {% endfor %}
 {% if empty %}
-<p class="small area" style="margin:0">{% if empty | length == 8 %}No evidence has been added yet, so all eight areas are gaps.{% else %}Gap, with no evidence yet: {{ list_text(empty | map(attribute="label") | list) }}.{% endif %}</p>
+<p class="small area" style="margin:0">{% if empty | length == AREAS | length %}No evidence has been added yet, so all eleven areas are gaps.{% else %}Gap, with no evidence yet: {{ list_text(empty | map(attribute="label") | list) }}.{% endif %}</p>
 {% endif %}
 </section>
 </div>
@@ -81,7 +81,7 @@
 </dl>
 <div class="weeks" role="img" aria-label="Updates in {{ m.activeWeeks }} of the last 13 weeks">{% for w in m.weeks %}<i class="{{ 'on' if w.active else '' }}"></i>{% endfor %}</div>
 <p class="small row" style="justify-content:space-between;margin:6px 0 0"><span>13 weeks ago</span><span>This week</span></p>
-<p class="small" style="margin:8px 0 0">Orange marks a week with a progress update. There are no streaks, points or ranks.</p>
+<p class="small" style="margin:8px 0 0">A filled week has a progress update.</p>
 </section>
 <section aria-labelledby="up-h" class="card">
 <h2 id="up-h" class="app-h2">Progress updates</h2>

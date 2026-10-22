@@ -1,63 +1,60 @@
 """The public pages of the website, with the title and description each one carries in search results.
 
 Each description is the page's own opening line, and the site map lists exactly these pages.
-Copied on 17 October 2026 from apps/web/lib/pages.ts.
+Copied on 17 October 2026 from apps/web/lib/pages.ts. How it works, About and Questions were removed on
+21 October 2026, and their addresses redirect (routes/system.py). Reporting and complaints was added the same day,
+with the legal pack.
 """
 
 PUBLIC_PAGES = {
     "home": {
         "path": "/",
-        "title": "IkonetU | Connecting early-stage founders to investors",
-        "description": "Upload a one-minute pitch, build a verifiable venture profile, and connect with investors looking for real progress.",
+        "title": "IkonetU | Connecting student founders to investors",
+        "description": "Record a one-minute pitch, add your proof, and let investors ask to meet you.",
     },
     "founders": {
         "path": "/for-founders",
         "title": "For founders",
-        "description": "Upload a one-minute pitch, add evidence as you go, and become discoverable to investors who look for real progress.",
+        "description": "Record a one-minute pitch, upload proof one piece at a time, and show up when investors search your sector, stage and country.",
     },
     "investors": {
         "path": "/for-investors",
         "title": "For investors",
-        "description": "Search by sector, stage, geography, evidence and recent activity. See who supplied each piece of evidence and whether IkonetU reviewed it, then request an introduction.",
-    },
-    "how": {
-        "path": "/how-it-works",
-        "title": "How it works",
-        "description": "A founder publishes a one-minute pitch and adds evidence. Each piece of evidence shows who supplied it and whether IkonetU reviewed it. Investors search, check and request introductions.",
+        "description": "Search student founders by sector, stage, country and evidence, watch their pitches, and ask for an introduction.",
     },
     "trust": {
         "path": "/trust-and-safety",
         "title": "Trust and safety",
-        "description": "Founders and investors should know exactly what they can rely on. This page sets out what IkonetU does, what it never claims, and how to raise a concern.",
-    },
-    "about": {
-        "path": "/about",
-        "title": "About",
-        "description": "IkonetU connects early-stage founders to investors. It gives a founder's progress a structure that an investor can check.",
-    },
-    "questions": {
-        "path": "/questions",
-        "title": "Questions",
-        "description": "Questions founders and investors ask about IkonetU, evidence, the readiness check, introductions and data.",
+        "description": "IkonetU explains how it verifies evidence, who sees what, what the IkonetU Score is and how to raise a concern.",
     },
     "readiness": {
         "path": "/readiness-check",
         "title": "Readiness self-check",
-        "description": "Eight questions, one for each area of the readiness check on a founder profile. Nothing you choose is saved or sent, and you do not need an account.",
+        "description": "Answer eleven questions, one for each area of the IkonetU Score, and see what to add first. You need no account, and nothing is saved.",
+    },
+    "pricing": {
+        "path": "/pricing",
+        "title": "Pricing",
+        "description": "Founders and investors each have two plans. Free covers the pitch, search and introductions, and Premium adds verification.",
     },
     "privacy": {
         "path": "/privacy",
         "title": "Privacy policy",
-        "description": "How IkonetU Technology Limited collects, uses and keeps personal data. Adopted on 15 October 2026.",
+        "description": "How IkonetU Technology Limited collects, uses, shares and keeps personal data, and the rights you have. This version is dated 21 October 2026.",
     },
     "terms": {
         "path": "/terms",
         "title": "Terms",
-        "description": "The website terms, founder terms, investor terms, acceptable use policy and pitch licence of IkonetU. Adopted on 15 October 2026.",
+        "description": "The terms of use, founder terms, investor terms, acceptable use policy and investment risk warning of IkonetU. This version is dated 21 October 2026.",
     },
     "cookies": {
         "path": "/cookies",
         "title": "Cookie policy",
-        "description": "The cookies and browser storage IkonetU uses, and how long each item lasts. Adopted on 15 October 2026.",
+        "description": "Every cookie and item of browser storage that IkonetU uses, what each one does and how long it lasts. This version is dated 21 October 2026.",
+    },
+    "complaints": {
+        "path": "/complaints",
+        "title": "Reporting and complaints",
+        "description": "How to report content or a user on IkonetU, how to ask for a decision to be reviewed and how to complain. This policy is dated 21 October 2026.",
     },
 }

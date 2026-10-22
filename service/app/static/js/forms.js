@@ -1,6 +1,7 @@
 // While a form is being sent, its button shows what is happening ("Sending…") and cannot be pressed
-// again, as the Next.js forms did. The label comes from the button's data-pending attribute. Pressing
-// the browser's back button returns the page as it was, so the label is put back when a page is shown.
+// again, as the Next.js forms did. The label comes from the button's data-pending attribute, and
+// aria-busy keeps the button's own colours instead of the grey of a disabled one. Pressing the
+// browser's back button returns the page as it was, so the label is put back when a page is shown.
 (function () {
   document.addEventListener("submit", function (event) {
     if (event.defaultPrevented) return;
@@ -10,6 +11,7 @@
       var b = buttons[i];
       if (!b.dataset.label) b.dataset.label = b.textContent;
       b.textContent = b.dataset.pending;
+      b.setAttribute("aria-busy", "true");
       // Disabled after this tick, so the browser still sends the press of the button itself.
       setTimeout(function (button) { button.disabled = true; }, 0, b);
     }
@@ -18,6 +20,7 @@
     var buttons = document.querySelectorAll("button[data-pending][data-label]");
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].textContent = buttons[i].dataset.label;
+      buttons[i].removeAttribute("aria-busy");
       buttons[i].disabled = false;
     }
   });

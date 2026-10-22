@@ -13,7 +13,7 @@
 {% if stale %}
 <section class="card" aria-labelledby="stale-h" style="margin-bottom:24px">
 <h2 id="stale-h" class="app-h2">Scores to update</h2>
-<p class="body2">Each of these ventures has a decision that is newer than its score, so its founder sees an out-of-date score.</p>
+<p class="body2">Each of these ventures has a decision or a founder's statement that is newer than its recorded score, so its monthly record and the staff view are out of date. The founder's dashboard already shows the current score.</p>
 <ul class="todo">
 {% for v in stale %}
 <li style="align-items:center;justify-content:space-between"><span>{{ v.name }} <span class="small">· decided {{ date_text(v.last_decided_at) }}{% if v.scored_at %}, scored {{ date_text(v.scored_at) }}{% else %}, never scored{% endif %}</span></span><form method="post" action="/admin/evidence/recompute"><input type="hidden" name="venture" value="{{ v.venture_id }}"><button type="submit" class="btn btn-n btn-sm">Recompute the score</button></form></li>

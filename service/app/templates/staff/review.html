@@ -61,6 +61,11 @@
 <a href="/admin/evidence" class="back">{{ icon("arrow-left", 16) }} Evidence to review</a>
 <p class="lbl" style="margin-bottom:8px">{{ area_label(category) }} · {{ (e.ventures or {}).get("name") or "" }}</p>
 <h1 class="app-title">{{ signal_label(e.signal_code) }}</h1>
+{% if hint %}<p class="app-lede">The founder was asked for: {{ lower_first(hint) }}</p>{% endif %}
+{% if how == "statement" %}<p class="status status-info" role="note">This statement stands in for a connection to the founder's bank, platform or analytics, which IkonetU does not have yet. Check that it covers what the signal asks for.</p>
+{% elif how == "judgement" %}<p class="status status-info" role="note">The scoring specification would have AI assess this. IkonetU does not use AI checks yet, so judge it yourself against the signal's description.</p>
+{% elif how == "link" %}<p class="status status-info" role="note">IkonetU will check this automatically later. For now, open the link and check it yourself.</p>
+{% endif %}
 <div class="side">
 <section class="card stack-s" aria-labelledby="what-h">
 <h2 id="what-h" class="app-h2">What the founder sent</h2>

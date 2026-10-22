@@ -1,17 +1,22 @@
-// The readiness self-check: eight questions, one per area, and a result. Nothing is saved or sent.
-// Ported on 17 October 2026 from apps/web/components/site/pages/readiness.tsx.
+// The readiness self-check: one question for each of the eleven areas of the IkonetU Score, and a result.
+// Nothing is saved or sent. Ported on 17 October 2026 from apps/web/components/site/pages/readiness.tsx.
+// Since 21 October 2026 the areas follow AREAS in app/product.py, each reason is that area's AREA_WHY, and
+// each weight is the area's weight in rubric v3 (app/score_engine/rubric.py), which orders the first steps.
 import { navVals } from "../side.js";
 
 // name, weight used to order the first steps, question, what to add, why it matters, what to keep doing
 const AREAS = [
-  ["Identity", 100, "Is your company registered, and does the record name you as a founder or director?", "Upload your certificate of incorporation or registry record.", "investors want to know the company exists and who stands behind it.", "Keep the record current when directors change."],
-  ["Legal", 100, "Is your company registered for tax, and do you hold the contracts, licences or IP filings your business needs?", "Upload your tax registration and your key contracts or licences.", "a company that can trade legally carries less risk.", "Add new contracts and licences as you sign them."],
-  ["Financial", 200, "Do you keep monthly accounts or bank statements, and can you show revenue for the last 12 months?", "Upload bank or mobile money statements and your monthly accounts.", "recorded numbers can be reviewed. Remembered numbers cannot.", "Add each month's records when the month closes."],
-  ["Product", 200, "Is your product live, and can you show people using it or paying for it?", "Add a link to the live product and evidence such as orders or usage data.", "a product investors can try is easier to believe than a description.", "Post an update each time you ship a major change."],
-  ["Market", 100, "Have you documented customer interviews, signed pilot or intent letters, or market research?", "Upload interview notes, letters of intent or a market research document.", "investors want to know the problem exists before they look at the solution.", "Keep your research dated, so investors can see it is current."],
-  ["Team", 150, "Can you show who is building the company and the experience the plan needs?", "Add your team members and their credentials.", "investors back people, so they want to see who is building the company.", "Add new team members as they join."],
-  ["Media and presence", 100, "Do you have a live website, a pitch deck or one-pager, and any press coverage?", "Add your website, your deck and links to any coverage.", "a public presence lets investors check what you say.", "Add new coverage when it appears."],
-  ["Operations", 50, "Can you show how the business runs, such as supplier contracts, premises or the tools you use?", "Upload supplier contracts or other operational evidence.", "operational evidence shows the business can deliver.", "Update it when suppliers or premises change."],
+  ["Identity", 9, "Can you show a government ID, such as your national ID number or passport, with your full legal name?", "Upload your government ID and confirm your legal name and address.", "investors want to know who stands behind the company.", "Replace your ID before it expires."],
+  ["Registration", 11, "Is your business registered, with a tax identification number?", "Upload your registration certificate and your tax identification number.", "a registered company with a tax number can sign contracts and take investment.", "Add licences and filings as you receive them."],
+  ["Business tools", 7, "Does the business use an email address on its own domain, a website and written processes?", "Add your company email domain, your website and your process documents.", "working business tools show that the company runs day to day.", "Update your documents when the way you work changes."],
+  ["Team", 9, "Can you show who works in the business, such as staff on payroll, co-founders and advisers?", "Add your team, your payroll records and your advisers.", "investors back people, so they want to see who is building the company.", "Add new people as they join."],
+  ["Financial", 14, "Can you show six months of bank or mobile money statements, and revenue that comes in regularly?", "Upload six months of bank or mobile money statements.", "investors can check numbers that are written down.", "Add each month's statement when the month closes."],
+  ["Academic", 6, "Can you show your studies or training, such as a degree, a certificate or an entrepreneurship course?", "Add your degree, certificates or courses that relate to the business.", "study and training show the skills the founder brings.", "Add new certificates when you complete them."],
+  ["Product or operations", 12, "Is your product live, or can you show the business operating, with users or customers?", "Add a link to the live product, or records of the business operating.", "a product or a working operation is easier to believe than a description.", "Post an update each time you ship or open somewhere new."],
+  ["Traction", 14, "Can you show paying customers, signed letters of intent, partnerships or funding received?", "Add your customer numbers, letters of intent and partnership agreements.", "customers and partners show that the market wants what the company sells.", "Update your customer numbers every month."],
+  ["Recognition", 4, "Has the business or a founder won an award, a fellowship, a competition or a mentor's endorsement?", "Add the award, the fellowship or a letter from your mentor.", "outside recognition shows that others have judged the work.", "Add each new award as it comes."],
+  ["Governance", 4, "Does the company publish a privacy policy and terms, and keep its tax and annual filings up to date?", "Add your tax compliance certificate, your policies and your annual returns.", "good governance lowers the risk of backing the company.", "Renew certificates and filings before they lapse."],
+  ["Pitch and media", 10, "Do you have a pitch video of 60 to 90 seconds, a pitch deck and a product demo?", "Record your pitch video and add your deck and a demo.", "a clear pitch and visible progress let investors check what the founder says.", "Add new videos and coverage as they appear."],
 ];
 const LABELS = ["Not yet", "Partly", "Yes, and I can show it"];
 
@@ -48,9 +53,9 @@ export default {
       questions,
       number: current + 1,
       areaName: AREAS[current] ? AREAS[current][0] : "",
-      pct: Math.round(((current + (answers[current] !== undefined ? 1 : 0)) / 8) * 100),
+      pct: Math.round(((current + (answers[current] !== undefined ? 1 : 0)) / AREAS.length) * 100),
       isFirst: current === 0,
-      nextLabel: current === 7 ? "See my result" : "Next",
+      nextLabel: current === AREAS.length - 1 ? "See my result" : "Next",
       hasError: s.error,
       done: s.done,
       summary: `You answered yes in ${areaWord(count(2))}, partly in ${areaWord(count(1))} and not yet in ${areaWord(count(0))}.`,
@@ -70,7 +75,7 @@ export default {
           set((now) => ({ ...now, error: true }));
           return;
         }
-        if (current === 7) set((now) => ({ ...now, error: false, done: true }));
+        if (current === AREAS.length - 1) set((now) => ({ ...now, error: false, done: true }));
         else set((now) => ({ ...now, error: false, current: current + 1 }));
       },
       back: () => {

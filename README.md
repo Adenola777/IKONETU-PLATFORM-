@@ -23,22 +23,23 @@ The public pages were built from the design boards of October 2026 and are serve
 | `/` | Home |
 | `/for-founders` | For founders |
 | `/for-investors` | For investors |
-| `/how-it-works` | How it works |
 | `/readiness-check` | Readiness self-check. The answers stay in the browser and are never sent |
+| `/pricing` | Pricing: Free and Premium for founders and for investors |
 | `/trust-and-safety` | Trust and safety |
-| `/about` | About |
-| `/questions` | Questions |
 | `/privacy` | Privacy policy |
 | `/terms` | Terms |
 | `/cookies` | Cookie policy |
+| `/complaints` | Reporting and complaints |
 
 The investor interest form was retired on 15 October 2026, when investor accounts opened. Every investor button on the website now leads to account sign-up, and the old address `/investor-interest` redirects to `/for-investors`. The `investor_interest` table keeps the rows it already holds.
 
-The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label. The picture of the next three steps was captured again on 17 October 2026, after the dashboard's wording changed.
+The seven product pictures on the website were captured from this app on 15 October 2026, signed in against a local test copy of the database loaded with the website's six sample founders. Each picture carries a "Sample data" label. On 21 October 2026 five of them (the score card, the next three steps, founder search, a piece of evidence and the momentum card) were captured again on the same sample founders, served through a stand-in for Supabase built the way the route tests build theirs, because the IkonetU Score changed what those screens show.
+
+On 21 October 2026 the owner approved the website copy audit. How it works, About and Questions were removed: `/how-it-works` and `/about` redirect to the home page and `/questions` to For founders. The walkthrough video was taken off the website.
 
 IkonetU Technology Limited adopted the privacy policy, the terms and the cookie policy on 15 October 2026. Each page's title and description are in `service/app/pages.py`, which the site map also reads. `/robots.txt` keeps the API, sign-in and the signed-in pages out of search engines.
 
-The page markup lives in `service/app/templates/site/pages` and the styles in `service/app/static/css/site.css`. The behaviour of each page, such as the menu, the pitch player, the walkthrough video and the readiness self-check, is in `service/app/static/js/ik`. The signed-in pages use the same shared styles, with their own additions in `service/app/static/css/app.css`.
+The page markup lives in `service/app/templates/site/pages` and the styles in `service/app/static/css/site.css`. The behaviour of each page, such as the menu, the pitch player and the readiness self-check, is in `service/app/static/js/ik`. The signed-in pages use the same shared styles, with their own additions in `service/app/static/css/app.css`.
 
 The fonts are kept in `service/app/static/fonts` and served by the app, so no visitor's browser asks Google for them.
 
@@ -50,7 +51,7 @@ After sign-in, a new person chooses at `/onboarding` whether they are a founder 
 
 | Address | What the founder does |
 |---|---|
-| `/dashboard` | Publishes or hides the profile, sees the readiness check and the next three steps, and edits the venture's details and its ask. The dashboard shows no score |
+| `/dashboard` | Sees the IkonetU Score with its league, a chart of the eleven areas, the next three steps and the monthly record; publishes or hides the profile; sees the readiness check investors see; and edits the venture's details and its ask. Investors do not see the score |
 | `/dashboard/pitch` | Uploads a pitch of up to 90 seconds and 50 MB, with a typed transcript. The video goes from the browser straight to the founder's folder in the private `pitches` bucket. The captions are made from the transcript |
 | `/dashboard/evidence` | Adds evidence with up to three files or a link, and sees each item's status and the reviewer's note or reason |
 | `/dashboard/updates` | Posts and removes progress updates |
@@ -122,7 +123,7 @@ The app was built and tested with Python 3.13.16.
 cd service
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest          # 201 tests, 47 of them in the score engine
+.venv/bin/python -m pytest          # 213 tests, 49 of them in the score engine
 .venv/bin/uvicorn app.main:app --port 3000    # http://localhost:3000
 ```
 
@@ -130,7 +131,7 @@ Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Sup
 
 ## Rules the code enforces
 
-- A score only counts approved evidence. Self-reported claims add nothing.
+- A score only counts approved evidence and the founder's own statements for the three self-declared signals, which count at 60% of their points. The rules are rubric v3, from the Scoring System Specification of March 2026.
 - Founders cannot approve their own evidence, change its status or give themselves staff roles. The database blocks these even if the app has a bug.
 - Score history and the audit log cannot be edited after they are written.
 - The waitlist and the investor interest list cannot be read or written by any signed-in user or visitor. Only the server writes to the waitlist, and nothing writes to the interest list since its form was retired.

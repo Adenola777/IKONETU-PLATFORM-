@@ -36,6 +36,8 @@
     // The boxes now drawn ticked are the page's own state, as they would be if the page had loaded at this address.
     var boxes = form.querySelectorAll("input");
     for (var i = 0; i < boxes.length; i++) boxes[i].defaultChecked = boxes[i].checked;
+    var options = form.querySelectorAll("option");
+    for (var j = 0; j < options.length; j++) options[j].defaultSelected = options[j].selected;
     history.replaceState(history.state, "", address);
     label();
     try {

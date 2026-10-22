@@ -23,7 +23,7 @@ export default {
           if (ctx.menuEl) ctx.menuEl.focus();
         }
       },
-      cur: { founders: page("founders"), investors: page("investors"), how: page("how"), trust: page("trust"), signin: page("signin") },
+      cur: { founders: page("founders"), investors: page("investors"), trust: page("trust"), pricing: page("pricing"), signin: page("signin") },
     };
   },
 };

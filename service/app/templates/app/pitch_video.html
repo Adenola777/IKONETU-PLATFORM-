@@ -8,6 +8,7 @@
 <div class="player">
 <video src="{{ src }}" controls preload="metadata" playsinline aria-label="{{ title }}" data-cues="{{ cues(transcript, duration) | tojson | forceescape }}"></video>
 </div>
+<p class="err" role="status" hidden data-pitch-error>The pitch could not be played. Try again, or read the transcript below.</p>
 <details class="transcript">
 <summary>Read the transcript</summary>
 <p>{{ transcript }}</p>

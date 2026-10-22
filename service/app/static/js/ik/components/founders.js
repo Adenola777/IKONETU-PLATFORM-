@@ -1,16 +1,20 @@
-// The for-founders page: the eight areas of the readiness check and the sample momentum weeks.
-// Ported on 17 October 2026 from apps/web/components/site/pages/founders.tsx.
+// The for-founders page: the eleven areas of the IkonetU Score and the sample momentum weeks.
+// Ported on 17 October 2026 from apps/web/components/site/pages/founders.tsx. The areas follow AREAS in
+// app/product.py since 21 October 2026, and the sample levels match the sample profile on the home page.
 import { navVals } from "../side.js";
 
 const AREAS = [
-  ["Identity", 3, "Whether the company is registered and who stands behind it.", "A registry record or certificate of incorporation, and the founder's government ID."],
-  ["Legal", 2, "Whether the company can trade legally.", "A tax registration, contracts, licences or IP filings."],
-  ["Financial", 3, "Whether the numbers are recorded and can be checked.", "Bank or mobile money statements, monthly accounts and revenue for the last 12 months."],
-  ["Product", 3, "Whether the product exists, works and is used.", "A live link, a test account, signed orders or usage data."],
-  ["Market", 3, "Whether the problem is real and people want the product.", "Customer interviews, signed pilot or intent letters, or market research."],
-  ["Team", 2, "Who is building the company and whether they can deliver the plan.", "Team members and their credentials, or a programme they completed."],
-  ["Media and presence", 2, "Whether investors can check the company in public.", "A live website, a social profile, a pitch deck or press coverage."],
-  ["Operations", 1, "Whether the business can deliver.", "Supplier contracts, premises or the tools the business runs on."],
+  ["Identity", 3, "Who the founder is, verified against a government ID.", "A national ID number or passport, and your full legal name and address."],
+  ["Registration", 3, "Whether the business is registered and can trade.", "A registration certificate, a tax identification number and any operating licence."],
+  ["Business tools", 2, "Whether the company runs on professional tools.", "An email address on your own domain, your website and your process documents."],
+  ["Team", 2, "Who is building the company.", "Staff on payroll, co-founders, advisers and the founders' backgrounds."],
+  ["Financial", 3, "Whether money comes in and is recorded.", "Six months of bank or mobile money statements, recurring revenue and a payment gateway."],
+  ["Academic", 1, "The skills the founder brings from study and training.", "A degree, certifications, research or an entrepreneurship course."],
+  ["Product or operations", 3, "Whether the product is live or the business is operating.", "A live product with users, a published app, or a verified location with customers."],
+  ["Traction", 3, "Whether customers and partners want what you sell.", "Verified customer numbers, letters of intent, partnerships, grants or prior funding."],
+  ["Recognition", 1, "Whether others have judged the work.", "Awards, fellowships, competition wins or a mentor's endorsement."],
+  ["Governance", 2, "Whether the company is run with care.", "A tax compliance certificate, annual returns, a privacy policy and a board."],
+  ["Pitch and media", 2, "Whether investors can see and hear the pitch.", "A pitch video of 60 to 90 seconds, a pitch deck, a demo video and press clips."],
 ];
 const LEVEL_NAME = { 3: "Strong", 2: "Building", 1: "Gap" };
 
@@ -22,7 +26,7 @@ const WEEK_NOTES = {
   7: ["Reached 1,000 active traders."],
   8: ["Hired a field agent for a second market."],
   11: ["Added two merchant references."],
-  12: ["Revenue evidence reviewed by IkonetU.", "Shipped receipt sharing on WhatsApp."],
+  12: ["Revenue evidence verified by IkonetU.", "Shipped receipt sharing on WhatsApp."],
 };
 const MONDAY = Date.UTC(2026, 6, 20);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -54,7 +58,7 @@ export default {
       const notes = WEEK_NOTES[i] || [];
       return {
         name: `Week of ${weekLabel(i)}${notes.length ? `, ${notes.length} ${notes.length === 1 ? "update" : "updates"}` : ", no update"}`,
-        bg: notes.length ? "#F26B1D" : "#E7EAF0",
+        bg: notes.length ? "var(--mark-on)" : "var(--mark-off)",
         on: s.week === i,
         pick: () => set((now) => ({ ...now, week: i })),
       };

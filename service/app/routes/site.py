@@ -1,4 +1,4 @@
-"""The eleven public pages of the website."""
+"""The public pages of the website: the eight in PUBLIC_PAGES."""
 
 from __future__ import annotations
 
@@ -11,9 +11,8 @@ router = APIRouter()
 
 # The template of each page, named after the page class its board gives it (pg-home and so on).
 TEMPLATES = {
-    "home": "home", "founders": "founders", "investors": "investors", "how": "how", "trust": "trust",
-    "about": "about", "questions": "questions", "readiness": "readiness", "privacy": "privacy",
-    "terms": "terms", "cookies": "cookies",
+    "home": "home", "founders": "founders", "investors": "investors", "trust": "trust",
+    "readiness": "readiness", "pricing": "pricing", "privacy": "privacy", "terms": "terms", "cookies": "cookies", "complaints": "complaints",
 }
 
 

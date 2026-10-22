@@ -4,19 +4,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+# Founders and investors can be in any country since 21 October 2026.
+from .countries import COUNTRIES
 from .score_engine.engine import parse_instant
 
 # The sectors a venture and an investor choose from. Discovery filters on them.
 SECTORS = ("Fintech", "Agritech", "Edtech", "Health", "Other")
-INTEREST_COUNTRIES = ("NG", "GH", "KE", "other")
 CHEQUE_SIZES = ("Under $25,000", "$25,000 to $100,000", "$100,000 to $500,000", "Over $500,000", "Prefer not to say")
 INVESTOR_TYPES = ("individual", "angel", "fund")
-
-COUNTRIES = (
-    {"code": "NG", "name": "Nigeria", "dial": "234"},
-    {"code": "GH", "name": "Ghana", "dial": "233"},
-    {"code": "KE", "name": "Kenya", "dial": "254"},
-)
 
 STAGES = (
     {"code": "idea", "label": "Idea"},
@@ -25,17 +20,23 @@ STAGES = (
     {"code": "scaling", "label": "Scaling"},
 )
 
-# The eight areas of evidence, in the order of the score engine's rubric.
+# The eleven areas of evidence, in the order of the score engine's rubric v3. The product area
+# holds both pathways, Technical Output and Business Operations, because the score counts
+# whichever of the two is higher.
 AREAS = (
-    {"code": "identity", "label": "Identity"},
-    {"code": "legal", "label": "Legal"},
-    {"code": "financial", "label": "Financial"},
-    {"code": "product", "label": "Product"},
-    {"code": "market", "label": "Market"},
-    {"code": "team", "label": "Team"},
-    {"code": "media", "label": "Media and presence"},
-    {"code": "operations", "label": "Operations"},
+    {"code": "identity", "label": "Identity", "categories": ("identity",)},
+    {"code": "business", "label": "Registration", "categories": ("business",)},
+    {"code": "infrastructure", "label": "Business tools", "categories": ("infrastructure",)},
+    {"code": "team", "label": "Team", "categories": ("team",)},
+    {"code": "financial", "label": "Financial", "categories": ("financial",)},
+    {"code": "academic", "label": "Academic", "categories": ("academic",)},
+    {"code": "output", "label": "Product or operations", "categories": ("technical", "operations")},
+    {"code": "traction", "label": "Traction", "categories": ("traction",)},
+    {"code": "awards", "label": "Recognition", "categories": ("awards",)},
+    {"code": "governance", "label": "Governance", "categories": ("governance",)},
+    {"code": "media", "label": "Pitch and media", "categories": ("media",)},
 )
+AREA_COUNT = len(AREAS)
 
 
 def country_name(code: str | None) -> str:
@@ -46,8 +47,15 @@ def stage_label(code: str) -> str:
     return next((s["label"] for s in STAGES if s["code"] == code), code)
 
 
+def area_of(category: str) -> str:
+    """The area a rubric category belongs to."""
+    return next((a["code"] for a in AREAS if category in a["categories"]), category)
+
+
 def area_label(code: str) -> str:
-    return next((a["label"] for a in AREAS if a["code"] == code), code)
+    """The area's name, for an area or a rubric category."""
+    area = area_of(code)
+    return next((a["label"] for a in AREAS if a["code"] == area), code)
 
 
 # The three statuses an investor sees. The database decides which one applies
@@ -56,11 +64,11 @@ def area_label(code: str) -> str:
 # and submitted for evidence nobody has decided yet.
 STATUS = {
     "third_party": {
-        "name": "Third-party evidence available", "chip": "chip-io", "icon": "link",
+        "name": "Third-party evidence available", "chip": "chip-3p", "icon": "link",
         "means": "An outside source backs it. The outside source has not assessed the company.",
     },
     "reviewed": {
-        "name": "Platform reviewed", "chip": "chip-i", "icon": "shield-check",
+        "name": "Platform reviewed", "chip": "chip-ok", "icon": "shield-check",
         "means": "An IkonetU reviewer compared it with its source. A review is not an audit, a valuation or an endorsement.",
     },
     "submitted": {
@@ -79,7 +87,7 @@ def is_shown_status(v: object) -> bool:
 # holds platform-reviewed or third-party evidence, building when it holds founder-submitted
 # evidence only, and a gap when it holds none. The owner set this on 15 October 2026.
 LEVEL = {
-    "strong": {"name": "Strong", "chip": "chip-i", "means": "Platform-reviewed or third-party evidence"},
+    "strong": {"name": "Strong", "chip": "chip-ok", "means": "Platform-reviewed or third-party evidence"},
     "building": {"name": "Building", "chip": "chip-n", "means": "Founder-submitted evidence only"},
     "gap": {"name": "Gap", "chip": "chip-none", "means": "No evidence yet"},
 }
@@ -94,13 +102,17 @@ def level_of(status: str | None) -> str:
 
 
 def area_cells(areas: list[dict]) -> list[dict]:
-    """One entry per area, in rubric order, with its level and how many pieces of evidence it holds."""
+    """One entry per area, in rubric order, with its level and how many pieces of evidence it holds.
+
+    `areas` holds one entry per rubric category or per area. An area with two categories takes
+    the best status of the two and adds their counts.
+    """
     cells = []
     for a in AREAS:
-        found = next((x for x in areas if x["category"] == a["code"]), None)
+        found = [x for x in areas if x["category"] in a["categories"] or x["category"] == a["code"]]
+        best = max((x["status"] for x in found), key=lambda st: RANK.get(st, 0), default=None)
         cells.append({
-            "code": a["code"], "label": a["label"], "level": level_of(found["status"] if found else None),
-            "count": found["count"] if found else 0,
+            "code": a["code"], "label": a["label"], "level": level_of(best), "count": sum(x["count"] for x in found),
         })
     return cells
 
@@ -111,9 +123,9 @@ def readiness_text(areas: list[dict]) -> str:
 
     def n(level: str) -> int:
         return sum(1 for c in cells if c["level"] == level)
-    if n("gap") == 8:
-        return "No evidence yet, so all eight areas are gaps."
-    return f"Strong in {n('strong')} of 8 areas, building in {n('building')}, with a gap in {n('gap')}."
+    if n("gap") == AREA_COUNT:
+        return "No evidence yet, so all eleven areas are gaps."
+    return f"Strong in {n('strong')} of {AREA_COUNT} areas, building in {n('building')}, with a gap in {n('gap')}."
 
 
 def summarise_areas(rows: list[dict]) -> list[dict]:
@@ -188,34 +200,40 @@ def date_text(iso) -> str:
 
 INVESTOR_TYPE_NAME = {"individual": "Individual investor", "angel": "Angel investor", "fund": "Fund investor"}
 
-# Why each area matters to an investor. The founder's next steps and the public readiness
-# self-check use the same sentences.
+# Why each area matters to an investor. The founder's next steps use the same sentences.
 AREA_WHY = {
-    "identity": "Investors want to know the company exists and who stands behind it.",
-    "legal": "A company that can trade legally carries less risk.",
-    "financial": "Recorded numbers can be reviewed. Remembered numbers cannot.",
-    "product": "A product investors can try is easier to believe than a description.",
-    "market": "Investors want to know the problem exists before they look at the solution.",
+    "identity": "Investors want to know who stands behind the company.",
+    "business": "A registered company with a tax number can sign contracts and take investment.",
+    "infrastructure": "Working business tools show that the company runs day to day.",
     "team": "Investors back people, so they want to see who is building the company.",
-    "media": "A public presence lets investors check what the founder says.",
-    "operations": "Operational evidence shows the business can deliver.",
+    "financial": "Investors can check numbers that are written down.",
+    "academic": "Study and training show the skills the founder brings.",
+    "output": "A product or a working operation is easier to believe than a description.",
+    "traction": "Customers and partners show that the market wants what the company sells.",
+    "awards": "Outside recognition shows that others have judged the work.",
+    "governance": "Good governance lowers the risk of backing the company.",
+    "media": "A clear pitch and visible progress let investors check what the founder says.",
 }
 
 
+def why_it_matters(category: str) -> str:
+    return AREA_WHY[area_of(category)]
+
+
 def evidence_added_text(items: list[dict], now: datetime) -> str:
-    """The evidence added in the last 90 days, for example "7 pieces in 90 days, in 7 of 8 areas"."""
+    """The evidence added in the last 90 days, for example "7 pieces in 90 days, in 7 of 11 areas"."""
     recent = [e for e in items if days_between(e["createdAt"], now) <= 90]
     if not recent:
         return "None in 90 days"
-    areas = len({e["category"] for e in recent})
-    return f"{len(recent)} {'piece' if len(recent) == 1 else 'pieces'} in 90 days, in {areas} of 8 areas"
+    areas = len({area_of(e["category"]) for e in recent})
+    return f"{len(recent)} {'piece' if len(recent) == 1 else 'pieces'} in 90 days, in {areas} of {AREA_COUNT} areas"
 
 
 def momentum(update_dates: list[str], now: datetime) -> dict:
     """Momentum, as the website describes it: recency, consistency and evidence added.
 
     Consistency counts progress updates in the last 90 days, and the strip marks each of
-    the last 13 weeks that had an update. There are no streaks, points or ranks.
+    the last 13 weeks that had an update. Momentum has no streaks or points of its own.
     """
     days = [days_between(d, now) for d in update_dates]
     in90 = sum(1 for d in days if d <= 90)

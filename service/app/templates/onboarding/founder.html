@@ -22,7 +22,8 @@
 <div class="field">
 <label for="o-country">Country</label>
 <select id="o-country" name="country" class="input"{{ invalid(errors, "country") }}>
-{% for c in COUNTRIES %}<option value="{{ c.code }}"{% if (v.get("country") or "NG") == c.code %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+<option value="" disabled{% if not v.get("country") %} selected{% endif %}>Choose your country</option>
+{% for c in COUNTRIES %}<option value="{{ c.code }}"{% if v.get("country") == c.code %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
 </select>
 {{ err(errors, "country") }}
 </div>
@@ -33,13 +34,13 @@
 </div>
 </div>
 <div class="field">
-<label for="o-institution">University or institution (optional)</label>
-<input id="o-institution" name="institution" class="input" type="text" maxlength="120"{{ value("institution") }}{{ invalid(errors, "institution") }}>
+<label for="o-institution">University, college or institution</label>
+<input id="o-institution" name="institution" class="input" type="text" required maxlength="120"{{ value("institution") }}{{ invalid(errors, "institution") }}>
 {{ err(errors, "institution") }}
 </div>
 <div class="field">
-<label for="o-graduate">Student or graduate status (optional)</label>
-<input id="o-graduate" name="graduateStatus" class="input" type="text" maxlength="80"{{ value("graduateStatus") }}{{ invalid(errors, "graduateStatus", "o-graduate-hint") }}>
+<label for="o-graduate">Student or graduate status</label>
+<input id="o-graduate" name="graduateStatus" class="input" type="text" required maxlength="80"{{ value("graduateStatus") }}{{ invalid(errors, "graduateStatus", "o-graduate-hint") }}>
 <p id="o-graduate-hint" class="hint">For example: final-year student, or graduated 2024.</p>
 {{ err(errors, "graduateStatus") }}
 </div>
@@ -103,6 +104,10 @@
 {% endfor %}
 </fieldset>
 
+<div>
+<label class="check"><input type="checkbox" name="studentFounder"{{ invalid(errors, "studentFounder") }}> <span>I study at a university, college or other higher education institution, or I graduated from one in the last three years.</span></label>
+{{ err(errors, "studentFounder") }}
+</div>
 {% if ask_adult %}
 <div>
 <label class="check"><input type="checkbox" name="confirmedAdult"{{ invalid(errors, "confirmedAdult") }}> <span>I am 18 or older.</span></label>

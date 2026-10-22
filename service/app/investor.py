@@ -8,16 +8,12 @@ the first message its zod schema would have given.
 from __future__ import annotations
 
 from .forms import Parsed, _optional, _text, _web
-from .product import CHEQUE_SIZES, COUNTRIES, INTEREST_COUNTRIES, INVESTOR_TYPES, SECTORS, STAGES
+from .product import CHEQUE_SIZES, COUNTRIES, INVESTOR_TYPES, SECTORS, STAGES
 from .validate import Errors, js_len, js_trim
 from .waitlist import PRIVACY_VERSION
 
-BASED_IN = (
-    {"code": "NG", "name": "Nigeria"},
-    {"code": "GH", "name": "Ghana"},
-    {"code": "KE", "name": "Kenya"},
-    {"code": "other", "name": "Somewhere else"},
-)
+# An investor can be based in any country. Rows written before 21 October 2026 may hold "other".
+BASED_IN = COUNTRIES
 
 INVESTOR_TYPE_OPTIONS = (
     {"code": "individual", "name": "Individual investor", "hint": "You invest your own money, without a fund or an angel network."},
@@ -64,7 +60,7 @@ def _details(form: dict, e: Errors) -> tuple[dict, bool]:
     whole = True
     full_name = _text(e, "fullName", _first(form, "fullName"), 2, "Enter your full name.", 120, "Your name is too long.")
     based_in = _first(form, "basedIn")
-    if based_in not in INTEREST_COUNTRIES:
+    if based_in not in COUNTRY_CODES:
         e.add("basedIn", "Choose where you are based.")
         whole = False
     investor_type = _first(form, "investorType")
@@ -73,11 +69,16 @@ def _details(form: dict, e: Errors) -> tuple[dict, bool]:
         whole = False
     firm = _optional(e, "firm", _first(form, "firm"), 120, "The firm name is too long.")
     website = _web(e, "website", _first(form, "website"), 200, "That address is too long.", WEBSITE)
-    sectors, stages, countries = _all(form, "sectors"), _all(form, "stages"), _all(form, "countries")
+    # Countries come from three menus, and a menu left on "No country" sends an empty value.
+    sectors, stages = _all(form, "sectors"), _all(form, "stages")
+    countries = [c for c in _all(form, "countries") if c]
     whole &= _choices(e, "sectors", sectors, SECTORS, "Choose sectors from the list.", "Choose each sector once.",
                       "Choose at least one sector.")
     whole &= _choices(e, "stages", stages, STAGE_CODES, "Choose stages from the list.", "Choose each stage once.")
     whole &= _choices(e, "countries", countries, COUNTRY_CODES, "Choose countries from the list.", "Choose each country once.")
+    if len(countries) > 3 and "countries" not in e:
+        e.add("countries", "Choose up to three countries.")
+        whole = False
     cheque = _first(form, "chequeSize")
     if cheque not in CHEQUE_SIZES:
         e.add("chequeSize", "Choose a cheque size, or prefer not to say.")

@@ -56,9 +56,13 @@
 </fieldset>
 
 <fieldset class="field">
-<legend>Countries you invest in (optional)</legend>
-<div class="opts opts-3">
-{% for c in COUNTRIES %}<label class="opt"><input type="checkbox" name="countries" value="{{ c.code }}"{% if c.code in many(values, 'countries') %} checked{% endif %}> {{ c.name }}</label>{% endfor %}
+<legend>Countries you invest in (optional, up to three)</legend>
+{% set picked = many(values, 'countries') | select | list %}
+<div class="grid3" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
+{% for n in range(3) %}<select name="countries" class="input" aria-label="Country {{ n + 1 }}"{{ invalid(errors, "countries") }}>
+<option value="">No country</option>
+{% for c in COUNTRIES %}<option value="{{ c.code }}"{% if picked[n] is defined and picked[n] == c.code %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+</select>{% endfor %}
 </div>
 {{ field_error(errors, "countries") }}
 </fieldset>

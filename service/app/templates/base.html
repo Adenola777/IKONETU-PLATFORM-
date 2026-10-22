@@ -25,10 +25,11 @@
 <meta name="twitter:title" content="{{ meta.full_title }}">
 <meta name="twitter:description" content="{{ meta.description }}">
 <link rel="icon" href="/icon.svg" type="image/svg+xml" sizes="any">
-{# The fonts the first screen uses are preloaded, as next/font preloaded them, so text does not move when they arrive. #}
-{% for f in ["636a5ac981f94f8b-s.p", "6e8c7cb283336a9d-s.p", "7452ca4a93358909-s.p", "8ebc6e9dde468c4a-s.p", "9e7b0a821b9dfcb4-s.p", "e0ecb571b51ea3b5-s.p"] %}
+{# The two Latin faces of IBM Plex Sans, which the first screen uses, are preloaded so text does not move when they arrive. #}
+{% for f in ["ibm-plex-sans-latin-400-normal", "ibm-plex-sans-latin-600-normal"] %}
 <link rel="preload" href="/static/fonts/{{ f }}.woff2" as="font" type="font/woff2" crossorigin>
 {% endfor %}
+<link rel="stylesheet" href="/static/css/tokens.css">
 <link rel="stylesheet" href="/static/css/fonts.css">
 <link rel="stylesheet" href="/static/css/globals.css">
 <link rel="stylesheet" href="/static/css/site.css">
