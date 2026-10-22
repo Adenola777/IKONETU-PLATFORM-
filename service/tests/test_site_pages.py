@@ -291,10 +291,13 @@ def test_the_home_page_explains_the_evidence_labels_once(client):
     assert _text(client, "/").count("The founder added it, and IkonetU has not verified it yet.") == 1
 
 
-def test_the_home_page_plans_keep_their_table_roles_when_a_phone_stacks_them(client):
+def test_the_home_page_sets_its_plans_as_a_card_for_each_side(client):
     body = client.get("/").text
-    assert '<table class="tbl plans" role="table"><thead role="rowgroup">' in body
-    assert body.count('<th scope="row" role="rowheader">') == 4 and body.count('<td role="cell"') == 8
+    cards = re.findall(r'<div class="price-side price-([fi])"><span class="chip chip-\1">([^<]+)</span><dl class="price-rows">(.*?)</dl></div>', body, re.DOTALL)
+    assert [(side, label) for side, label, _ in cards] == [("f", "For founders"), ("i", "For investors")]
+    rows = [re.findall(r"<dt>([^<]+)</dt><dd class=\"price-amt\">([^<]+)</dd>", c) for _, _, c in cards]
+    assert rows == [[("Founder Free", "$0"), ("Founder Premium", "$5 a month")], [("Investor Free", "$0"), ("Investor Premium", "$29 a month")]]
+    assert '<table class="tbl plans"' not in body
 
 
 # The owner's approval of 21 October 2026 for the other pages ("approved, do the other pages"): each page takes the
@@ -350,11 +353,11 @@ def test_trust_and_safety_links_its_sections_and_sets_the_statuses_as_a_table(cl
     assert '<p class="risk-box">Investing in early-stage businesses is high risk.' in body
 
 
-def test_the_founders_page_puts_the_sample_dashboard_beneath_the_hero_and_the_steps_on_a_timeline(client):
+def test_the_founders_page_puts_the_example_dashboard_beneath_the_hero_and_the_steps_on_a_timeline(client):
     body = client.get("/for-founders").text
     after_hero = body[body.index("</section>", body.index('aria-labelledby="f-title"')):]
     assert after_hero.startswith('</section><section id="readiness" aria-labelledby="f-ready" class="show">')
-    assert '<div class="frame dash" role="group" aria-label="Sample founder dashboard">' in body
+    assert '<div class="frame dash" role="group" aria-label="Example founder dashboard">' in body
     timeline = re.search(r'<ol class="timeline">(.*?)</ol>', body, re.DOTALL).group(1)
     assert len(re.findall(r'<li><span class="num num-f">\d</span><h3 class="h3">', timeline)) == 4
 
@@ -374,3 +377,30 @@ def test_the_readiness_check_marks_a_strong_area_in_the_verified_colour(client):
     assert '<div class="hero-c rc-hero"><p class="lbl lbl-f">Readiness self-check</p>' in body
     assert 'color:var(--verified)">Already strong</h3>' in body and "#123C7A;margin-top:3px" not in body
 
+
+
+
+# The owner's edits of 22 October 2026: no "sample data" wording, one Example tag on each showcase, no stories or
+# explanatory notes, and justified paragraphs.
+@pytest.mark.parametrize("key", list(PUBLIC_PAGES))
+def test_no_page_says_sample(client, key):
+    assert not re.search(r"\bsample\b", _text(client, PUBLIC_PAGES[key]["path"]), re.IGNORECASE)
+
+
+@pytest.mark.parametrize(("path", "tags"), [("/", 1), ("/for-founders", 2), ("/for-investors", 1)])
+def test_each_showcase_carries_one_example_tag(client, path, tags):
+    assert client.get(path).text.count('<span class="chip chip-n">Example</span>') == tags
+
+
+def test_the_home_page_says_its_central_message_without_the_story(client):
+    text = _text(client, "/")
+    assert "Many founders build real businesses" not in text and "investors spend their time" not in text
+    assert "IkonetU puts the founder's evidence beside the pitch, so investors see the proof before they ask to meet." in text
+    assert "Measures" not in text and "A filled week has a progress update" not in text
+
+
+def test_website_paragraphs_are_justified_and_hyphenated(client):
+    css = (APP / "static" / "css" / "site.css").read_text()
+    assert ".site:not(.pg-app) :is(p, dd, figcaption, .rows > li, .plan-list > li){text-align:justify;-webkit-hyphens:auto;hyphens:auto}" in css
+    assert "text-align-last:center" in css
+    assert '<html lang="en-GB">' in client.get("/").text

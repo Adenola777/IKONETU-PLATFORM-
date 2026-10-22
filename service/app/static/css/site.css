@@ -14,6 +14,13 @@ body{margin:0}
 .site .page{font-family:var(--font-sans),system-ui,sans-serif;font-size:var(--t-body);color:var(--ink);background:var(--canvas);line-height:1.6;-webkit-font-smoothing:antialiased}
 .site .skip{position:absolute;left:16px;top:-100px;z-index:10;padding:12px 16px;border-radius:var(--r-control);background:var(--ink);color:#FFFFFF;font-weight:600;text-decoration:none}
 .site .skip:focus{top:16px;color:#FFFFFF}
+/* Paragraphs are justified on every website page, as the owner chose on 22 October 2026, and hyphenated so a narrow
+   line does not open wide gaps. A paragraph in a centred block keeps its last line centred. Headings are never
+   justified, and the signed-in app keeps its own alignment. */
+.site:not(.pg-app) :is(p, dd, figcaption, .rows > li, .plan-list > li){text-align:justify;-webkit-hyphens:auto;hyphens:auto}
+.site:not(.pg-app) :is(.hero-c, .intro-c, .show-head, [style*="text-align:center"]) p,
+.site:not(.pg-app) figcaption > span,
+.site:not(.pg-app) :is(.cap, .legal-date, .cta-note, figcaption){text-align:justify;text-align-last:center}
 .site .wrap{max-width:1288px;margin:0 auto;padding-left:24px;padding-right:24px;box-sizing:border-box}
 .site .narrow{max-width:928px}
 /* A reading column: about 70 characters a line at 17px, start-aligned in the middle of the page. */
@@ -249,9 +256,18 @@ html{scroll-behavior:smooth}
 .site .lg{display:grid;grid-template-columns:300px minmax(0,1fr);gap:8px 24px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
 .site .lg p{margin:0;color:var(--text-3)}
 .site .lg-name{font-weight:600}
-.site .plans th[scope="row"]{vertical-align:top;padding-top:14px;padding-bottom:14px}
-.site .plans .plan-name{display:block;margin-bottom:6px;font-weight:600;color:var(--ink)}
-.site .plans .plan-price{font-weight:600;color:var(--ink);white-space:nowrap}
+/* The home page's prices: a card for each side, with Free and Premium as rows of name, price and one sentence. */
+.site .price-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:var(--w-wide);margin:40px auto 0}
+.site .price-side{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:32px;border-radius:var(--r-frame)}
+.site .price-f{background:var(--founder-tint)}
+.site .price-i{background:var(--investor-tint)}
+/* On its own tint a context label needs a white ground to show as a label. */
+.site .price-side .chip{background:var(--canvas)}
+.site .price-rows{align-self:stretch;margin:8px 0 0}
+.site .price-rows > div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;padding:16px 0;border-top:1px solid var(--line)}
+.site .price-rows dt{font-weight:600;color:var(--ink)}
+.site .price-rows .price-amt{margin:0;font-weight:600;color:var(--ink);white-space:nowrap}
+.site .price-rows .price-what{grid-column:1 / -1;margin:0;color:var(--text-3)}
 /* A legal page centres its title, date and links, and its text sits in the reading column. A table may run wider
    than the column, to the width of a composition, so its columns stay readable. */
 .site .legal-hero .wrap{padding-bottom:40px}
@@ -349,7 +365,6 @@ html{scroll-behavior:smooth}
 @media (max-width: 640px){
 .site .lg{grid-template-columns:minmax(0,1fr);gap:6px}
 .site .strip{margin:0 16px}
-.pg-home .strip-key{display:none}
 .site .weeks-row{gap:4px}
 .pg-home .side{padding:24px}
 .pg-home .modpanel{grid-template-columns:minmax(0,1fr)}
@@ -366,13 +381,8 @@ html{scroll-behavior:smooth}
 .pg-home .shot img{max-width:360px;margin:0 auto}
 .pg-home .tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .pg-home .tab{padding-right:12px;font-size:var(--t-ui-s)}
-/* Each plan becomes one block, with its name and price on a line and what it adds below. The column headings stay
-   for screen readers, and the table's roles are written into the markup because a change of display drops them. */
-.site .plans,.site .plans tbody,.site .plans th,.site .plans td{display:block}
-.site .plans thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-.site .plans tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:16px 0;border-bottom:1px solid var(--line)}
-.site .plans th[scope="row"],.site .plans td{padding:0;border:0}
-.site .plans td:last-child{grid-column:1 / -1}
+.site .price-duo{grid-template-columns:minmax(0,1fr)}
+.site .price-side{padding:24px}
 }
 
 /* ForFounders */
@@ -461,15 +471,15 @@ html{scroll-behavior:smooth}
 .pg-founders .dash .areas{grid-template-columns:minmax(0,1fr)}
 .pg-founders .dash .areas > div:last-of-type{border-bottom:1px solid var(--line)}
 .pg-founders .dash-next{padding:24px;border-radius:var(--r-panel);background:var(--founder-tint)}
-.pg-founders .dash-why{margin:4px 0 16px}
+.pg-founders .dash-next .h3{margin-bottom:16px}
+.pg-founders .dash-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
 .pg-founders .dash-next .lbl{margin-bottom:4px}
 .pg-founders .dash-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 24px;margin-top:32px;padding-top:24px;border-top:1px solid var(--line)}
 .pg-founders .dash-q{font-weight:600}
-.pg-founders .mom{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:32px 48px;align-items:start}
+.pg-founders .mom{max-width:720px}
 .pg-founders .mom-box{padding:8px 24px 24px;box-shadow:none}
-.pg-founders .mom-notes{margin:0}
 @media (max-width: 960px){
-.pg-founders .dash-cols,.pg-founders .mom{grid-template-columns:minmax(0,1fr)}
+.pg-founders .dash-cols{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width: 599px){
 .pg-founders .dash{padding:20px}

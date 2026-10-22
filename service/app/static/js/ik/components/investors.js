@@ -128,7 +128,7 @@ export default {
       results,
       noMatches: matches.length === 0,
       noFilters: count === 0,
-      matchText: `${matches.length === 1 ? "1 sample founder matches" : `${matches.length} sample founders match`}. Sorted by company name.`,
+      matchText: `${matches.length === 1 ? "1 founder matches" : `${matches.length} founders match`}. Sorted by company name.`,
       clearFilters: () => set((now) => ({ ...now, filters: NO_FILTERS, requested: "" })),
       previewStop: () => {
         ctx.doneId = "";

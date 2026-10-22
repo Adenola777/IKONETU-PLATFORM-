@@ -63,6 +63,11 @@ between its phone and desktop value.
 Text inside components uses three fixed sizes as well: `--t-ui-xs` (12px) on thumbnails, `--t-ui-s` (14px) for
 hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones from zooming into a field.
 
+Paragraphs are justified on every website page, as the owner chose on 22 October 2026, and hyphenated in British
+English, so a line has straight edges on both sides. A paragraph in a centred block keeps its last line centred.
+Headings, questions, labels, buttons, chips and table cells are never justified, and the signed-in app keeps its own
+alignment. On a phone a justified line can open wide gaps between words.
+
 ## Widths, spacing, corners and shadows
 
 | Token | Value | Used for |
@@ -92,6 +97,7 @@ hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones 
 | Every button | | Keyboard focus is a 3px investor-blue ring 3px outside, white on the navy footer. While a form sends, `forms.js` sets `aria-busy` and the form's own wording, such as "Sending…": the button keeps its colours and cannot be pressed. Any other disabled button is #667085 on #F2F4F7 |
 | Input, select, text area | `input` | The edge is `--line-control`. Focus is the 3px ring 2px out. An error has a 2px `--error` edge and a message under the field that names what to fix, joined to it by `aria-describedby` |
 | Option card | `opt` | A founder's choice takes the founder tint, an investor's the investor tint, and any other a neutral fill |
+| Example tag | `chip chip-n` reading Example | One on each showcase of made-up founders, and one on each app screen, in place of every sentence that said sample data |
 | Status chip | `chip chip-n`, `chip-ok`, `chip-3p`, `chip-none` | Founder submitted, Platform reviewed, Third-party evidence available, Not added yet. Each carries its icon and its words |
 | Context label | `chip chip-f`, `chip-i` | For founders, For investors, and the founder's league |
 | Recency | `chip chip-n` with `dot` | A clock in the text colour. It never pulses |
@@ -104,7 +110,7 @@ hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones 
 | Product frame | `frame` | The home page's sample profile sits in it, with `--r-frame` and `--shadow-frame`. When the view changes, its status chips fade across |
 | Step tabs | `tabs`, `tab`, `stage`, `shot` | A tab list over four app screens. A click or the arrow keys, Home and End choose a step, focus moves to the chosen tab, and its screen fades in over the last. On a phone the tabs sit two by two and each screen is the phone capture |
 | Founder and investor panels | `side side-f`, `side side-i` | The founder tint or the investor tint, each with an app screen. Hover lifts a panel 2px with `--shadow-raised`, and under reduced motion it does not move |
-| Plans table | `tbl plans` | On a phone each plan becomes one block, with its name and price on a line and what it adds below. The column headings stay for screen readers, and the roles are written into the markup, because a change of display drops a table's own |
+| Price cards | `price-duo`, `price-side`, `price-rows` | The home page's prices: a card in each side's tint, with Free and Premium as rows of name, price and one sentence. The cards sit one above the other below 600px
 | Hero | `hero-c`, `hero-solo`, `hero-note`, `acts` | The label, headline, introduction, actions and note are centred. `hero-solo` adds space below a hero that has a bordered section after it. On a phone the main action fills the width and the second sits beneath it as a link |
 | Section opening | `intro-c` | The heading and a short introduction are centred over a composition. Paragraphs longer than three lines, lists, tables and forms stay start-aligned |
 | Reading column | `read`, `doc`, `doc-lead`, `rows`, `risk-box`, `qa`, `faq-c` | Long text at 680px, start-aligned in the middle of the page: the legal pages, Trust and safety, the readiness check and every set of questions. A table in a legal page may run to 960px so its columns stay readable |
