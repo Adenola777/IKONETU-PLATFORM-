@@ -16,6 +16,8 @@ body{margin:0}
 .site .skip:focus{top:16px;color:#FFFFFF}
 .site .wrap{max-width:1288px;margin:0 auto;padding-left:24px;padding-right:24px;box-sizing:border-box}
 .site .narrow{max-width:928px}
+/* A reading column: about 70 characters a line at 17px, start-aligned in the middle of the page. */
+.site .read{max-width:calc(var(--w-read) + 48px)}
 .site .sec{padding-top:96px;padding-bottom:96px}
 .site .sec-t{border-top:1px solid var(--line)}
 .site .soft{background:var(--fill-panel)}
@@ -82,6 +84,7 @@ body{margin:0}
 .site .navlink[aria-current="page"]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--ink)}
 .site .menubtn{display:none;order:2;margin-left:auto;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line-control);border-radius:var(--r-control);background:var(--canvas);color:var(--ink);font-size:var(--t-small);font-weight:600}
 .site .menubtn:hover{background:var(--fill)}
+.site .menubtn[aria-expanded="true"]{background:var(--fill-pressed)}
 .site .hdr .btn-sm{min-height:44px;padding:0 16px;font-size:var(--t-small)}
 .site .site-ftr{background:var(--footer);color:var(--footer-text)}
 .site .ftr-top{padding-top:64px;padding-bottom:48px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:48px}
@@ -203,36 +206,99 @@ html{scroll-behavior:smooth}
 @keyframes pd-in{from{opacity:0}to{opacity:1}}
 }
 
-/* Main: the home page, rebuilt on 21 October 2026 to the approved composition. The hero and every short
-   introduction are centred, the sample profile sits beneath the hero, and long rows stay start-aligned. */
-.pg-home .hero-c{padding-top:clamp(40px,6vw,88px);text-align:center}
-.pg-home .hero-c .lbl{margin-bottom:20px}
-.pg-home .hero-c .h1{max-width:var(--w-title);margin:0 auto 24px}
-.pg-home .hero-c .lede{margin:0 auto 32px}
-.pg-home .hero-note{margin:16px 0 0}
-.pg-home .acts{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
-.pg-home .show{padding-top:56px}
-.pg-home .show-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 16px;margin-bottom:20px}
-.pg-home .frame{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-frame);box-shadow:var(--shadow-frame);scroll-margin-top:24px;text-align:left}
-.pg-home .frame.swap .chip{animation:fade-in var(--m-quick) ease-out}
-.pg-home .cap{margin:16px 0 0;text-align:center}
-.pg-home .strip{margin:0 24px;padding:20px 0 24px;border-top:1px solid var(--line)}
-.pg-home .strip-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px;margin-bottom:10px}
-.pg-home .weeks-row{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:6px}
-.pg-home .weeks-row i{display:block;height:28px;border-radius:var(--r-mark);background:var(--mark-off);box-shadow:inset 0 0 0 1px var(--mark-edge)}
-.pg-home .weeks-row i.on{background:var(--mark-on);box-shadow:none}
-.pg-home .strip-ends{display:flex;justify-content:space-between;gap:12px;margin-top:6px}
-.pg-home .intro-c{display:flex;flex-direction:column;align-items:center;text-align:center}
-.pg-home .intro-c .h2{max-width:26ch}
-.pg-home .intro-c .lede{margin:0 auto}
-.pg-home .intro-c .lede + .lede{margin-top:16px}
-.pg-home .intro-c .acts{margin-top:16px}
-.pg-home .wide{max-width:var(--w-wide);margin:40px auto 0}
-.pg-home .lg-h{padding:24px 0 8px}
-.pg-home .legend-t .lg-h:first-child{padding-top:0}
-.pg-home .lg{display:grid;grid-template-columns:300px minmax(0,1fr);gap:8px 24px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
-.pg-home .lg p{margin:0;color:var(--text-3)}
-.pg-home .lg-name{font-weight:600}
+/* Compositions every page shares, set on 21 October 2026 by the approved plan. A hero and the heading and short
+   introduction of a section are centred, and paragraphs longer than three lines, lists, tables and forms stay
+   start-aligned. */
+.site .hero-c{padding-top:clamp(40px,6vw,88px);text-align:center}
+.site .hero-c .lbl{margin-bottom:20px}
+.site .hero-c .h1{max-width:var(--w-title);margin:0 auto 24px}
+.site .hero-c .lede{margin:0 auto 32px}
+.site .hero-note{margin:16px 0 0}
+/* A hero with a bordered section straight after it, and no showcase between them. */
+.site .hero-solo{padding-bottom:clamp(48px,6vw,88px)}
+.site .acts{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.site .show{padding-top:56px}
+.site .show-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 16px;margin-bottom:20px}
+.site .frame{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-frame);box-shadow:var(--shadow-frame);scroll-margin-top:24px;text-align:left}
+.site .frame.swap .chip{animation:fade-in var(--m-quick) ease-out}
+.site .cap{margin:16px 0 0;text-align:center}
+/* A short heading over a showcase, centred, for a page whose showcase needs its own title. */
+.site .show-head{max-width:var(--w-intro);margin:0 auto 24px;text-align:center}
+.site .show-head .h3{margin-bottom:8px}
+/* A large app screen in a section, at the width of a composition. A phone loads its own capture. */
+.site .screen{max-width:var(--w-wide);margin:48px auto 0}
+.site .screen img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:var(--r-panel);box-shadow:var(--shadow-raised)}
+.site .screen figcaption{margin-top:12px;text-align:center}
+.site .cta-note{max-width:var(--w-intro);margin:32px auto 0}
+/* A showcase followed by a bordered section keeps its caption clear of the line. */
+.site .show + .sec-t{margin-top:clamp(48px,6vw,88px)}
+.site .strip{margin:0 24px;padding:20px 0 24px;border-top:1px solid var(--line)}
+.site .strip-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px;margin-bottom:10px}
+.site .weeks-row{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:6px}
+.site .weeks-row i{display:block;height:28px;border-radius:var(--r-mark);background:var(--mark-off);box-shadow:inset 0 0 0 1px var(--mark-edge)}
+.site .weeks-row i.on{background:var(--mark-on);box-shadow:none}
+.site .strip-ends{display:flex;justify-content:space-between;gap:12px;margin-top:6px}
+.site .intro-c{display:flex;flex-direction:column;align-items:center;text-align:center}
+.site .intro-c .h2{max-width:26ch}
+.site .intro-c .lede{margin:0 auto}
+.site .intro-c .lede + .lede{margin-top:16px}
+.site .intro-c .acts{margin-top:16px}
+.site .wide{max-width:var(--w-wide);margin:40px auto 0}
+.site .lg-h{padding:24px 0 8px}
+.site .legend-t .lg-h:first-child{padding-top:0}
+.site .lg{display:grid;grid-template-columns:300px minmax(0,1fr);gap:8px 24px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.site .lg p{margin:0;color:var(--text-3)}
+.site .lg-name{font-weight:600}
+.site .plans th[scope="row"]{vertical-align:top;padding-top:14px;padding-bottom:14px}
+.site .plans .plan-name{display:block;margin-bottom:6px;font-weight:600;color:var(--ink)}
+.site .plans .plan-price{font-weight:600;color:var(--ink);white-space:nowrap}
+/* A legal page centres its title, date and links, and its text sits in the reading column. A table may run wider
+   than the column, to the width of a composition, so its columns stay readable. */
+.site .legal-hero .wrap{padding-bottom:40px}
+.site .legal-date{max-width:var(--w-intro);margin:0 auto 24px}
+.site .hero-c .legalnav,.site .hero-c .toc{justify-content:center}
+.site .read .scroll{width:min(var(--w-wide),calc(100vw - 48px));position:relative;left:50%;transform:translateX(-50%)}
+/* Inside a reading column: an introduction, plain rows with a line between them, a box for a warning and a
+   row of links. None of them carries an icon. */
+.site .doc .doc-lead{font-size:var(--t-lead);line-height:1.55;color:var(--text-2)}
+.site .rows{list-style:none;margin:0 0 16px;padding:0;border-bottom:1px solid var(--line)}
+.site .rows li{padding:12px 0;border-top:1px solid var(--line);line-height:1.6;color:var(--text-3)}
+.site .doc .risk-box{padding:20px 24px;border-radius:var(--r-panel);background:var(--fill-panel);border:1px solid var(--line);font-weight:600;color:var(--ink)}
+.site .legend-tbl td:first-child{width:1%;white-space:nowrap}
+@media (max-width: 599px){
+.site .legend-tbl,.site .legend-tbl tbody,.site .legend-tbl tr,.site .legend-tbl td{display:block}
+.site .legend-tbl thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.site .legend-tbl tr{padding:14px 0;border-bottom:1px solid var(--line)}
+.site .legend-tbl td{padding:0;border:0}
+.site .legend-tbl td + td{margin-top:8px}
+}
+.site .doc-links{margin-top:24px}
+/* Questions and their answers, under a centred heading, in a start-aligned reading column. */
+.site .qa{max-width:var(--w-read);margin:40px auto 0}
+.site .qa .h3{margin:32px 0 8px}
+.site .qa .h3:first-child{margin-top:0}
+.site .qa p{margin:0;color:var(--text-2)}
+.site .qa .qa-end{margin-top:32px}
+/* A text link in founder colours, and the rule above a closing call to action. */
+.site .tlink-f{color:var(--founder-text)}
+.site .tlink-f:hover{color:var(--founder-text)}
+.site .cta-f{border-top:2px solid var(--founder)}
+.site .cta-i{border-top:2px solid var(--investor)}
+.site .faq-c{max-width:var(--w-read);margin:40px auto 0}
+/* Numbered steps as a timeline: across the page on a desktop, joined by a line, and down the page on a phone. */
+.site .timeline{list-style:none;max-width:var(--w-page);margin:48px auto 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.site .timeline-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.site .timeline li{position:relative;display:flex;flex-direction:column;gap:12px}
+.site .timeline li:not(:last-child)::before{content:"";position:absolute;top:15px;left:44px;right:-12px;height:2px;background:var(--line)}
+.site .timeline .body2{margin:0}
+@media (max-width: 760px){
+.site .timeline,.site .timeline-3{grid-template-columns:minmax(0,1fr);gap:32px}
+.site .timeline li{padding-left:48px}
+.site .timeline .num{position:absolute;left:0;top:0}
+.site .timeline li:not(:last-child)::before{top:40px;bottom:-28px;left:15px;right:auto;width:2px;height:auto}
+}
+
+/* The home page */
 .pg-home .tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 24px}
 .pg-home .tab{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 18px 0 8px;border:1px solid var(--line-control);border-radius:var(--r-pill);background:var(--canvas);color:var(--text-3);font-size:var(--t-small);font-weight:600;transition:background-color var(--m-quick) ease,color var(--m-quick) ease,border-color var(--m-quick) ease}
 .pg-home .tab:hover{background:var(--fill);color:var(--ink)}
@@ -254,11 +320,6 @@ html{scroll-behavior:smooth}
 .pg-home .side .body2{margin:0}
 .pg-home .side picture{display:block;width:100%}
 .pg-home .side-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-top:auto}
-.pg-home .tlink-f{color:var(--founder-text)}
-.pg-home .tlink-f:hover{color:var(--founder-text)}
-.pg-home .plans th[scope="row"]{vertical-align:top;padding-top:14px;padding-bottom:14px}
-.pg-home .plans .plan-name{display:block;margin-bottom:6px;font-weight:600;color:var(--ink)}
-.pg-home .plans .plan-price{font-weight:600;color:var(--ink);white-space:nowrap}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 @keyframes row-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .pg-home .modpanel{animation:row-in var(--m-open) ease-out}
@@ -286,10 +347,10 @@ html{scroll-behavior:smooth}
 .pg-home .duo{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width: 640px){
-.pg-home .lg{grid-template-columns:minmax(0,1fr);gap:6px}
-.pg-home .strip{margin:0 16px}
+.site .lg{grid-template-columns:minmax(0,1fr);gap:6px}
+.site .strip{margin:0 16px}
 .pg-home .strip-key{display:none}
-.pg-home .weeks-row{gap:4px}
+.site .weeks-row{gap:4px}
 .pg-home .side{padding:24px}
 .pg-home .modpanel{grid-template-columns:minmax(0,1fr)}
 .pg-home .modpanel dd{margin-bottom:8px}
@@ -298,18 +359,20 @@ html{scroll-behavior:smooth}
 }
 /* On a phone the main action fills the width, and the second reads as a link beneath it. */
 @media (max-width: 599px){
-.pg-home .acts{flex-direction:column;align-items:stretch}
-.pg-home .acts .btn-io,.pg-home .acts .btn-n{border-color:transparent;background:none;min-height:44px}
+.site .acts{flex-direction:column;align-items:stretch}
+.site .acts .btn-io,.site .acts .btn-n{border-color:transparent;background:none;min-height:44px}
+.site .acts > .tlink{align-self:center}
+.site .screen img{max-width:360px;margin:0 auto}
 .pg-home .shot img{max-width:360px;margin:0 auto}
 .pg-home .tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .pg-home .tab{padding-right:12px;font-size:var(--t-ui-s)}
 /* Each plan becomes one block, with its name and price on a line and what it adds below. The column headings stay
    for screen readers, and the table's roles are written into the markup because a change of display drops them. */
-.pg-home .plans,.pg-home .plans tbody,.pg-home .plans th,.pg-home .plans td{display:block}
-.pg-home .plans thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-.pg-home .plans tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:16px 0;border-bottom:1px solid var(--line)}
-.pg-home .plans th[scope="row"],.pg-home .plans td{padding:0;border:0}
-.pg-home .plans td:last-child{grid-column:1 / -1}
+.site .plans,.site .plans tbody,.site .plans th,.site .plans td{display:block}
+.site .plans thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.site .plans tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.site .plans th[scope="row"],.site .plans td{padding:0;border:0}
+.site .plans td:last-child{grid-column:1 / -1}
 }
 
 /* ForFounders */
@@ -347,12 +410,8 @@ html{scroll-behavior:smooth}
 .pg-investors .thumb .len{position:absolute;right:6px;top:6px;padding:0 6px;border-radius:var(--r-pill);background:rgba(16,24,40,0.75);font-size:var(--t-ui-xs);font-weight:600;font-variant-numeric:tabular-nums}
 .pg-investors .thumb .pv{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding:6px 8px;background:rgba(16,24,40,0.92);text-align:left}
 .pg-investors .thumb .pvcap{font-size:var(--t-ui-xs);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pg-investors .disc{background:var(--investor-tint);border-radius:var(--r-frame);padding:24px}
-.pg-investors .disc-in{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-panel);padding:24px;box-shadow:var(--shadow-raised)}
-.pg-investors .rely{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
-@media (max-width: 960px){
-.pg-investors .rely{grid-template-columns:minmax(0,1fr)}
-}
+/* The founder search sits in the showcase frame under the hero. */
+.pg-investors .disc-in{max-width:var(--w-page);margin:0 auto;background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-frame);padding:32px;box-shadow:var(--shadow-frame)}
 @media (max-width: 400px){
 .pg-investors .res .chip{white-space:normal;border-radius:var(--r-control)}
 }
@@ -361,11 +420,12 @@ html{scroll-behavior:smooth}
 .pg-investors .res{flex-direction:column}
 .pg-investors .res .thumb{width:100%}
 .pg-investors .thumb .pvcap{font-size:var(--t-ui-s)}
-.pg-investors .disc{padding:8px;border-radius:var(--r-frame)}
 .pg-investors .disc-in{padding:16px}
 }
 
 /* ReadinessCheck */
+.pg-readiness .rc-main{padding-bottom:112px}
+.pg-readiness .rc-hero{padding-bottom:40px}
 .pg-readiness .opt{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px;border:1px solid var(--line-control);border-radius:var(--r-control);box-sizing:border-box;cursor:pointer;font-weight:600}
 .pg-readiness .opt input{width:20px;height:20px;margin:0;accent-color:var(--founder-text);flex:none}
 .pg-readiness .opt:hover{background:var(--fill-panel)}
@@ -376,3 +436,43 @@ html{scroll-behavior:smooth}
 .pg-readiness .cols{grid-template-columns:minmax(0,1fr)}
 }
 .pg-readiness .fill{transition:width var(--m-open) ease}
+
+/* Pricing: each side's two plans sit side by side, Free first, and each list is plain rows without ticks. */
+.pg-pricing .intro-c .chip{margin-bottom:16px}
+.pg-pricing .plan-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:var(--w-wide);margin:40px auto 0}
+.pg-pricing .plan{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.pg-pricing .plan-cost{margin:8px 0 0;font-size:var(--t-title);font-weight:600;line-height:1.15;color:var(--ink)}
+.pg-pricing .plan-note{margin:0}
+.pg-pricing .plan-lead{margin:16px 0 0;font-weight:600;color:var(--ink)}
+.pg-pricing .plan-list{align-self:stretch;list-style:none;margin:16px 0 0;padding:0}
+.pg-pricing .plan-lead + .plan-list{margin-top:4px}
+.pg-pricing .plan-list li{padding:12px 0;border-top:1px solid var(--line);font-size:var(--t-ui);line-height:1.5;color:var(--text-3)}
+.pg-pricing .plan-act{margin-top:auto;padding-top:16px}
+.pg-pricing .plan-soon{margin:0;font-weight:600;color:var(--ink)}
+@media (max-width: 760px){
+.pg-pricing .plan-pair{grid-template-columns:minmax(0,1fr)}
+}
+
+/* For founders: the dashboard on sample data under the hero, and the progress strip beside what an update is. */
+.pg-founders .dash{padding:32px}
+.pg-founders .dash-intro{max-width:var(--w-read);margin:8px 0 0}
+.pg-founders .dash-sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:16px 0 0;font-weight:600}
+.pg-founders .dash-cols{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:32px 48px;align-items:start;margin-top:24px}
+.pg-founders .dash .areas{grid-template-columns:minmax(0,1fr)}
+.pg-founders .dash .areas > div:last-of-type{border-bottom:1px solid var(--line)}
+.pg-founders .dash-next{padding:24px;border-radius:var(--r-panel);background:var(--founder-tint)}
+.pg-founders .dash-why{margin:4px 0 16px}
+.pg-founders .dash-next .lbl{margin-bottom:4px}
+.pg-founders .dash-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 24px;margin-top:32px;padding-top:24px;border-top:1px solid var(--line)}
+.pg-founders .dash-q{font-weight:600}
+.pg-founders .mom{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:32px 48px;align-items:start}
+.pg-founders .mom-box{padding:8px 24px 24px;box-shadow:none}
+.pg-founders .mom-notes{margin:0}
+@media (max-width: 960px){
+.pg-founders .dash-cols,.pg-founders .mom{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width: 599px){
+.pg-founders .dash{padding:20px}
+.pg-founders .dash-next{padding:20px}
+.pg-founders .mom-box{padding:4px 16px 16px}
+}

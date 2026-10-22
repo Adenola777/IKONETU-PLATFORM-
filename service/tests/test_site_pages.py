@@ -255,7 +255,7 @@ def test_every_font_the_site_names_is_ibm_plex_sans_and_is_served(client):
 # The owner's answers of 21 October 2026 on the rebuilt home page: centred openings, larger app screens as the only
 # pictures, and icons only where they mark a status or are a control's only label.
 HOME_ICONS = {"shield-check", "link", "upload", "circle-dashed", "circle-check", "circle-alert", "clock", "captions", "play",
-              "chevron-down", "x", "menu"}
+              "chevron-down", "x"}
 
 
 def test_the_home_page_centres_its_hero_and_the_opening_of_each_section(client):
@@ -263,8 +263,8 @@ def test_the_home_page_centres_its_hero_and_the_opening_of_each_section(client):
     assert '<section aria-labelledby="hero-title" class="hero-c">' in body
     assert '<div class="wrap intro-c"><h2 id="why-title" class="h2">Investors back what they can check.</h2>' in body
     css = (APP / "static" / "css" / "site.css").read_text()
-    assert ".pg-home .hero-c{padding-top:clamp(40px,6vw,88px);text-align:center}" in css
-    assert ".pg-home .intro-c{display:flex;flex-direction:column;align-items:center;text-align:center}" in css
+    assert ".site .hero-c{padding-top:clamp(40px,6vw,88px);text-align:center}" in css
+    assert ".site .intro-c{display:flex;flex-direction:column;align-items:center;text-align:center}" in css
 
 
 def test_the_home_page_pictures_are_app_screens_with_a_phone_capture_for_each(client):
@@ -295,3 +295,82 @@ def test_the_home_page_plans_keep_their_table_roles_when_a_phone_stacks_them(cli
     body = client.get("/").text
     assert '<table class="tbl plans" role="table"><thead role="rowgroup">' in body
     assert body.count('<th scope="row" role="rowheader">') == 4 and body.count('<td role="cell"') == 8
+
+
+# The owner's approval of 21 October 2026 for the other pages ("approved, do the other pages"): each page takes the
+# composition the approved plan gave it, and the icon rule of the home page holds on every page.
+# A status icon, or the only label of a control: a selected filter's tick, a muted preview and a row that opens.
+SITE_ICONS = HOME_ICONS | {"plus", "check", "volume-x"}
+
+
+@pytest.mark.parametrize("key", list(PUBLIC_PAGES))
+def test_every_page_centres_its_hero(client, key):
+    body = client.get(PUBLIC_PAGES[key]["path"]).text
+    h1 = body.index("<h1")
+    hero = body.rfind('class="hero-c', 0, h1)
+    assert hero != -1 and "</section>" not in body[hero:h1]
+
+
+@pytest.mark.parametrize("key", list(PUBLIC_PAGES))
+def test_no_page_carries_a_decorative_icon(client, key):
+    body = client.get(PUBLIC_PAGES[key]["path"]).text
+    assert set(re.findall(r'class="lucide lucide-([a-z-]+)"', body)) <= SITE_ICONS
+    assert body.count("Menu</button>") == 1
+
+
+def test_the_header_menu_button_shows_its_word_alone_and_marks_when_it_is_open(client):
+    for path in ("/", "/terms", "/no-such-page"):
+        assert "lucide-menu" not in client.get(path).text, path
+    assert '.site .menubtn[aria-expanded="true"]{background:var(--fill-pressed)}' in (APP / "static" / "css" / "site.css").read_text()
+
+
+@pytest.mark.parametrize("key", LEGAL)
+def test_a_legal_page_centres_its_title_and_date_over_a_reading_column(client, key):
+    body = client.get(PUBLIC_PAGES[key]["path"]).text
+    assert '<section aria-labelledby="l-title" class="hero-c legal-hero">' in body
+    assert '<p class="small legal-date">' in body
+    assert '<div class="wrap sec narrow doc">' not in body and body.count('<div class="wrap sec read doc">') >= 3
+
+
+def test_the_pricing_page_sets_free_beside_premium_for_each_side(client):
+    body = client.get("/pricing").text
+    pairs = re.findall(r'<div class="plan-pair">(.*?)</div></div></section>', body, re.DOTALL)
+    assert len(pairs) == 2
+    for pair, side in zip(pairs, ("Founder", "Investor")):
+        assert re.findall(r'<h3 class="h3" id="[a-z-]+">([^<]+)</h3>', pair) == [f"{side} Free", f"{side} Premium"]
+    assert body.count('<div class="qa">') == 1
+
+
+def test_trust_and_safety_links_its_sections_and_sets_the_statuses_as_a_table(client):
+    body = client.get("/trust-and-safety").text
+    hero = body[body.index('<section aria-labelledby="t-title"'):]
+    hero = hero[:hero.index("</section>")]
+    assert len(re.findall(r'<a class="tlink" href="#t-[a-z]+">', hero)) == 8
+    assert '<table class="tbl legend-tbl" role="table">' in body and body.count('<tr role="row"><td role="cell"><span class="chip') == 3
+    assert '<p class="risk-box">Investing in early-stage businesses is high risk.' in body
+
+
+def test_the_founders_page_puts_the_sample_dashboard_beneath_the_hero_and_the_steps_on_a_timeline(client):
+    body = client.get("/for-founders").text
+    after_hero = body[body.index("</section>", body.index('aria-labelledby="f-title"')):]
+    assert after_hero.startswith('</section><section id="readiness" aria-labelledby="f-ready" class="show">')
+    assert '<div class="frame dash" role="group" aria-label="Sample founder dashboard">' in body
+    timeline = re.search(r'<ol class="timeline">(.*?)</ol>', body, re.DOTALL).group(1)
+    assert len(re.findall(r'<li><span class="num num-f">\d</span><h3 class="h3">', timeline)) == 4
+
+
+def test_the_investors_page_puts_the_search_beneath_the_hero_and_shows_an_introduction_in_three_steps(client):
+    body = client.get("/for-investors").text
+    after_hero = body[body.index("</section>", body.index('aria-labelledby="inv-title"')):]
+    assert after_hero.startswith('</section><section id="discover" aria-labelledby="disc-title" class="show">')
+    steps = re.findall(r'<li><span class="num num-i">\d</span><h3 class="h3">([^<]+)</h3>', body)
+    assert steps == ["Send a short note", "The founder decides", "Talk on IkonetU"]
+    for name in ("evidence", "intro"):
+        assert f'<source media="(max-width: 599px)" srcset="/media/phone-{name}.webp"' in body
+
+
+def test_the_readiness_check_marks_a_strong_area_in_the_verified_colour(client):
+    body = client.get("/readiness-check").text
+    assert '<div class="hero-c rc-hero"><p class="lbl lbl-f">Readiness self-check</p>' in body
+    assert 'color:var(--verified)">Already strong</h3>' in body and "#123C7A;margin-top:3px" not in body
+

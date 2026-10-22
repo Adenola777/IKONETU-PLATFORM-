@@ -1,8 +1,8 @@
 # The IkonetU design system
 
 The owner approved this system on 21 October 2026, in the design review's steps 2 and 4. It applies to the
-website and the signed-in app. The home page was rebuilt to the approved composition on 21 October 2026, and
-the other pages wait on the owner's approval (see the end of this file).
+website and the signed-in app. Every website page was rebuilt to the approved composition on 21 and 22 October
+2026 (see the end of this file).
 
 ## Where it lives
 
@@ -97,7 +97,7 @@ hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones 
 | Recency | `chip chip-n` with `dot` | A clock in the text colour. It never pulses |
 | Segmented control | `seg` | The selected segment is white with `--shadow-raised`. Hover darkens the ground |
 | Row that opens | `modbtn`, `areabtn` | `aria-expanded`, with a chevron that turns in 200ms |
-| Header menu on a phone | `menubtn`, `hdr-nav` | `aria-expanded` and `aria-controls`. Escape closes the menu and returns focus to the button |
+| Header menu on a phone | `menubtn`, `hdr-nav` | `aria-expanded` and `aria-controls`. The button carries the word Menu alone, and while the menu is open it takes the pressed fill. Escape closes the menu and returns focus to the button |
 | Pitch dialog | `dialog.pd` | It fades in over 150ms with its backdrop. The website's player plays captions only, so it has no loading or video error state |
 | Pitch video in the app | `pitch_video.html` | A video that cannot play shows "The pitch could not be played. Try again, or read the transcript below." |
 | Meter and progress strip | `rmeter`, `meter`, `ameter`, `weeks`, `wk`, `weeks-row` | Filled `--mark-on`, building `--mark-mid`, empty white with a `--mark-edge` outline. The words beside each one carry the same count |
@@ -105,11 +105,20 @@ hints, errors and table text, and `--t-ui` (16px) in inputs, which keeps phones 
 | Step tabs | `tabs`, `tab`, `stage`, `shot` | A tab list over four app screens. A click or the arrow keys, Home and End choose a step, focus moves to the chosen tab, and its screen fades in over the last. On a phone the tabs sit two by two and each screen is the phone capture |
 | Founder and investor panels | `side side-f`, `side side-i` | The founder tint or the investor tint, each with an app screen. Hover lifts a panel 2px with `--shadow-raised`, and under reduced motion it does not move |
 | Plans table | `tbl plans` | On a phone each plan becomes one block, with its name and price on a line and what it adds below. The column headings stay for screen readers, and the roles are written into the markup, because a change of display drops a table's own |
+| Hero | `hero-c`, `hero-solo`, `hero-note`, `acts` | The label, headline, introduction, actions and note are centred. `hero-solo` adds space below a hero that has a bordered section after it. On a phone the main action fills the width and the second sits beneath it as a link |
+| Section opening | `intro-c` | The heading and a short introduction are centred over a composition. Paragraphs longer than three lines, lists, tables and forms stay start-aligned |
+| Reading column | `read`, `doc`, `doc-lead`, `rows`, `risk-box`, `qa`, `faq-c` | Long text at 680px, start-aligned in the middle of the page: the legal pages, Trust and safety, the readiness check and every set of questions. A table in a legal page may run to 960px so its columns stay readable |
+| Timeline | `timeline`, `timeline-3`, `num` | Numbered steps across the page, joined by a line, and down the page below 760px |
+| App screen | `screen` | An app capture at 960px with its caption, and a 624 by 780 phone capture that a browser below 600px loads in its place |
+| Plan card | `plan-pair`, `plan` | Each side's Free and Premium side by side, one above the other below 760px. A plan's list is plain rows without ticks |
+| Status table | `tbl legend-tbl` | Each status chip beside what it means. On a phone each row stacks, with the table's roles written into the markup |
+| Showcase heading | `show-head` | A short centred title over a showcase that needs one, as on For investors |
 
 An icon appears for one of two reasons: it marks a status, as on the status chips and the captions mark on a
 pitch preview, or it is a control's only visible label, as with the play mark, a closing cross or the chevron
 of a row that opens. A control that carries its own words, such as Play, Captions or Transcript, has no icon.
-The home page keeps to this, and the other pages follow it when they are rebuilt.
+Every website page keeps to this. A selected filter's tick and a muted preview's mark show the state of a control,
+so they stay.
 
 ## Motion
 
@@ -135,15 +144,14 @@ or writes a colour out.
 
 ## What is not built yet
 
-Step 6 rebuilt the home page on 21 October 2026. For founders, For investors, Trust and safety, Pricing, the
-readiness check and the legal pages keep their earlier compositions until the owner approves them, and the
-readiness check's headline still uses a style of its own.
+Step 6 rebuilt the home page on 21 October 2026 and the other pages on 22 October 2026, each to the composition
+the plan gave it.
 
-On the home page itself, three things are not built:
+Three things are not built:
 
-- The progress strip is drawn filled. It does not fill as it comes into view, because nothing on the site waits
+- The progress strips are drawn filled. They do not fill as they come into view, because nothing on the site waits
   for the visitor to scroll.
-- A pitch preview does not play on hover. The website's sample pitch is captions over a drawn figure, with no
-  video to play.
-- The shared header's Menu button still carries an icon beside its word. The header serves every page, so it
-  changes when the other pages do.
+- On the home page a pitch preview does not play on hover. For investors keeps its muted preview of the captions,
+  because that page had it before.
+- The website's sample pitch shows its captions over a drawn figure, because it has no video to play. The founder
+  search on For investors draws the same figure on each thumbnail.

@@ -79,7 +79,8 @@ export default {
         meta: `${f.city}, ${f.country} · ${f.sector} · ${f.stage} · ${f.length} pitch · ${f.n90} ${f.n90 === 1 ? "update" : "updates"} in 90 days`,
         momText: `Updated ${f.days} days ago`,
         momCls: "chip-n",
-        momDot: f.days <= 30 ? "#F26B1D" : "#858FA1",
+        // As in the app's founder search: a recent clock takes the chip's text colour, and an older one is muted.
+        momDot: f.days <= 30 ? "currentColor" : "var(--mark-mid)",
         watchLabel: `Watch the ${f.name} pitch, ${f.length}`,
         evidence: f.ev.map(([area, status]) => ({
           label: `${area} · ${STATUS_NAME[status]}`,
