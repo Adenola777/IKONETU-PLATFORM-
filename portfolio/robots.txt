@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://adenolaadegbesan.co.uk/sitemap.xml
