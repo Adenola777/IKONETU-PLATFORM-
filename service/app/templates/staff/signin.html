@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{# The admin sign-in: an email address and a password, on a page of its own. Founders and investors sign in at /signin. #}
+{% from "macros.html" import err, invalid %}
+{% block styles %}<link rel="stylesheet" href="/static/css/sign-in.css">{% endblock %}
+{% block body %}
+<div class="site pg-signin pg-admin">
+<div class="page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="si-hdr">
+<div class="si-hdr-in">
+<span class="ad-brand">{{ logo("navy", 30) }}<span class="ad-tag">Admin</span></span>
+</div>
+</header>
+<main id="main" class="si-main">
+<p class="si-lbl">IkonetU Admin</p>
+<h1>Sign in to the admin dashboard</h1>
+<p class="si-lede">For IkonetU admins only. Use the email address and password of your admin account.</p>
+{% if signed_out %}<p class="status status-ok" role="status" style="margin-bottom:24px">You are signed out.</p>{% endif %}
+<form class="form" method="post" action="/admin/signin" novalidate>
+{% if message %}<p class="status status-err" role="alert">{{ message }}</p>{% endif %}
+<div class="field">
+<label for="a-email">Email</label>
+<input id="a-email" name="email" class="input" type="email" autocomplete="username" required maxlength="160" value="{{ email }}"{{ invalid(errors, "email") }}>
+{{ err(errors, "email") }}
+</div>
+<div class="field">
+<label for="a-password">Password</label>
+<input id="a-password" name="password" class="input" type="password" autocomplete="current-password" required maxlength="200"{{ invalid(errors, "password") }}>
+{{ err(errors, "password") }}
+</div>
+<button type="submit" class="btn btn-i btn-lg" data-pending="Signing in">Sign in</button>
+<p class="hint">Founders and investors sign in on the <a href="/signin">main sign-in page</a>.</p>
+</form>
+</main>
+</div>
+</div>
+{% endblock %}

@@ -462,6 +462,15 @@ class Supabase:
         session = _session_from(r.data)
         return (session, None) if session else (None, ApiError(None, "no_session", "verify returned no session"))
 
+    async def sign_in_with_password(self, email: str, password: str) -> tuple[Session | None, ApiError | None]:
+        """Only the admin sign-in uses a password. Accounts made by the email code have none, so it cannot open them."""
+        body = {"email": email, "password": password, "gotrue_meta_security": {"captcha_token": None}}
+        r = await self._auth("POST", "token", body, params={"grant_type": "password"})
+        if not r.ok:
+            return None, r.error
+        session = _session_from(r.data)
+        return (session, None) if session else (None, ApiError(None, "no_session", "token returned no session"))
+
     async def exchange_code(self, auth_code: str, code_verifier: str) -> tuple[Session | None, ApiError | None]:
         r = await self._auth("POST", "token", {"auth_code": auth_code, "code_verifier": code_verifier},
                              params={"grant_type": "pkce"})

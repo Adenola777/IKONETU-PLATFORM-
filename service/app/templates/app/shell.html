@@ -42,6 +42,7 @@
 <div class="app-hdr-in">
 <a href="/" aria-label="IkonetU home" class="app-logo">{{ logo("default", 30) }}</a>
 <form method="post" action="/signout">
+{% if role == "admin" %}<input type="hidden" name="next" value="/admin/signin">{% endif %}
 <button type="submit" class="btn btn-n btn-sm">Sign out</button>
 </form>
 </div>

@@ -23,3 +23,8 @@
 .pg-signin .btn:disabled:not([aria-busy="true"]){background:var(--fill);border-color:var(--line);color:var(--text-disabled);cursor:progress}
 .pg-signin .link-button{align-self:flex-start;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;color:var(--investor);text-decoration:underline;cursor:pointer}
 .pg-signin .link-button:disabled{color:var(--text-disabled);cursor:progress}
+/* The admin sign-in: the navy band of the footer marks it as the staff side, with the navy logo and an Admin tag. */
+.pg-admin .si-hdr{background:var(--footer);border-bottom-color:var(--footer-line)}
+.pg-admin .ad-brand{display:inline-flex;align-items:center;gap:12px;min-height:44px}
+.pg-admin .ad-tag{padding:2px 10px;border:1px solid var(--footer-line);border-radius:999px;font-size:var(--t-label);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--footer-text)}
+.pg-admin .si-lbl{color:var(--investor)}

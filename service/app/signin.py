@@ -68,6 +68,19 @@ def read_pending(raw: str | None) -> Pending | None:
     return None
 
 
+def parse_admin_sign_in(email: str, password: str) -> tuple[str | None, Errors]:
+    """The admin sign-in: an email address and a password. The password is sent as typed, spaces included."""
+    errors = Errors()
+    value = js_trim(email).lower()
+    if not is_email(value) or js_len(value) > 160:
+        errors.add("email", "Enter a valid email address.")
+    if not password:
+        errors.add("password", "Enter your password.")
+    elif js_len(password) > 200:
+        errors.add("password", "That password is too long.")
+    return (value if not errors else None), errors
+
+
 def parse_email_sign_in(email: str, confirmed_adult: bool) -> tuple[str | None, Errors]:
     """The sign-in step: an email, and the 18 or older confirmation (SRD SEC-A9)."""
     errors = Errors()
