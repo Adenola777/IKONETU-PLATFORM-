@@ -54,7 +54,7 @@ templates.env.globals.update(
     INVESTOR_TYPE_OPTIONS=investor.INVESTOR_TYPE_OPTIONS, FILTER_GROUPS=discovery.FILTER_GROUPS,
     ACTIVITY_OPTIONS=discovery.ACTIVITY_OPTIONS, ROLE_NAME=staff.ROLE_NAME, ACCOUNT_STATUS_NAME=staff.ACCOUNT_STATUS_NAME,
     ACTION_GROUPS=staff.ACTION_GROUPS, action_text=staff.action_text, REVIEW_LANES=forms.REVIEW_LANES,
-    signal_label=forms.signal_label, when_text=jsfmt.when_text,
+    signal_label=forms.signal_label, when_text=jsfmt.when_text, month_long=jsfmt.month_long,
     based_in_name=lambda code: next((c["name"] for c in investor.BASED_IN if c["code"] == code), code),
 )
 templates.env.trim_blocks = True

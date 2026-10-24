@@ -36,6 +36,7 @@ ACTION_TEXT = {
     "account.role": "changed a role",
     "account.suspend": "suspended an account",
     "account.reactivate": "made an account active again",
+    "register.add": "added entries to the investor register",
 }
 
 # The filters of the audit log page, by the first part of the action.
@@ -44,6 +45,7 @@ ACTION_GROUPS = (
     {"code": "evidence", "label": "Evidence decisions"},
     {"code": "venture", "label": "Profile holds"},
     {"code": "account", "label": "Roles and suspensions"},
+    {"code": "register", "label": "Investor register"},
 )
 
 ID = re.compile(r"[0-9a-f-]{36}")

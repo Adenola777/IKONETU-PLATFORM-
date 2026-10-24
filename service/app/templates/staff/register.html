@@ -1,0 +1,86 @@
+{% extends "app/shell.html" %}
+{# The investor register: entries by month with the running total, and every entry in register number order. Admins only. #}
+{% from "app/ui.html" import form_status %}
+{% set role = "admin" %}
+{% set current = "register" %}
+{% block main %}
+<h1 class="app-title">Investor register</h1>
+<p class="app-lede">The investors IkonetU has recorded, each with a register number and the date they registered. The register holds a name and a date only, and only admins can see it. An entry is not an IkonetU account.</p>
+{{ form_status(states.get("added", {})) }}
+<div class="row" style="margin:16px 0 32px"><a class="btn btn-i" href="/admin/register/add">Add entries</a></div>
+
+<section aria-labelledby="months-h" style="margin-bottom:40px">
+<h2 id="months-h" class="app-h2">By month</h2>
+{% if months_failed %}
+<p class="status status-err" role="alert">The months could not be read. Please reload the page.</p>
+{% elif not months %}
+<div class="empty"><p>The register is empty. Add entries to start it.</p></div>
+{% else %}
+<p class="small" style="margin:0 0 12px">{{ "One investor is" if in_register == 1 else in_register ~ " investors are" }} in the register, from {{ month_long(months[0].month) }} to {{ month_long(months[-1].month) }}.</p>
+<div class="scroll">
+<table class="tbl">
+<thead>
+<tr><th scope="col">Month</th><th scope="col">Registered that month</th><th scope="col">Running total</th></tr>
+</thead>
+<tbody>
+{% for m in months %}
+<tr>
+<td>{% if m.registered %}<a href="/admin/register?month={{ m.month[:7] }}">{{ month_long(m.month) }}</a>{% else %}{{ month_long(m.month) }}{% endif %}</td>
+<td>{{ m.registered }}</td>
+<td>{{ m.running_total }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+</section>
+
+<section aria-labelledby="entries-h">
+<h2 id="entries-h" class="app-h2">Entries</h2>
+<form class="tools" role="search" action="/admin/register">
+<div class="field">
+<label for="g-q">Name or register number</label>
+<input id="g-q" name="q" class="input" value="{{ q }}" maxlength="80">
+</div>
+<div class="field field-s">
+<label for="g-month">Month</label>
+<select id="g-month" name="month" class="input">
+<option value=""{% if not month %} selected{% endif %}>Every month</option>
+{% for m in months %}<option value="{{ m.month[:7] }}"{% if month == m.month[:7] %} selected{% endif %}>{{ month_long(m.month) }}</option>{% endfor %}
+</select>
+</div>
+<button type="submit" class="btn btn-n">Search</button>
+</form>
+
+{% if failed %}
+<p class="status status-err" role="alert">The list could not be read. Please reload the page.</p>
+{% elif not rows %}
+<div class="empty"><p>{{ "Nobody matches." if q or month else "The register has no entries yet." }}</p></div>
+{% else %}
+<p class="small" style="margin:0 0 12px">{{ "One entry" if total == 1 else total ~ " entries" }}{% if total > PAGE %}, {{ (page - 1) * PAGE + 1 }} to {{ (page - 1) * PAGE + rows | length }} shown{% endif %}.</p>
+<div class="scroll">
+<table class="tbl">
+<thead>
+<tr><th scope="col">Number</th><th scope="col">Name</th><th scope="col">Registered on</th></tr>
+</thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td>{{ r.register_no }}</td>
+<td>{{ r.full_name }}</td>
+<td>{{ date_text(r.registered_on) }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if total > PAGE %}
+<nav class="pager" aria-label="Pages">
+{% if page > 1 %}<a class="btn btn-n btn-sm" href="{{ link(page - 1) }}">Previous page</a>{% else %}<span></span>{% endif %}
+{% if page * PAGE < total %}<a class="btn btn-n btn-sm" href="{{ link(page + 1) }}">Next page</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+</section>
+{% endblock %}

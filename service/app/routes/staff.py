@@ -18,6 +18,8 @@ from ..forms import REVIEW_LANES, parse_decision
 from ..jsfmt import month_long, month_short, number_text, parse_int, search_params, to_fixed
 from ..log import log_error, log_info
 from ..product import days_between
+from ..register import added_text, parse_register, register_lines
+from ..register import refusal_text as register_refusal
 from ..score_engine import RUBRIC_V3
 from ..scoring import record_venture_score
 from ..session import require_staff
@@ -496,6 +498,75 @@ async def set_status(request: Request, user_id: str):
     return redirect(f"/admin/people/{parsed.data['id']}?done={parsed.data['status']}")
 
 
+# ---------------------------------------------------------------- investor register
+MONTH = re.compile(r"([0-9]{4})-(0[1-9]|1[0-2])")
+
+
+@router.get("/admin/register")
+async def register(request: Request):
+    """The investor register, in register number order, with the entries of each month and the running total."""
+    v = await require_staff(request, admin=True)
+    q = _search(request)
+    asked = _single(request, "month") or ""
+    month = asked if MONTH.fullmatch(asked) else None
+    page = _page(request)
+    result, months = await asyncio.gather(
+        v.db.rpc("admin_register", {"p_search": q or None, "p_month": f"{month}-01" if month else None,
+                                    "p_limit": PAGE, "p_offset": (page - 1) * PAGE}),
+        v.db.rpc("admin_register_months"),
+    )
+    if not result.ok:
+        log_error("admin.register_failed", {"code": result.error.code})
+    if not months.ok:
+        log_error("admin.register_months_failed", {"code": months.error.code})
+    rows = result.data or []
+    month_rows = months.data or []
+
+    def link(p: int) -> str:
+        pairs = [*((("q", q),) if q else ()), *((("month", month),) if month else ()), ("page", str(p))]
+        return "/admin/register?" + search_params(pairs)
+
+    return render(request, "staff/register.html", {
+        "q": q, "month": month, "page": page, "rows": rows, "total": rows[0]["total_count"] if rows else 0,
+        "failed": not result.ok, "months": month_rows, "months_failed": not months.ok,
+        "in_register": month_rows[-1]["running_total"] if month_rows else 0, "PAGE": PAGE, "link": link,
+    }, _meta("Investor register"))
+
+
+def _register_add_page(request: Request, states: dict | None = None):
+    return render(request, "staff/register_add.html", {"states": states or {}}, _meta("Add to the investor register"))
+
+
+@router.get("/admin/register/add")
+async def register_add_form(request: Request):
+    await require_staff(request, admin=True)
+    return _register_add_page(request)
+
+
+@router.post("/admin/register/add")
+async def register_add(request: Request):
+    """Adds a pasted list to the register through admin_register_add(), which adds every entry or none and writes the
+    audit log. An entry already there with the same name and date stays as it was."""
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    text = one(values, "entries")
+    parsed = parse_register(text)
+    if not parsed.ok:
+        return _register_add_page(request, {"add": {"status": "error", "message": "Nothing was added. Please correct the list.",
+                                                    "problems": parsed.errors[:20], "more": max(0, len(parsed.errors) - 20),
+                                                    "values": values}})
+    result = await v.db.rpc("admin_register_add", {"p_entries": parsed.entries})
+    if not result.ok:
+        (log_info if result.error.code in ("P0001", "22023") else log_error)("admin.register_add_failed", {"code": result.error.code})
+        return _register_add_page(request, {"add": {"status": "error", "message": register_refusal(result.error.message),
+                                                    "values": values}})
+    data = result.data
+    counts = (data[0] if data else None) if isinstance(data, list) else data
+    added, unchanged = (counts or {}).get("added", 0), (counts or {}).get("unchanged", 0)
+    log_info("admin.register_added", {"added": added, "unchanged": unchanged})
+    return redirect("/admin/register", {"form": "added", "status": "sent", "message": added_text(added, unchanged, parsed.skipped)})
+
+
 # ---------------------------------------------------------------- audit log
 @router.get("/admin/audit")
 async def audit(request: Request):
@@ -520,9 +591,10 @@ async def audit(request: Request):
     for e in raw:
         hidden = (e.get("after") or {}).get("profiles_hidden")
         counted = isinstance(hidden, (int, float)) and not isinstance(hidden, bool) and hidden > 0
+        lines = register_lines(e.get("after")) if e["action"] == "register.add" else change_lines(e.get("before"), e.get("after"))
         entries.append({
             **e, "actor": _actor(names, e.get("actor_id")), "href": entity_href(e["entity"], e.get("entity_id")),
-            "lines": change_lines(e.get("before"), e.get("after")), "reason": entry_reason(e.get("after")),
+            "lines": lines, "reason": entry_reason(e.get("after")),
             "hidden": number_text(hidden) if counted else None,
         })
     older = None

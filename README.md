@@ -85,6 +85,8 @@ An investor sees three statuses for evidence and nothing else about it: "Founder
 | `/admin/founders/<id>` | Reviewers and admins | Everything one venture holds: who can see it, every piece of evidence in every status, the pitch, the ask, the score, recent updates and introductions by status. An admin hides the profile from investors here with a reason the founder reads, or lifts the hold |
 | `/admin/evidence` | Reviewers and admins | Review evidence, open its files through links that last five minutes, and approve it with a note of what was compared, ask for more, or reject it. An approval recomputes the founder's score with the score engine |
 | `/admin/investors` | Admins | Approve, decline or suspend investor accounts |
+| `/admin/register` | Admins | The investor register: the entries of each month with the running total, and every entry with search and a filter by month. Each entry has a register number, a name and a registration date, and is not an account |
+| `/admin/register/add` | Admins | Paste a list to add to the register. Every entry is added or none is, an entry already there with the same name and date stays as it was, and the addition goes in the audit log |
 | `/admin/people` | Admins | Every account with its email address and last sign-in, with search and filters for role and status |
 | `/admin/people/<id>` | Admins | Change a person's role, suspend the account with a reason or make it active again, and see that account's entries in the audit log |
 | `/admin/audit` | Admins | Every staff decision, newest first, with who made it, what changed and the reason |
