@@ -195,8 +195,10 @@ async def require_investor(request: Request) -> Viewer:
 
 
 async def require_staff(request: Request, admin: bool = False) -> Viewer:
-    """For staff pages. `admin` limits the page to admins."""
-    v = await require_viewer(request)
+    """For staff pages. `admin` limits the page to admins. Someone signed out goes to the admin sign-in."""
+    v = await viewer(request)
+    if v is None:
+        raise RedirectTo("/admin/signin")
     p = v.profile
     ok = p is not None and p.status == "active" and (p.role == "admin" or (not admin and p.role == "reviewer"))
     if not ok:
