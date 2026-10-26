@@ -24,6 +24,7 @@
   --founder-text: #B54708;
   --founder-tint: #FFF1E6;
   --founder-rule: #F9C9AA;
+  --founder-bubble: #FFE3CC; /* the founder's own messages in a conversation, behind ink text */
 
   /* Investor context */
   --investor: #123C7A;

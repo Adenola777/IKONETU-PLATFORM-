@@ -198,6 +198,21 @@ def date_text(iso) -> str:
     return f"{d.day} {MONTHS[d.month - 1]} {d.year}"
 
 
+def day_month(iso) -> str:
+    """A date as 15 Oct, for the narrow places a card has room for, read in UTC."""
+    d = _when(iso) if iso else None
+    if d is None:
+        return ""
+    d = d.astimezone(timezone.utc)
+    return f"{d.day} {MONTHS[d.month - 1][:3]}"
+
+
+def initials(name: str | None) -> str:
+    """The first letters of the first two words of a name, for an avatar. A missing name gives a question mark."""
+    words = [w for w in (name or "").split() if w[:1].isalpha()]
+    return "".join(w[0] for w in words[:2]).upper() or "?"
+
+
 INVESTOR_TYPE_NAME = {"individual": "Individual investor", "angel": "Angel investor", "fund": "Fund investor"}
 
 # Why each area matters to an investor. The founder's next steps use the same sentences.

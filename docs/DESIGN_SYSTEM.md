@@ -32,6 +32,7 @@ Each colour has one job. The contrast figures were measured with the WCAG formul
 | Divider | `--line` | #E7EAF0 | | Decoration only |
 | Founder action | `--founder` | #F26B1D | dark text 5.83:1 | A fill only. As text it measures 3.05:1 on white, so it is never text |
 | Founder text and tint | `--founder-text`, `--founder-tint` | #B54708, #FFF1E6 | 4.90:1 | Founder labels and panels |
+| Founder message | `--founder-bubble` | #FFE3CC | ink text 14.46:1 | The founder's own messages in a conversation. Added on 26 October 2026 with the app frame |
 | Investor action | `--investor` | #123C7A | white text 10.75:1 | Investor buttons, links, the focus ring |
 | Investor tint | `--investor-tint` | #EEF4FF | investor text 9.74:1 | Investor labels and panels |
 | Verified | `--verified` on `--verified-tint` | #067647 on #ECFDF3 | 5.40:1 | "Platform reviewed", and a Strong area |

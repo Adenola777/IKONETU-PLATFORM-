@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from . import discovery, forms, investor, jsfmt, product, staff
 from .captions import cues_from_transcript
 from .config import settings
-from .icons import icon, logo
+from .icons import icon, logo, mark
 from .venture_profile import list_text, profile_areas
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -41,10 +41,11 @@ def bare_url(address: str) -> str:
 
 
 templates.env.globals.update(
-    icon=icon, logo=logo, settings=settings, meter_sentence=meter_sentence, lower_first=lower_first,
+    icon=icon, logo=logo, mark=mark, settings=settings, meter_sentence=meter_sentence, lower_first=lower_first,
     STATUS=product.STATUS, LEVEL=product.LEVEL, AREAS=product.AREAS, AREA_WHY=product.AREA_WHY,
     SECTORS=product.SECTORS, STAGES=product.STAGES, COUNTRIES=product.COUNTRIES,
     area_cells=product.area_cells, area_label=product.area_label, date_text=product.date_text,
+    day_month=product.day_month, initials=product.initials,
     activity_text=product.activity_text, clock_text=product.clock_text, is_recent=product.is_recent,
     stage_label=product.stage_label, country_name=product.country_name, level_of=product.level_of,
     momentum=product.momentum, evidence_added_text=product.evidence_added_text, bare_url=bare_url,

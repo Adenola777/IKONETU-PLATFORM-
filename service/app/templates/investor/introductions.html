@@ -1,33 +1,72 @@
 {% extends "app/shell.html" %}
+{# The investor's introductions: every request, those waiting for the founder, and those accepted, one tab each (screen 14). #}
 {% set role = "investor" %}
 {% set current = "requests" %}
-{% set STATUS_NAME = {"pending": "Waiting for the founder", "accepted": "Accepted", "declined": "Declined", "withdrawn": "Withdrawn"} %}
-{% set STATUS_CHIP = {"pending": "chip-n", "accepted": "chip-ok", "declined": "chip-none", "withdrawn": "chip-none"} %}
+{% set CHIP = {
+  "pending": ("chip-wait", "clock", "Waiting"),
+  "accepted": ("chip-ok", "check", "Accepted"),
+  "declined": ("chip-none", "x", "Declined"),
+  "withdrawn": ("chip-none", "rotate-ccw", "Withdrawn"),
+} %}
+{% macro how() %}You can send up to ten requests a day. A founder who declines is not asked again by you. An accepted request opens a conversation that only the two of you can read.{% endmacro %}
 {% block main %}
-<h1 class="app-title">Your introductions</h1>
-<p class="app-lede">You can send up to ten requests a day. A founder who declines is not asked again by you. An accepted request opens a conversation that only the two of you can read.</p>
-{% if not rows %}
-<div class="empty">
-<p>You have not asked for an introduction yet.</p>
-<p><a href="/investor">Discover founders</a></p>
+{% set TABS = [("all", "All"), ("waiting", "Waiting"), ("accepted", "Accepted")] %}
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Introductions</h1>
+<p class="fr-sub">The founders you asked to meet, and where each request stands.</p>
 </div>
-{% else %}
-<div class="scroll">
-<table class="tbl">
-<thead>
-<tr><th scope="col">Founder</th><th scope="col">Asked on</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Action</span></th></tr>
-</thead>
-<tbody>
-{% for r in rows %}
-<tr>
-<td><a href="/investor/ventures/{{ r.venture_id }}">{{ r.venture_name }}</a><br><span class="small">{{ r.founder_name }}</span></td>
-<td>{{ date_text(r.created_at) }}</td>
-<td><span class="chip {{ STATUS_CHIP[r.status] }}">{{ STATUS_NAME[r.status] }}</span></td>
-<td>{% if r.status == "accepted" %}<a href="/introductions/{{ r.id }}">Open the conversation</a>{% endif %}{% if r.status == "pending" %}<form method="post" action="/investor/introductions/withdraw"><input type="hidden" name="id" value="{{ r.id }}"><button type="submit" class="linkbtn">Withdraw</button></form>{% endif %}</td>
-</tr>
+<div class="fr-cols">
+<div class="fr-page">
+<nav class="seg" aria-label="Introductions">
+{% for key, label in TABS %}
+<a href="/investor/introductions?tab={{ key }}"{% if key == tab %} aria-current="true"{% endif %}>{{ label }}<span class="n{{ ' has' if counts[key] }}">{{ counts[key] }}</span></a>
 {% endfor %}
-</tbody>
-</table>
+</nav>
+{% if shown %}
+<ul class="fr-list" aria-label="Your requests">
+{% for r in shown %}
+{% set c = CHIP[r.status] %}
+<li class="ic">
+<div class="ic-head">
+<span class="ic-av ic-av-f" aria-hidden="true">{{ initials(r.founder_name) }}</span>
+<span class="ic-who"><h2 class="ic-name"><a href="/investor/ventures/{{ r.venture_id }}">{{ r.venture_name }}</a></h2><span class="ic-line">{{ r.founder_name }} · asked on {{ date_text(r.created_at) }}</span></span>
+<span class="chip {{ c[0] }}">{{ icon(c[1], 14) }}{{ c[2] }}</span>
 </div>
+{% if r.status == "accepted" %}
+<a class="btn btn-i ic-open" href="/introductions/{{ r.id }}">{{ icon("message-square", 18) }}Open the conversation</a>
+{% elif r.status == "pending" %}
+<form method="post" action="/investor/introductions/withdraw" class="ic-open"><input type="hidden" name="id" value="{{ r.id }}"><button type="submit" class="btn btn-n">Withdraw this request</button></form>
+{% elif r.status == "declined" %}
+<p class="ic-meta">{{ r.founder_name }} declined on {{ date_text(r.decided_at) }}.</p>
+{% else %}
+<p class="ic-meta">You withdrew this request on {{ date_text(r.decided_at) }}. You can ask again from the founder's profile.</p>
 {% endif %}
+</li>
+{% endfor %}
+</ul>
+{% elif not rows %}
+<p class="fr-empty">You have not asked for an introduction yet. <a href="/investor">Discover founders</a></p>
+{% elif tab == "waiting" %}
+<p class="fr-empty">No request is waiting for an answer.</p>
+{% else %}
+<p class="fr-empty">No founder has accepted a request yet.</p>
+{% endif %}
+<details class="help fr-phone-only">
+<summary>{{ icon("info", 18) }}<span class="q">How requests work</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<p>{{ how() }}</p>
+</details>
+</div>
+<aside class="fr-aside" aria-label="About introductions">
+<section class="panel">
+<h2>{{ icon("info", 18) }}How requests work</h2>
+<p>{{ how() }}</p>
+</section>
+<section class="panel">
+<h2>{{ icon("lock", 18) }}Who can read a conversation</h2>
+<p>Only you and the founder can read it. IkonetU staff see how many introductions and messages there are, never what they say.</p>
+</section>
+</aside>
+</div>
+</div>
 {% endblock %}

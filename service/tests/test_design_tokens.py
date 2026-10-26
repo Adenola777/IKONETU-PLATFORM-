@@ -15,7 +15,7 @@ from app.product import LEVEL, STATUS
 
 APP = Path(__file__).resolve().parents[1] / "app"
 CSS = APP / "static" / "css"
-SHEETS = ["site.css", "app.css", "sign-in.css", "globals.css"]
+SHEETS = ["site.css", "app.css", "sign-in.css", "globals.css", "frame.css"]
 
 
 def tokens() -> dict[str, str]:

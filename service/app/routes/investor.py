@@ -224,7 +224,15 @@ async def investor_introductions(request: Request):
     v = await require_investor(request)
     result = await v.db.table("introductions").eq("investor_id", v.id).order("created_at", ascending=False).limit(200) \
         .select("id, venture_id, status, venture_name, founder_name, created_at, decided_at")
-    return render(request, "investor/introductions.html", {"rows": result.data or []}, _meta("Your introductions"))
+    rows = result.data or []
+    tab = request.query_params.get("tab", "")
+    if tab not in ("all", "waiting", "accepted"):
+        tab = "all"
+    shown = {"all": rows, "waiting": [r for r in rows if r["status"] == "pending"],
+             "accepted": [r for r in rows if r["status"] == "accepted"]}
+    return render(request, "investor/introductions.html", {
+        "rows": rows, "shown": shown[tab], "tab": tab, "counts": {k: len(x) for k, x in shown.items()},
+    }, _meta("Your introductions"))
 
 
 # ---------------------------------------------------------------- the investor's own profile

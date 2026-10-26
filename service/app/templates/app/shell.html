@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {#
-  The frame of every signed-in page: the lockup, the sections for the person's role, and sign
-  out. It uses the website's shared styles. A page sets `role` and `current` before it starts.
+  The frame of every signed-in page. A page sets `role` and `current` before it starts, and a
+  conversation also sets `chat`.
+
+  A founder's and an investor's pages use the app frame of the design (the app flow board, 26
+  October 2026): on a phone a header with the mark and the account menu, and a bar of sections
+  at the bottom; from 1024px a sidebar with every section and the account at its foot. Staff
+  pages keep the header with sections along the top.
 #}
 {% set NAV = {
   "founder": [
@@ -32,8 +37,68 @@
     ("audit", "/admin/audit", "Audit log"),
   ],
 } %}
-{% block styles %}<link rel="stylesheet" href="/static/css/app.css">{% endblock %}
+{# The app frame's sections: key, address, name in the sidebar, name in the bottom bar, icon. #}
+{% set FRAME = {
+  "founder": [
+    ("overview", "/dashboard", "Home", "Home", "house"),
+    ("pitch", "/dashboard/pitch", "Pitch", "Pitch", "video"),
+    ("evidence", "/dashboard/evidence", "Evidence", "Evidence", "file-check"),
+    ("updates", "/dashboard/updates", "Progress updates", none, "activity"),
+    ("introductions", "/dashboard/introductions", "Introductions", "Intros", "message-square"),
+    ("preview", "/dashboard/preview", "What investors see", none, "eye"),
+  ],
+  "investor": [
+    ("discover", "/investor", "Discover founders", "Discover", "compass"),
+    ("requests", "/investor/introductions", "Introductions", "Intros", "message-square"),
+    ("profile", "/investor/profile", "Your profile", "Profile", "user-round"),
+  ],
+} %}
+{% block styles %}<link rel="stylesheet" href="/static/css/app.css">{% if role in FRAME %}<link rel="stylesheet" href="/static/css/frame.css">{% endif %}{% endblock %}
 {% block body %}
+{% if role in FRAME %}
+{% set frame_viewer = request.state.viewer if request.state.viewer else none %}
+{% set person = frame_viewer.profile.full_name if frame_viewer and frame_viewer.profile else "" %}
+{% set items = FRAME[role] %}
+{# A page that has no place in the bottom bar lights the section it is reached from. #}
+{% set tab = current if current in ["overview", "pitch", "evidence", "introductions", "discover", "requests", "profile"] else "overview" %}
+{% set account = ("/dashboard#venture-h", "Your venture details") if role == "founder" else ("/investor/profile", "Your investor profile") %}
+<div class="site pg-app frame {{ 'app-i' if role == 'investor' else 'app-f' }}{{ ' frame-chat' if chat }}">
+<a class="skip" href="#main">Skip to content</a>
+<aside class="fr-side">
+<a href="/" aria-label="IkonetU home" class="fr-logo">{{ logo("default", 30) }}</a>
+<nav aria-label="Sections" class="fr-nav">
+<ul>
+{% for key, href, label, short, ic in items %}
+<li><a href="{{ href }}"{% if key == current %} aria-current="page"{% endif %}>{{ icon(ic, 20) }}<span>{{ label }}</span></a></li>
+{% endfor %}
+</ul>
+</nav>
+<div class="fr-me">
+<span class="fr-av" aria-hidden="true">{{ initials(person) }}</span>
+<span class="fr-who"><b>{{ person or "Your account" }}</b><span>{{ "Founder" if role == "founder" else "Investor" }}</span></span>
+</div>
+<a class="fr-link" href="{{ account[0] }}">{{ account[1] }}</a>
+<form method="post" action="/signout"><button type="submit" class="fr-out">{{ icon("log-out", 18) }}Sign out</button></form>
+</aside>
+<header class="fr-top">
+<a href="/" aria-label="IkonetU home" class="fr-mark">{{ mark(28) }}</a>
+<details class="fr-acct">
+<summary aria-label="Account"><span class="fr-av" aria-hidden="true">{{ initials(person) }}</span></summary>
+<div class="fr-menu">
+<p class="fr-menu-who">{{ person or "Your account" }}</p>
+<a href="{{ account[0] }}">{{ account[1] }}</a>
+<form method="post" action="/signout"><button type="submit">Sign out</button></form>
+</div>
+</details>
+</header>
+<main id="main" class="fr-main">{% block main %}{% endblock %}</main>
+<nav aria-label="Sections" class="fr-tabs">
+{% for key, href, label, short, ic in items if short %}
+<a href="{{ href }}"{% if key == tab %} aria-current="page"{% endif %}><span class="fr-pill">{{ icon(ic, 22) }}</span>{{ short }}</a>
+{% endfor %}
+</nav>
+</div>
+{% else %}
 {% set links = NAV.get(role, []) if role and role != "none" else [] %}
 <div class="site pg-app {{ 'app-i' if role == 'investor' else 'app-f' }}">
 <div class="page">
@@ -56,7 +121,8 @@
 </nav>
 {% endif %}
 </header>
-<main id="main" class="app-main">{% block main %}{% endblock %}</main>
+<main id="main" class="app-main">{{ self.main() }}</main>
 </div>
 </div>
+{% endif %}
 {% endblock %}
