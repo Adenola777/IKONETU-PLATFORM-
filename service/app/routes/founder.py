@@ -64,7 +64,11 @@ def _typed(raw: dict) -> dict[str, str]:
 # ---------------------------------------------------------------- onboarding
 @router.get("/onboarding")
 async def onboarding(request: Request):
-    """The first step after sign-in: a person says whether they are a founder or an investor."""
+    """The first step after sign-in: a person says whether they are a founder or an investor.
+
+    The choice comes back here as ?role=, so the form works without script, and sends the person to
+    that sign-up. Anything else shows the choice again.
+    """
     v = await require_viewer(request)
     if v.profile:
         if v.profile.role == "founder":
@@ -72,6 +76,9 @@ async def onboarding(request: Request):
             if not ventures.data:
                 raise RedirectTo("/onboarding/founder")
         raise RedirectTo(home_for(v.profile))
+    chosen = request.query_params.get("role")
+    if chosen in ("founder", "investor"):
+        raise RedirectTo(f"/onboarding/{chosen}")
     return render(request, "onboarding/choice.html", {}, _meta("Join IkonetU"))
 
 

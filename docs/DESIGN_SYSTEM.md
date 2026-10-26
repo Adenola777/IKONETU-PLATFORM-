@@ -33,8 +33,10 @@ Each colour has one job. The contrast figures were measured with the WCAG formul
 | Founder action | `--founder` | #F26B1D | dark text 5.83:1 | A fill only. As text it measures 3.05:1 on white, so it is never text |
 | Founder text and tint | `--founder-text`, `--founder-tint` | #B54708, #FFF1E6 | 4.90:1 | Founder labels and panels |
 | Founder message | `--founder-bubble` | #FFE3CC | ink text 14.46:1 | The founder's own messages in a conversation. Added on 26 October 2026 with the app frame |
+| Founder chosen | `--founder-wash` | #FFFAF5 | ink text 17.11:1, grey text 7.41:1 | The founder card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
 | Investor action | `--investor` | #123C7A | white text 10.75:1 | Investor buttons, links, the focus ring |
 | Investor tint | `--investor-tint` | #EEF4FF | investor text 9.74:1 | Investor labels and panels |
+| Investor chosen | `--investor-wash` | #F7FAFF | ink text 16.96:1, grey text 7.35:1 | The investor card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
 | Verified | `--verified` on `--verified-tint` | #067647 on #ECFDF3 | 5.40:1 | "Platform reviewed", and a Strong area |
 | Third party | `--third-party` on `--third-party-tint` | #5925DC on #F4F3FF | 7.02:1 | "Third-party evidence available" |
 | Error | `--error` on `--error-tint` | #B42318 on #FEF3F2 | 6.05:1 | Form errors, failed actions, staff danger buttons |

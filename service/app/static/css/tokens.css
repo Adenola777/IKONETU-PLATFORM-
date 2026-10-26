@@ -25,6 +25,7 @@
   --founder-tint: #FFF1E6;
   --founder-rule: #F9C9AA;
   --founder-bubble: #FFE3CC; /* the founder's own messages in a conversation, behind ink text */
+  --founder-wash: #FFFAF5; /* a chosen founder card, behind ink text */
 
   /* Investor context */
   --investor: #123C7A;
@@ -32,6 +33,7 @@
   --investor-press: #081F40;
   --investor-tint: #EEF4FF;
   --investor-tint-press: #D9E3F5;
+  --investor-wash: #F7FAFF; /* a chosen investor card, behind ink text */
 
   /* Status, kept apart from the two contexts */
   --verified: #067647;

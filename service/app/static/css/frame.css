@@ -416,3 +416,34 @@
 .frame .steps3 strong{font-size:var(--t-ui);font-weight:600}
 .frame .steps3 small{font-size:var(--t-ui-s);color:var(--text-2)}
 .frame .steps3 .now + span small{color:var(--investor);font-weight:600}
+
+/* ---------------------------------------------------------------- founder or investor (03)
+   One card each, a radio inside each. Continue sits at the foot of a phone's screen, and takes the
+   investor's colour when the investor card is chosen. From 1024px the cards stand side by side. */
+.frame-plain .fr-main:has(.rp-form){padding-bottom:20px}
+.frame .rp-form{min-height:calc(100vh - 92px);min-height:calc(100dvh - 92px);gap:24px}
+.frame .rp-group{display:flex;flex-direction:column;gap:12px;min-width:0;margin:0;padding:0;border:0}
+.frame .rp{position:relative;display:flex;align-items:center;gap:14px;margin:1px;padding:16px;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);cursor:pointer}
+.frame .rp input{position:absolute;width:1px;height:1px;margin:0;opacity:0}
+.frame .rp-ico{flex:none;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px}
+.frame .rp-f .rp-ico{background:var(--founder-tint);color:var(--founder-text)}
+.frame .rp-i .rp-ico{background:var(--investor-tint);color:var(--investor)}
+.frame .rp-txt{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;min-width:0}
+.frame .rp-txt b{font-size:18px;line-height:24px;font-weight:600;color:var(--ink)}
+.frame .rp-txt span{font-size:15px;line-height:22px;color:var(--text-2)}
+.frame .rp-dot{flex:none;width:22px;height:22px;box-sizing:border-box;border:2px solid var(--line-control);border-radius:var(--r-pill);background:var(--canvas)}
+.frame .rp-f input:checked ~ .rp-dot{border:7px solid var(--founder)}
+.frame .rp-i input:checked ~ .rp-dot{border:7px solid var(--investor)}
+.frame .rp-f:has(input:checked){margin:0;border:2px solid var(--founder);background:var(--founder-wash)}
+.frame .rp-i:has(input:checked){margin:0;border:2px solid var(--investor);background:var(--investor-wash)}
+.frame .rp:has(input:focus-visible){outline:var(--focus);outline-offset:3px}
+.frame .rp-go{margin-top:auto;min-height:52px;border-radius:14px}
+.frame .rp-form:has(.rp-i input:checked) .rp-go{background:var(--investor);color:#FFFFFF}
+.frame .rp-form:has(.rp-i input:checked) .rp-go:hover{background:var(--investor-hover);color:#FFFFFF}
+@media (min-width:1024px){
+  .frame-plain .fr-main:has(.rp-form){padding-bottom:80px}
+  .frame .rp-form{min-height:0;gap:28px}
+  .frame .rp-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .frame .rp{align-items:flex-start;padding:20px}
+  .frame .rp-go{margin-top:4px}
+}
