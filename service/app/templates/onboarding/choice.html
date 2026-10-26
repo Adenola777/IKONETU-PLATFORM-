@@ -1,19 +1,32 @@
 {% extends "app/shell.html" %}
-{# The first step after sign-in: a person says whether they are a founder or an investor. #}
+{#
+  The first step after sign-in (screen 03): founder or investor, one card each, and Continue. The form
+  asks /onboarding again with ?role=, which sends the person to that sign-up, so it works without
+  script. Continue takes the investor's colour when the investor card is chosen.
+#}
 {% set role = "none" %}
 {% block main %}
-<h1 class="app-title">How will you use IkonetU?</h1>
-<p class="app-lede">Choose one. Each account is either a founder account or an investor account.</p>
-<div class="choice">
-<section class="card card-f" aria-labelledby="c-founder">
-<h2 id="c-founder" class="app-h2" style="margin:0">I am a founder</h2>
-<p class="body2">Create your profile and your venture, upload a one-minute pitch, add evidence, and publish when you are ready. Approved investors can then find you and ask for an introduction, which you accept or decline.</p>
-<a class="btn btn-f" href="/onboarding/founder">Create a founder profile</a>
-</section>
-<section class="card card-i" aria-labelledby="c-investor">
-<h2 id="c-investor" class="app-h2" style="margin:0">I am an investor</h2>
-<p class="body2">Tell us what you invest in. An IkonetU admin checks each investor account before it can browse founder profiles and request introductions.</p>
-<a class="btn btn-i" href="/onboarding/investor">Create an investor profile</a>
-</section>
-</div>
+<form class="fr-page rp-form" method="get" action="/onboarding">
+<h1 class="fr-h1">How will you use IkonetU?</h1>
+<fieldset class="rp-group">
+<legend class="sr-only">Account type</legend>
+<label class="rp rp-f">
+<input type="radio" name="role" value="founder" checked>
+<span class="rp-ico" aria-hidden="true">{{ icon("rocket", 24) }}</span>
+<span class="rp-txt"><b>Founder</b><span>You build a profile with a pitch and evidence, and publish it when you are ready.</span></span>
+<span class="rp-dot" aria-hidden="true"></span>
+</label>
+<label class="rp rp-i">
+<input type="radio" name="role" value="investor">
+<span class="rp-ico" aria-hidden="true">{{ icon("briefcase", 24) }}</span>
+<span class="rp-txt"><b>Investor</b><span>You browse published founders once an IkonetU admin approves your account.</span></span>
+<span class="rp-dot" aria-hidden="true"></span>
+</label>
+</fieldset>
+<details class="help">
+<summary>{{ icon("info", 18) }}<span class="q">Can one account do both?</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<p>Each account is either a founder account or an investor account.</p>
+</details>
+<button type="submit" class="btn btn-f btn-wide rp-go">Continue</button>
+</form>
 {% endblock %}

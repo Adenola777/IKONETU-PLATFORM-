@@ -40,6 +40,7 @@ Each value is entered in the Render dashboard. None is written in this repositor
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Sign-in and the signed-in pages | Safe in the browser |
 | `SUPABASE_SERVICE_ROLE_KEY` | `POST /api/v1/waitlist`, and recording a founder's score after their own statement | Server only. It bypasses row level security, so it must never be committed or sent to a browser |
 | `NEXT_PUBLIC_PHONE_SIGN_IN` | The sign-in page | Leave unset until an SMS and WhatsApp provider is set up in Supabase Auth |
+| `GOOGLE_SIGN_IN` | The sign-in page | `on` shows Continue with Google. Leave unset until the Google provider is switched on in Supabase Auth, or the button leads to Supabase's error page. The README, under "Sign-in", has the steps |
 | `TRUSTED_PROXY_HOPS` | The waitlist's rate limit | The number of proxies in front of the app, 1 in `render.yaml`. **Unverified** for Render: see check 8 below |
 | `CLIENT_IP_HEADER` | The waitlist's rate limit | Optional. A single header the edge sets with the caller's address, used instead of `X-Forwarded-For` |
 | `SENTRY_DSN` | Error reports from the server | Server only. Leave unset until Sentry is named in the privacy policy; `docs/OPERATIONS.md` has the steps |

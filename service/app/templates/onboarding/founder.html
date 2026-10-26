@@ -6,13 +6,16 @@
 {% set errors = st.get("errors", {}) %}
 {% set v = st.get("values", {}) if st.get("status") == "error" else {} %}
 {% macro value(name) %}{% if name in v %} value="{{ v[name] }}"{% endif %}{% endmacro %}
-<div class="app-narrow">
-<h1 class="app-title">Create your founder profile</h1>
-<p class="app-lede">Tell us about you and your venture. Nobody sees your profile until you publish it, and then only approved investors see it. Nobody else can see your email or phone number.</p>
-<form class="form" method="post" action="/onboarding/founder" novalidate>
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Create your founder profile</h1>
+<p class="fr-sub">Tell us about you and your venture. Nobody sees your profile until you publish it, and then only approved investors see it. Nobody else can see your email or phone number.</p>
+</div>
+<form class="form ob-form" method="post" action="/onboarding/founder" novalidate>
 {% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
 
-<h2 class="app-h2" style="margin:0">About you</h2>
+<section class="card2 form" aria-labelledby="ob-you">
+<h2 id="ob-you">About you</h2>
 <div class="field">
 <label for="o-name">Full name</label>
 <input id="o-name" name="fullName" class="input" type="text" autocomplete="name" required maxlength="120"{{ value("fullName") }}{{ invalid(errors, "fullName") }}>
@@ -51,7 +54,9 @@
 {{ err(errors, "bio") }}
 </div>
 
-<h2 class="app-h2" style="margin:12px 0 0">Your venture</h2>
+</section>
+<section class="card2 form" aria-labelledby="ob-venture">
+<h2 id="ob-venture">Your venture</h2>
 <div class="field">
 <label for="o-venture">Venture name</label>
 <input id="o-venture" name="ventureName" class="input" type="text" required maxlength="120"{{ value("ventureName") }}{{ invalid(errors, "ventureName") }}>
@@ -96,6 +101,8 @@
 {% endfor %}
 </div>
 
+</section>
+<section class="card2 form">
 <fieldset class="field">
 <legend>Your choices</legend>
 <p class="hint">Each of these is optional. To change an answer later, write to privacy@ikonetu.com.</p>
@@ -118,7 +125,8 @@
 <label class="check"><input type="checkbox" name="acceptedPrivacy"{{ invalid(errors, "acceptedPrivacy") }}><span>I have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.</span></label>
 {{ err(errors, "acceptedPrivacy") }}
 </div>
-<button type="submit" class="btn btn-f" style="align-self:flex-start" data-pending="Saving…">Create my profile</button>
+</section>
+<button type="submit" class="btn btn-f btn-wide" data-pending="Saving…">Create my profile</button>
 </form>
 </div>
 {% endblock %}

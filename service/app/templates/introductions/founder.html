@@ -1,53 +1,100 @@
 {% extends "app/shell.html" %}
+{# The founder's introductions: requests waiting for an answer, open conversations, and closed requests, one tab each (screens 08 and 08.1). #}
 {% set role = "founder" %}
 {% set current = "introductions" %}
-{% macro line(r) %}{{ INVESTOR_TYPE_NAME.get(r.investor_type, r.investor_type) }}{% if r.investor_firm %}, {{ r.investor_firm }}{% endif %}{% endmacro %}
+{% macro line(r) %}{{ INVESTOR_TYPE_NAME.get(r.investor_type, r.investor_type) }}{% if r.investor_firm %} · {{ r.investor_firm }}{% endif %}{% endmacro %}
+{% macro accepting() %}Accepting opens a conversation on IkonetU. It does not share your email or phone number, and it does not mean the investor will invest. You do not have to give a reason to decline.{% endmacro %}
 {% block main %}
-<h1 class="app-title">Introductions</h1>
-<p class="app-lede">An approved investor asks with a short note, and you decide. You do not have to give a reason. Accepting opens a conversation on IkonetU. It does not share your email or phone number, and it does not mean the investor will invest.</p>
+{% set TABS = [("requests", "Requests", pending | length), ("chats", "Chats", open | length), ("closed", "Closed", closed | length)] %}
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Introductions</h1>
+<p class="fr-sub">Approved investors ask to meet you with a short note, and you decide.</p>
+</div>
+<div class="fr-cols">
+<div class="fr-page">
+<nav class="seg" aria-label="Introductions">
+{% for key, label, n in TABS %}
+<a href="/dashboard/introductions?tab={{ key }}"{% if key == tab %} aria-current="true"{% endif %}>{{ label }}<span class="n{{ ' has' if n }}">{{ n }}</span></a>
+{% endfor %}
+</nav>
 
-<section aria-labelledby="p-h" class="stack">
-<h2 id="p-h" class="app-h2">Waiting for your answer ({{ pending | length }})</h2>
-{% if not pending %}
-<div class="empty"><p>No request is waiting for you.</p></div>
-{% else %}
-<ul class="reqs">
+{% if tab == "requests" %}
+{% if pending %}
+<ul class="fr-list" aria-label="Waiting for your answer">
 {% for r in pending %}
-<li class="card">
-<h3 class="app-h3">{{ r.investor_name }}</h3>
-<p class="small" style="margin:0 0 12px">{{ line(r) }} · asked on {{ date_text(r.created_at) }}</p>
-<blockquote class="quote">{{ r.note }}</blockquote>
-<div class="row" style="margin-top:16px">
-<form method="post" action="/dashboard/introductions/answer"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="answer" value="accepted"><button type="submit" class="btn btn-f btn-sm">Accept and open a conversation</button></form>
-<form method="post" action="/dashboard/introductions/answer"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="answer" value="declined"><button type="submit" class="btn btn-n btn-sm">Decline</button></form>
+<li class="ic">
+<div class="ic-head">
+<span class="ic-av ic-av-i" aria-hidden="true">{{ initials(r.investor_name) }}</span>
+<span class="ic-who"><h2 class="ic-name">{{ r.investor_name }}</h2><span class="ic-line">{{ line(r) }}</span></span>
+<span class="ic-date">{{ day_month(r.created_at) }}</span>
+</div>
+<p class="ic-note">{{ r.note }}</p>
+<div class="ic-acts">
+<form method="post" action="/dashboard/introductions/answer"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="answer" value="declined"><button type="submit" class="btn btn-n">Decline</button></form>
+<form method="post" action="/dashboard/introductions/answer"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="answer" value="accepted"><button type="submit" class="btn btn-f">Accept</button></form>
 </div>
 </li>
 {% endfor %}
 </ul>
-{% endif %}
-</section>
-
-<section aria-labelledby="o-h" class="stack" style="margin-top:48px">
-<h2 id="o-h" class="app-h2">Conversations ({{ open | length }})</h2>
-{% if not open %}
-<div class="empty"><p>You have no open conversations.</p></div>
 {% else %}
-<ul class="reqs">
-{% for r in open %}
-<li class="card row" style="justify-content:space-between"><span><strong>{{ r.investor_name }}</strong> <span class="small">{{ line(r) }} · accepted on {{ date_text(r.decided_at) }}</span></span><a class="btn btn-i btn-sm" href="/introductions/{{ r.id }}">Open the conversation</a></li>
-{% endfor %}
-</ul>
+<p class="fr-empty">No request is waiting for you.</p>
 {% endif %}
-</section>
+<details class="help fr-phone-only">
+<summary>{{ icon("info", 18) }}<span class="q">What accepting means</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<p>{{ accepting() }}</p>
+</details>
 
-{% if closed %}
-<section aria-labelledby="c-h" class="stack" style="margin-top:48px">
-<h2 id="c-h" class="app-h2">Closed</h2>
-<ul class="reqs">
-{% for r in closed %}
-<li class="small">{{ r.investor_name }}, {{ line(r) }}: {{ "you declined" if r.status == "declined" else "withdrawn by the investor" }} on {{ date_text(r.decided_at) }}.</li>
+{% elif tab == "chats" %}
+{% if open %}
+<ul class="fr-list" aria-label="Conversations">
+{% for r in open %}
+<li class="ic">
+<div class="ic-head">
+<span class="ic-av ic-av-i" aria-hidden="true">{{ initials(r.investor_name) }}</span>
+<span class="ic-who"><h2 class="ic-name">{{ r.investor_name }}</h2><span class="ic-line">{{ line(r) }}</span></span>
+<span class="chip chip-ok">{{ icon("check", 14) }}Accepted</span>
+</div>
+{% if r.latest %}
+<div class="ic-latest">
+<span>{{ "You wrote" if r.latest.sender_id == me else r.investor_name ~ " wrote" }} on {{ date_text(r.latest.created_at) }}</span>
+<p>{{ r.latest.body }}</p>
+</div>
+{% endif %}
+<p class="ic-meta">You accepted on {{ date_text(r.decided_at) }}, and the conversation holds {{ r.count }} message{{ "" if r.count == 1 else "s" }}.</p>
+<a class="btn btn-f ic-open" href="/introductions/{{ r.id }}">{{ icon("message-square", 18) }}Open the conversation</a>
+</li>
 {% endfor %}
 </ul>
-</section>
+{% else %}
+<p class="fr-empty">You have no open conversations.</p>
 {% endif %}
+
+{% else %}
+{% if closed %}
+<ul class="fr-list" aria-label="Closed">
+{% for r in closed %}
+<li class="ic-row">
+<span class="ic-av ic-av-n" aria-hidden="true">{{ initials(r.investor_name) }}</span>
+<span class="ic-who"><span class="ic-name">{{ r.investor_name }}</span><span class="ic-line">{% if r.status == "declined" %}You declined on {{ date_text(r.decided_at) }}.{% else %}The investor withdrew the request on {{ date_text(r.decided_at) }}.{% endif %}</span></span>
+</li>
+{% endfor %}
+</ul>
+{% else %}
+<p class="fr-empty">You have no closed introductions.</p>
+{% endif %}
+{% endif %}
+</div>
+<aside class="fr-aside" aria-label="About introductions">
+<section class="panel">
+<h2>{{ icon("info", 18) }}What accepting means</h2>
+<p>{{ accepting() }}</p>
+</section>
+<section class="panel">
+<h2>{{ icon("lock", 18) }}Who can read a conversation</h2>
+<p>Only you and the investor can read it. IkonetU staff see how many introductions and messages there are, never what they say.</p>
+</section>
+</aside>
+</div>
+</div>
 {% endblock %}

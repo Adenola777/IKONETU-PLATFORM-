@@ -107,12 +107,25 @@ What the admin changes do (migration `20261017000001_admin.sql`):
 
 Phone sign-in by WhatsApp or SMS (PRD A-1) is built and switched off. It needs an SMS and WhatsApp provider configured in Supabase Auth, and then `NEXT_PUBLIC_PHONE_SIGN_IN=on` on Render. With it on, the phone number is asked first and email becomes the fallback, as the sign-in wireframe shows.
 
+Sign-in with Google is built and switched off, as the owner chose on 26 October 2026, after trouble with the email sender. With `GOOGLE_SIGN_IN=on`, Continue with Google stands above the email form. `/signin/google` sends the browser to Supabase's `/auth/v1/authorize` with a PKCE challenge, and Supabase returns it to `/auth/callback` with a one-time code, which becomes a session as the email link does. No email is sent. A first Google sign-in makes the account, and onboarding then asks for the age confirmation that the email form asks for. If the sign-in does not finish, the sign-in page says that signing in with Google did not finish. The email code stays beneath the button for anyone without a Google account. The app's half was run in a browser against the local stand-in, which skips Google's own screens. The real Google screens and Supabase's Google provider have not been run (**unverified**).
+
+To switch it on, in this order. Supabase's guide "Sign in with Google" is the source of steps 1 and 2, and Google's OAuth verification guide of step 3.
+
+1. In the Google Auth Platform console, under Clients, create a client of the type "Web application". Under Authorized JavaScript origins add the public address, `https://ikonetu.com`. Under Authorized redirect URIs add the callback address that Supabase shows on its Google provider page. Keep the client ID and the client secret.
+2. In Supabase, on the Google provider page of the dashboard, switch Google on and enter the client ID and the client secret there. The secret goes into the dashboard only, never into a conversation or this repository.
+3. On the Audience page of the Google Auth Platform console, set the publishing status to "In production". Google's guides describe the "Testing" status of an app for outside users as limited to the test users listed there.
+4. On Render, set `GOOGLE_SIGN_IN` to `on` and restart the service.
+5. Sign in once with a real Google account and check that the founder or investor choice appears.
+
+The privacy policy does not yet name Google as a way to sign in, and the legal pack is for the solicitor to review, so its wording is the owner's to approve before the button goes live.
+
 `/onboarding` creates the profile, records the consents (PRD A-4) and creates the first venture, and `/dashboard` shows them. Every query runs as the signed-in founder, so the row level security in `supabase/migrations` decides what each one can read and write. Each signed-in page sends anyone without a session to `/signin`. `/auth/callback` turns the link in Supabase's default email into a session. Supabase's built-in email sender does not let the templates be edited, so until IkonetU has its own email sender the email carries a link rather than the code, and the code screen tells the founder to open it on the same device. The link only works in the browser that asked for it, because the sign-in is bound to a cookie set there.
 
 Supabase Auth needs these settings before sign-in works:
 
 1. Under URL Configuration, the Site URL set to `NEXT_PUBLIC_SITE_URL`, and `<NEXT_PUBLIC_SITE_URL>/auth/callback` under Redirect URLs.
 2. Once IkonetU has its own email sender under SMTP Settings, the "Magic Link" and "Confirm signup" email templates should show the code with `{{ .Token }}`. Until then the default email's link is used.
+   The owner switched the sender from SendGrid to Brevo on 26 October 2026, in the Supabase dashboard. SendGrid retired its free plans in May 2025. Brevo's free plan allows 300 emails a day and includes its SMTP relay. Read back the same day: `smtp_host` is `smtp-relay.brevo.com`, `smtp_port` is `587`, the SMTP login matches the Brevo login, and both email templates show the code with `{{ .Token }}`. ikonetu.com carries Brevo's verification code, both Brevo DKIM records and a DMARC record. Whether the stored password is the right Brevo SMTP key is **unverified** until a sign-in email arrives.
 3. The email code lasting 300 seconds and 6 digits long (SRD SEC-A1).
 4. The access token lasting 900 seconds, with refresh token rotation and reuse detection on (SRD SEC-A3).
 

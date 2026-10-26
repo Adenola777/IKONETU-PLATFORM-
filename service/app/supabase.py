@@ -22,7 +22,7 @@ import re
 import secrets
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import httpx
 
@@ -442,6 +442,13 @@ class Supabase:
             "code_challenge_method": "s256" if code_challenge else None,
         }
         return await self._auth("POST", "otp", body, params={"redirect_to": redirect_to} if redirect_to else None)
+
+    def authorize_url(self, provider: str, redirect_to: str, code_challenge: str) -> str:
+        """Where the browser goes to sign in with a provider such as Google. Supabase sends it back to
+        redirect_to with a one-time code, which exchange_code turns into a session (the PKCE flow)."""
+        query = urlencode({"provider": provider, "redirect_to": redirect_to, "code_challenge": code_challenge,
+                           "code_challenge_method": "s256"})
+        return f"{self.url}/auth/v1/authorize?{query}"
 
     async def send_phone_code(self, phone: str, channel: str, data: dict | None) -> Result:
         body = {

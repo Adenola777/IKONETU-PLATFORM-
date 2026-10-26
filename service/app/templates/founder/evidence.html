@@ -1,37 +1,61 @@
 {% extends "app/shell.html" %}
+{#
+  The founder's evidence (screen 06): how many pieces are added, approved and waiting, what was
+  added so far, and the form to add more. On a phone the form follows the list and Add evidence
+  jumps to it; from 1024px it sits in a column beside the list.
+#}
 {% from "app/ui.html" import status_chip, field_error, invalid, form_status, request_key %}
 {% set role = "founder" %}
 {% set current = "evidence" %}
 {% block scripts %}<script src="/static/js/app/evidence-form.js" defer></script>{% endblock %}
+{% macro shows() %}Investors see what each item shows, your sentence and its status. They never see your files or your own statements.{% endmacro %}
+{% macro counts() %}Each piece adds to your IkonetU Score once a reviewer approves it. A few signals take your own statement instead, which counts at 60% of its points without a review.{% endmacro %}
 {% block main %}
-<h1 class="app-title">Your evidence</h1>
-<p class="app-lede">Each piece of evidence adds to your IkonetU Score once a reviewer approves it. Investors see what it shows, your sentence and its status, never your files. A few signals take your own statement instead, which counts at 60% without a review.</p>
-<div class="side">
-<section aria-labelledby="list-h" class="stack">
-<h2 id="list-h" class="app-h2">Added so far ({{ rows | length }})</h2>
+{% set n_approved = rows | selectattr("status", "equalto", "approved") | list | length %}
+{% set n_waiting = rows | rejectattr("status", "in", ["approved", "needs_more", "rejected", "expired"]) | list | length %}
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Evidence</h1>
+<p class="fr-sub">Each piece shows investors something an IkonetU reviewer or an outside source has checked.</p>
+</div>
+<ul class="stats" aria-label="Your evidence in numbers">
+<li><b>{{ rows | length }}</b><span>Added</span></li>
+<li><b class="ok">{{ n_approved }}</b><span>Approved</span></li>
+<li><b>{{ n_waiting }}</b><span>Waiting</span></li>
+</ul>
+<a href="#add-h" class="btn btn-f ev-add-jump">{{ icon("plus", 18) }}Add evidence</a>
+<div class="fr-cols">
+<div class="fr-page">
+<section aria-labelledby="list-h" class="fr-page" style="gap:12px">
+<h2 id="list-h" class="c-lbl">Added so far ({{ rows | length }})</h2>
 {% if not rows %}
-<div class="empty"><p>You have not added any evidence yet.</p><p>Start with what an investor would ask for first, such as your company registration or revenue.</p></div>
+<p class="fr-empty">You have not added any evidence yet. Start with what an investor would ask for first, such as your company registration or revenue.</p>
 {% else %}
-<ul class="reqs">
+<ul class="ev-list">
 {% for r in rows %}
 {% set s = r.shown %}
 {% set files = r.evidence_files | length %}
-<li class="card">
-<p class="lbl" style="margin-bottom:6px">{{ area_label(r.area) }}</p>
-<h3 class="app-h3">{{ r.label }}</h3>
-{% if r.summary %}<p class="body2" style="margin:0 0 8px">{{ r.summary }}</p>{% endif %}
-<div class="row" style="margin-bottom:8px">{% if s.investors %}{{ status_chip(s.investors) }}{% else %}<span class="chip chip-none">Not shown to investors</span>{% endif %}</div>
-<p class="small" style="margin:0">{{ s.text }}</p>
+<li>
+<h3 class="ev-name">{{ r.label }}</h3>
+<span class="ev-meta">{{ area_label(r.area) }} · added on {{ date_text(r.created_at) }}{% if r.decided_at %}, decided on {{ date_text(r.decided_at) }}{% endif %} · {{ files }} {{ "file" if files == 1 else "files" }}{% if r.source_ref %} · <a href="{{ r.source_ref }}" target="_blank" rel="noopener nofollow">link</a>{% endif %}</span>
+<div class="row">{% if s.investors %}{{ status_chip(s.investors) }}{% else %}<span class="chip chip-none">Not shown to investors</span>{% endif %}</div>
+{% if r.summary %}<p class="ev-sum">{{ r.summary }}</p>{% endif %}
+<p class="ev-meta" style="margin:0">{{ s.text }}</p>
 {% if r.public_note %}<p class="note">What the reviewer compared: {{ r.public_note }}</p>{% endif %}
-{% if r.reason %}<p class="note" style="background:#FEF3F2;color:#B42318">The reviewer said: {{ r.reason }}</p>{% endif %}
-<p class="small" style="margin:8px 0 0">Added on {{ date_text(r.created_at) }}{% if r.decided_at %}, decided on {{ date_text(r.decided_at) }}{% endif %} · {{ files }} {{ "file" if files == 1 else "files" }}{% if r.source_ref %} · <a href="{{ r.source_ref }}" target="_blank" rel="noopener nofollow">link</a>{% endif %}</p>
+{% if r.reason %}<p class="note" style="background:var(--error-tint);color:var(--error)">The reviewer said: {{ r.reason }}</p>{% endif %}
 </li>
 {% endfor %}
 </ul>
 {% endif %}
 </section>
-<aside class="card" aria-labelledby="add-h">
-<h2 id="add-h" class="app-h2">Add evidence</h2>
+<div class="fr-phone-only fr-page" style="gap:8px">
+<details class="help"><summary>{{ icon("eye", 18) }}<span class="q">What investors see</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary><p>{{ shows() }}</p></details>
+<details class="help"><summary>{{ icon("info", 18) }}<span class="q">How evidence counts</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary><p>{{ counts() }}</p></details>
+</div>
+</div>
+<div class="fr-rail">
+<section class="card2" aria-labelledby="add-h">
+<h2 id="add-h" class="c-h">Add evidence</h2>
 {% set st = states.get("evidence", {}) %}
 {% set errors = st.get("errors", {}) %}
 {% set v = st.get("values", {}) if st.get("status") == "error" else {} %}
@@ -75,6 +99,10 @@
 </div>
 <button type="submit" class="btn btn-f" style="align-self:flex-start" data-pending="Adding…">Add this evidence</button>
 </form>
-</aside>
+</section>
+<section class="panel fr-desk-only"><h2>{{ icon("eye", 18) }}What investors see</h2><p>{{ shows() }}</p></section>
+<section class="panel fr-desk-only"><h2>{{ icon("info", 18) }}How evidence counts</h2><p>{{ counts() }}</p></section>
+</div>
+</div>
 </div>
 {% endblock %}

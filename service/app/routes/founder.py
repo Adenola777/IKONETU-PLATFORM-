@@ -64,7 +64,11 @@ def _typed(raw: dict) -> dict[str, str]:
 # ---------------------------------------------------------------- onboarding
 @router.get("/onboarding")
 async def onboarding(request: Request):
-    """The first step after sign-in: a person says whether they are a founder or an investor."""
+    """The first step after sign-in: a person says whether they are a founder or an investor.
+
+    The choice comes back here as ?role=, so the form works without script, and sends the person to
+    that sign-up. Anything else shows the choice again.
+    """
     v = await require_viewer(request)
     if v.profile:
         if v.profile.role == "founder":
@@ -72,6 +76,9 @@ async def onboarding(request: Request):
             if not ventures.data:
                 raise RedirectTo("/onboarding/founder")
         raise RedirectTo(home_for(v.profile))
+    chosen = request.query_params.get("role")
+    if chosen in ("founder", "investor"):
+        raise RedirectTo(f"/onboarding/{chosen}")
     return render(request, "onboarding/choice.html", {}, _meta("Join IkonetU"))
 
 
@@ -501,7 +508,7 @@ async def _declare(request: Request, v, venture: dict, data: dict, key: str | No
 async def _updates_page(request: Request, v, venture: dict, states: dict | None = None):
     result = await v.db.table("venture_updates").eq("venture_id", venture["id"]).order("created_at", ascending=False) \
         .limit(100).select("id, body, created_at")
-    context = {"rows": result.data or [], "new_key": str(uuid.uuid4())}
+    context = {"rows": result.data or [], "new_key": str(uuid.uuid4()), "now": datetime.now(timezone.utc)}
     if states:
         context["states"] = states
     return render(request, "founder/updates.html", context, _meta("Progress updates"))
