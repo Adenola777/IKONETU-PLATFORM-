@@ -501,7 +501,7 @@ async def _declare(request: Request, v, venture: dict, data: dict, key: str | No
 async def _updates_page(request: Request, v, venture: dict, states: dict | None = None):
     result = await v.db.table("venture_updates").eq("venture_id", venture["id"]).order("created_at", ascending=False) \
         .limit(100).select("id, body, created_at")
-    context = {"rows": result.data or [], "new_key": str(uuid.uuid4())}
+    context = {"rows": result.data or [], "new_key": str(uuid.uuid4()), "now": datetime.now(timezone.utc)}
     if states:
         context["states"] = states
     return render(request, "founder/updates.html", context, _meta("Progress updates"))

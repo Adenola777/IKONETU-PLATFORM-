@@ -1,14 +1,25 @@
 {% extends "app/shell.html" %}
-{# The founder's own profile, laid out exactly as approved investors see it. #}
+{#
+  What investors see (screen 07.2): the founder's own profile, laid out exactly as approved
+  investors see it, under a band that says whether it is published. The profile itself is the
+  one the investor's founder page shows, so it changes with that page.
+#}
 {% from "app/venture_profile.html" import venture_profile %}
 {% set role = "founder" %}
 {% set current = "preview" %}
 {% block scripts %}<script src="/static/js/app/pitch-video.js" defer></script>{% endblock %}
 {% block main %}
-<p class="status status-info" style="margin-bottom:24px">{{ "This is your published profile, as approved investors see it." if venture.published_at else "This is how your profile will look to approved investors once you publish it. It is hidden now." }} Investors also see a button to ask you for an introduction.</p>
+<div class="fr-page">
+<a href="/dashboard" class="fr-back">{{ icon("chevron-left", 18) }}Home</a>
+{% if venture.published_at %}
+<p class="pv-band on" role="status">{{ icon("eye", 18) }}<span><b>Published</b>This is your profile as approved investors see it. They also see a button to ask you for an introduction.</span></p>
+{% else %}
+<p class="pv-band off" role="status">{{ icon("eye-off", 18) }}<span><b>Hidden</b>Approved investors see this page once you publish it. They also see a button to ask you for an introduction.</span></p>
+{% endif %}
 {% if p %}
 {{ venture_profile(p, now) }}
 {% else %}
 <p class="status status-err">Your profile could not be loaded. Please reload the page.</p>
 {% endif %}
+</div>
 {% endblock %}

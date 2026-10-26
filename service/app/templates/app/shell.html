@@ -53,7 +53,7 @@
     ("profile", "/investor/profile", "Your profile", "Profile", "user-round"),
   ],
 } %}
-{% block styles %}<link rel="stylesheet" href="/static/css/app.css">{% if role in FRAME %}<link rel="stylesheet" href="/static/css/frame.css">{% endif %}{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/app.css">{% if role in FRAME or role == "none" %}<link rel="stylesheet" href="/static/css/frame.css">{% endif %}{% endblock %}
 {% block body %}
 {% if role in FRAME %}
 {% set frame_viewer = request.state.viewer if request.state.viewer else none %}
@@ -98,8 +98,18 @@
 {% endfor %}
 </nav>
 </div>
+{% elif role == "none" %}
+{# Sign-up and onboarding: the person has no sections yet, so only the lockup and sign out. #}
+<div class="site pg-app frame frame-plain app-f">
+<a class="skip" href="#main">Skip to content</a>
+<header class="fr-plain-top">
+<a href="/" aria-label="IkonetU home">{{ logo("default", 28) }}</a>
+<form method="post" action="/signout"><button type="submit" class="btn btn-n btn-sm">Sign out</button></form>
+</header>
+<main id="main" class="fr-main">{{ self.main() }}</main>
+</div>
 {% else %}
-{% set links = NAV.get(role, []) if role and role != "none" else [] %}
+{% set links = NAV.get(role, []) if role else [] %}
 <div class="site pg-app {{ 'app-i' if role == 'investor' else 'app-f' }}">
 <div class="page">
 <a class="skip" href="#main">Skip to content</a>

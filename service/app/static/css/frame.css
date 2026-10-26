@@ -199,3 +199,145 @@
   .frame .ch-req{max-width:68%}
   .frame .ch-compose{padding:12px 20px 18px}
 }
+
+/* ---------------------------------------------------------------- pages without the frame's sections
+   Sign-up and onboarding: the lockup and sign out across the top, and one column. */
+.frame-plain{display:block}
+.frame-plain .fr-plain-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:960px;height:64px;margin:0 auto;padding:0 20px;box-sizing:border-box}
+.frame-plain .fr-plain-top a{display:flex;align-items:center;min-height:44px}
+.frame-plain .fr-main{max-width:720px;margin:0 auto;padding:8px 20px 64px}
+@media (min-width:1024px){
+  .frame.frame-plain{display:block}
+  .frame-plain .fr-main{margin:0 auto;padding:24px 20px 80px}
+}
+
+/* ---------------------------------------------------------------- the founder's pages (05 to 07.2) */
+.frame .fr-rail{display:flex;flex-direction:column;gap:16px}
+.frame .fr-desk-only{display:none}
+@media (min-width:1024px){
+  .frame .fr-desk-only{display:block}
+}
+.frame .card2{display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);box-shadow:var(--shadow-raised);min-width:0}
+@media (min-width:1024px){.frame .card2{padding:20px 24px}}
+.frame .c-lbl{margin:0;font-size:var(--t-label);line-height:18px;font-weight:600;color:var(--text-2)}
+.frame .c-h{margin:0;font-size:var(--t-ui);line-height:22px;font-weight:600;color:var(--ink)}
+.frame .c-p{margin:0;font-size:var(--t-ui-s);line-height:21px;color:var(--text-2)}
+.frame .c-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.frame .card2 .btn{min-height:48px;border-radius:14px;font-size:var(--t-ui)}
+.frame .btn-wide{width:100%}
+@media (min-width:1024px){.frame .btn-wide{width:auto;align-self:flex-start;min-width:200px}}
+.frame .fr-notice{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--r-panel);background:var(--investor-tint);color:var(--investor);font-size:var(--t-ui-s);font-weight:600}
+.frame .fr-notice a{margin-left:auto;white-space:nowrap}
+.frame .fr-back{display:inline-flex;align-items:center;gap:4px;min-height:44px;font-size:var(--t-ui-s);font-weight:600;color:var(--text-2);text-decoration:none}
+@media (min-width:1024px){.frame .fr-back{display:none}}
+
+/* Who can see the profile */
+.frame .vis-head{display:flex;align-items:center;gap:12px}
+.frame .vis-ico{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--fill);color:var(--text-3)}
+.frame .vis-ico.on{background:var(--verified-tint);color:var(--verified)}
+.frame .vis-ico.held{background:var(--error-tint);color:var(--error)}
+.frame .vis-acts{display:flex;flex-direction:column;gap:4px}
+.frame .vis-acts form{display:flex;flex-direction:column}
+.frame .vis-acts .tlink{align-self:center;font-size:15px}
+@media (min-width:1024px){
+  .frame .vis-acts{flex-direction:row;align-items:center;gap:16px}
+  .frame .vis-acts .tlink{align-self:auto}
+}
+
+/* The score */
+.frame .sc-num{font-family:var(--font-sans),system-ui,sans-serif;font-size:44px;line-height:48px;letter-spacing:-0.02em}
+.frame .sc-line{margin:0;display:flex;align-items:baseline;gap:6px}
+.frame .sc-of{margin:0}
+.frame .sc-bar{display:block;height:8px;border-radius:var(--r-pill);background:var(--fill);overflow:hidden}
+.frame .sc-bar i{display:block;height:100%;border-radius:var(--r-pill);background:var(--founder)}
+.frame .chip-f{background:var(--founder-tint);color:var(--founder-text)}
+.frame .fold{border-top:1px solid var(--line)}
+.frame .fold summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;list-style:none;font-size:15px;font-weight:600;color:var(--investor);cursor:pointer}
+.frame .fold summary::-webkit-details-marker{display:none}
+.frame .fold[open] summary .chev{transform:rotate(180deg)}
+.frame .fold-in{display:flex;flex-direction:column;gap:12px;padding:4px 0 8px}
+.frame .shares li{font-size:var(--t-ui-s)}
+@media (min-width:1024px){
+  .frame .sc-split{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:center}
+  .frame .radar{max-width:260px}
+}
+
+/* Next steps */
+.frame .steps{margin:0;padding:0;list-style:none}
+.frame .steps li + li{border-top:1px solid var(--line)}
+.frame .steps a{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 0;color:var(--ink);text-decoration:none}
+.frame .steps a:hover .st-name{text-decoration:underline}
+.frame .st-n{flex:none;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:var(--r-pill);background:var(--founder-tint);color:var(--founder-text);font-size:var(--t-label);font-weight:600}
+.frame .st-body{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;min-width:0}
+.frame .st-name{font-size:15px;line-height:21px;font-weight:600}
+.frame .st-meta{font-size:var(--t-label);line-height:18px;color:var(--text-2)}
+.frame .st-meta .gain{margin-left:0}
+.frame .st-hint{font-size:var(--t-label);line-height:18px;color:var(--text-2)}
+.frame .steps svg{color:var(--text-2)}
+
+/* Readiness counts */
+.frame .counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.frame .counts li{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:var(--r-control);background:var(--fill-panel)}
+.frame .counts b{font-size:22px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.frame .counts span{font-size:var(--t-label);color:var(--text-2)}
+.frame .todo li{font-size:var(--t-ui-s);line-height:21px}
+
+/* Forms inside cards */
+.frame .card2 .form{gap:16px}
+.frame .card2 .grid2{gap:16px}
+@media (max-width:639px){.frame .card2 .grid2{grid-template-columns:minmax(0,1fr)}}
+.frame .card2 .input{border-radius:var(--r-control)}
+
+/* The pitch */
+.frame .player{border-radius:var(--r-panel)}
+.frame .acts2{display:flex;flex-direction:column;gap:10px}
+.frame .acts2 > details > summary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px solid var(--line-control);border-radius:14px;background:var(--canvas);font-size:15px;font-weight:600;color:var(--ink);list-style:none;cursor:pointer}
+.frame .acts2 > details > summary::-webkit-details-marker{display:none}
+.frame .acts2 > details[open] > summary{border-color:var(--ink);background:var(--fill)}
+.frame .acts2 .sheet{margin-top:12px;padding:16px;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas)}
+.frame .danger{border:1px solid var(--error-line);border-radius:var(--r-panel);background:var(--error-tint)}
+.frame .danger summary{display:flex;align-items:center;justify-content:center;min-height:44px;list-style:none;font-size:15px;font-weight:600;color:var(--error);cursor:pointer}
+.frame .danger summary::-webkit-details-marker{display:none}
+.frame .danger-in{display:flex;flex-direction:column;gap:12px;padding:0 16px 16px}
+.frame .danger-in p{margin:0;font-size:15px;line-height:22px;color:var(--ink)}
+.frame .btn-danger{background:var(--error);color:#FFFFFF}
+.frame .btn-danger:hover{background:var(--error-hover);color:#FFFFFF}
+.frame .fr-emptybox{display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 20px;border:1px dashed var(--line-control);border-radius:20px;background:var(--canvas);text-align:center}
+.frame .fr-emptybox .big{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:var(--r-pill);background:var(--founder-tint);color:var(--founder-text)}
+.frame .fr-emptybox p{margin:0}
+
+/* Evidence */
+.frame .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);overflow:hidden}
+.frame .stats li{display:flex;flex-direction:column;gap:2px;padding:12px 14px}
+.frame .stats li + li{border-left:1px solid var(--line)}
+.frame .stats b{font-size:22px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.frame .stats .ok{color:var(--verified)}
+.frame .stats span{font-size:var(--t-label);color:var(--text-2)}
+.frame .ev-list{margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);overflow:hidden}
+.frame .ev-list > li{display:flex;flex-direction:column;gap:6px;padding:14px 16px}
+.frame .ev-list > li + li{border-top:1px solid var(--line)}
+.frame .ev-name{margin:0;font-size:15px;line-height:21px;font-weight:600;color:var(--ink)}
+.frame .ev-meta{font-size:var(--t-label);line-height:18px;color:var(--text-2)}
+.frame .ev-list .row{gap:8px}
+.frame .ev-list .note{font-size:var(--t-label)}
+.frame .ev-sum{margin:0;font-size:var(--t-ui-s);line-height:20px;color:var(--text-3)}
+@media (min-width:1024px){.frame .ev-add-jump{display:none}}
+
+/* Progress updates */
+.frame .upd{margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);overflow:hidden}
+.frame .upd li{display:flex;flex-direction:column;gap:4px;padding:14px 16px 6px}
+.frame .upd li + li{border-top:1px solid var(--line)}
+.frame .upd time{font-size:var(--t-label);color:var(--text-2)}
+.frame .upd p{margin:0;font-size:15px;line-height:22px;white-space:pre-line;overflow-wrap:anywhere}
+.frame .upd .linkbtn{align-self:flex-start;min-height:40px;font-size:var(--t-ui-s)}
+.frame .weeks i{height:22px}
+
+/* What investors see */
+.frame .pv-band{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--r-panel);font-size:var(--t-ui-s);line-height:20px}
+.frame .pv-band b{display:block}
+.frame .pv-band.off{background:var(--fill);color:var(--text-3)}
+.frame .pv-band.on{background:var(--verified-tint);color:var(--verified)}
+
+/* The founder's sign-up form (04) */
+.frame-plain .ob-form{display:flex;flex-direction:column;gap:16px}
+.frame-plain .ob-form > .card2 > h2{margin:0;font-size:var(--t-ui);font-weight:600}
