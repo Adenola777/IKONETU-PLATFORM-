@@ -37,6 +37,7 @@ Each colour has one job. The contrast figures were measured with the WCAG formul
 | Investor action | `--investor` | #123C7A | white text 10.75:1 | Investor buttons, links, the focus ring |
 | Investor tint | `--investor-tint` | #EEF4FF | investor text 9.74:1 | Investor labels and panels |
 | Investor chosen | `--investor-wash` | #F7FAFF | ink text 16.96:1, grey text 7.35:1 | The investor card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
+| Google button | `--google-line`, `--google-text` | #747775, #1F1F1F | border 4.53:1, text 16.48:1 on white | Continue with Google, in the light theme of Google's sign-in asset bundle, which their branding rules require. Added on 26 October 2026 |
 | Verified | `--verified` on `--verified-tint` | #067647 on #ECFDF3 | 5.40:1 | "Platform reviewed", and a Strong area |
 | Third party | `--third-party` on `--third-party-tint` | #5925DC on #F4F3FF | 7.02:1 | "Third-party evidence available" |
 | Error | `--error` on `--error-tint` | #B42318 on #FEF3F2 | 6.05:1 | Form errors, failed actions, staff danger buttons |

@@ -15,8 +15,9 @@ from .waitlist import COUNTRY_CODES, normalise_contact
 # Between the two sign-in steps the server remembers where the code went, in an
 # HTTP-only cookie, so the address never appears in a URL or a log.
 PENDING_COOKIE = "ik_pending_sign_in"
-# The PKCE verifier for the link in the sign-in email, which only this browser holds.
+# The PKCE verifier for the link in the sign-in email or for a Google sign-in, which only this browser holds.
 VERIFIER_COOKIE = "ik_pkce"
+VIA_COOKIE = "ik_signin_via"  # "google" while a Google sign-in is under way
 CODE_LIFETIME_SECONDS = 300  # SRD SEC-A1: a code lasts 5 minutes
 
 ADULT = "You must be 18 or older to join."

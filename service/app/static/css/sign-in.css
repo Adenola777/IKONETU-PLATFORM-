@@ -68,6 +68,12 @@
 .pg-auth .link-button:hover{text-decoration:underline}
 .pg-auth .link-button:disabled{color:var(--text-disabled);cursor:progress}
 .pg-auth .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Continue with Google, in Google's light theme: white, a grey border, their G at 20px with 10px after it. */
+.pg-auth .au-google{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 12px;box-sizing:border-box;border:1px solid var(--google-line);border-radius:14px;background:var(--canvas);color:var(--google-text);font-size:var(--t-ui);font-weight:600;text-decoration:none}
+.pg-auth .au-google:hover{background:var(--fill-panel);color:var(--google-text)}
+.pg-auth .au-google img{flex:none;width:20px;height:20px}
+.pg-auth .au-or{display:flex;align-items:center;gap:12px;margin:0;font-size:var(--t-ui-s);line-height:20px;color:var(--text-2)}
+.pg-auth .au-or::before,.pg-auth .au-or::after{content:"";flex:1 1 auto;height:1px;background:var(--line)}
 /* Phone or Email: two links that look like a segmented control. */
 .pg-auth .au-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;border-radius:var(--r-control);background:var(--fill)}
 .pg-auth .au-seg a{display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:9px;font-size:15px;font-weight:600;color:var(--text-2);text-decoration:none}

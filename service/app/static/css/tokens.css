@@ -34,6 +34,8 @@
   --investor-tint: #EEF4FF;
   --investor-tint-press: #D9E3F5;
   --investor-wash: #F7FAFF; /* a chosen investor card, behind ink text */
+  --google-line: #747775; /* the border of Continue with Google, from Google's light theme */
+  --google-text: #1F1F1F; /* its text, from the same theme */
 
   /* Status, kept apart from the two contexts */
   --verified: #067647;

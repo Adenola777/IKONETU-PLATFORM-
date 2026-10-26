@@ -13,6 +13,7 @@ from ..signin import (
     CODE_LIFETIME_SECONDS,
     PENDING_COOKIE,
     VERIFIER_COOKIE,
+    VIA_COOKIE,
     Pending,
     now_ms,
     parse_admin_sign_in,
@@ -60,6 +61,8 @@ def _signin_page(request: Request, values: dict | None = None, errors: dict | No
         "errors": errors or {},
         "message": message,
         "link_error": request.query_params.get("error") == "link",
+        "google_enabled": settings.google_sign_in,
+        "google_error": request.query_params.get("error") == "google",
         "countries": COUNTRIES,
     }, Meta(title="Sign in", noindex=True))
 
@@ -70,6 +73,29 @@ async def signin_page(request: Request):
         return RedirectResponse("/dashboard", status_code=307)
     method = request.query_params.get("method")
     return _signin_page(request, method=method if settings.phone_sign_in and method in ("phone", "email") else None)
+
+
+@router.get("/signin/google")
+async def google_signin(request: Request):
+    """Starts sign-in with Google, with no code to type and no email to send.
+
+    Supabase takes the person to Google and back to /auth/callback with a one-time code, which the
+    verifier set here turns into a session, as the email link does. A first sign-in makes the account,
+    and onboarding then asks for the age confirmation the email form asks for here.
+    """
+    supabase = request.app.state.supabase
+    if not settings.google_sign_in or supabase is None:
+        return RedirectResponse("/signin", status_code=303)
+    if await current_user(request, supabase):
+        return RedirectResponse("/dashboard", status_code=303)
+    verifier, challenge = pkce_pair()
+    response = RedirectResponse(supabase.authorize_url("google", f"{settings.site_url}/auth/callback", challenge),
+                                status_code=303)
+    _set_verifier(response, verifier)
+    # Marks the sign-in as Google's, so a failure at the callback says so rather than speaking of an email link.
+    response.set_cookie(VIA_COOKIE, "google", max_age=CODE_LIFETIME_SECONDS * 2, path="/auth",
+                        httponly=True, samesite="lax", secure=settings.secure_cookies)
+    return response
 
 
 @router.post("/signin")
@@ -212,21 +238,28 @@ async def resend_code(request: Request):
 
 @router.get("/auth/callback")
 async def callback(request: Request):
-    """The sign-in email links here. The one-time code becomes a session."""
+    """The sign-in email and Google sign-in both return here. The one-time code becomes a session."""
     code = request.query_params.get("code")
     supabase = request.app.state.supabase
     verifier = request.cookies.get(VERIFIER_COOKIE)
+    via_google = request.cookies.get(VIA_COOKIE) == "google"
     if code and supabase is not None and verifier:
         session, error = await supabase.exchange_code(code, verifier)
         if session is not None:
             remember(request, session)
             response = RedirectResponse("/dashboard", status_code=307)
             response.delete_cookie(VERIFIER_COOKIE, path="/")
+            response.delete_cookie(VIA_COOKIE, path="/auth")
             return response
         log_warn("auth.callback_failed", {"status": error.status, "code": error.code})
     elif code:
         log_warn("auth.callback_failed", {"status": None, "code": "no_verifier" if supabase else "not_configured"})
-    return RedirectResponse("/signin?error=link", status_code=307)
+    elif request.query_params.get("error"):
+        # Supabase returns here with an error and no code when, for example, the person cancels at Google.
+        log_warn("auth.callback_failed", {"status": None, "code": request.query_params.get("error")})
+    response = RedirectResponse("/signin?error=google" if via_google else "/signin?error=link", status_code=307)
+    response.delete_cookie(VIA_COOKIE, path="/auth")
+    return response
 
 
 # ---------------------------------------------------------------- admin sign-in

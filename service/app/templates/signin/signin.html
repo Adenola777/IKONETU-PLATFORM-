@@ -1,7 +1,9 @@
 {% extends "signin/frame.html" %}
 {#
   Sign in or create your account (screen 01). With phone sign-in on, Phone and Email are two links that
-  reload the page with ?method=, so the choice works without script.
+  reload the page with ?method=, so the choice works without script. With Google sign-in on, Continue
+  with Google stands above the form as a link, because a form may only send to this site. Its G is
+  Google's own, cropped from their sign-in asset bundle, as their branding rules require.
 #}
 {% from "macros.html" import err, invalid %}
 {% block content %}
@@ -10,10 +12,18 @@
 <div class="au-head">
 <h1>Sign in or create your account</h1>
 <p class="au-lede">
-{% if phone_enabled %}Enter your phone number to create your account or to sign back in. A new account then chooses founder or investor.
+{% if google_enabled %}Continue with Google, or enter your {{ "phone number" if phone_enabled else "email" }}, to create your account or to sign back in. A new account then chooses founder or investor.
+{% elif phone_enabled %}Enter your phone number to create your account or to sign back in. A new account then chooses founder or investor.
 {% else %}Enter your email to create your account or to sign back in. A new account then chooses founder or investor.{% endif %}
 </p>
 </div>
+{% if google_error %}
+<p class="status status-err" role="alert">Signing in with Google did not finish. Please try again.</p>
+{% endif %}
+{% if google_enabled %}
+<a class="au-google" href="/signin/google"><img src="/static/img/google-g.png" alt="" width="20" height="20">Continue with Google</a>
+<p class="au-or"><span>or</span></p>
+{% endif %}
 {% if link_error %}
 <p class="status status-err" role="alert">That sign-in link has expired or was already used. Please ask for a new code.</p>
 {% endif %}
