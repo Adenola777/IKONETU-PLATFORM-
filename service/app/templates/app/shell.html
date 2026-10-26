@@ -100,7 +100,8 @@
 </div>
 {% elif role == "none" %}
 {# Sign-up and onboarding: the person has no sections yet, so only the lockup and sign out. #}
-<div class="site pg-app frame frame-plain app-f">
+{# An investor's sign-up and waiting page set tint to i, so a chosen option takes the investor's colour. #}
+<div class="site pg-app frame frame-plain {{ 'app-i' if tint == 'i' else 'app-f' }}">
 <a class="skip" href="#main">Skip to content</a>
 <header class="fr-plain-top">
 <a href="/" aria-label="IkonetU home">{{ logo("default", 28) }}</a>

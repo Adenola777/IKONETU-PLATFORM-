@@ -1,17 +1,21 @@
 {% extends "app/shell.html" %}
+{# The investor's sign-up (screen 10): about you, what you invest in, and your choices, one card each. #}
 {% from "app/investor_fields.html" import investor_fields %}
 {% from "app/ui.html" import field_error, invalid %}
 {% set role = "none" %}
+{% set tint = "i" %}
 {% block main %}
 {% set st = states.get("investor", {}) %}
 {% set errors = st.get("errors", {}) %}
 {% set v = st.get("values", {}) if st.get("status") == "error" else {"fullName": name} %}
-<div class="app-narrow">
-<h1 class="app-title">Create your investor profile</h1>
-<p class="app-lede">Tell us who you are and what you invest in. An IkonetU admin checks each investor account before it can browse founder profiles. We will show you here when yours is approved.</p>
-<form class="form" method="post" action="/onboarding/investor" novalidate>
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Create your investor profile</h1>
+<p class="fr-sub">Tell us who you are and what you invest in. An IkonetU admin checks each investor account before it can browse founder profiles. We will show you here when yours is approved.</p>
+</div>
+<form class="form ob-form" method="post" action="/onboarding/investor" novalidate>
 {% if st.get("status") == "error" %}<p class="status status-err" role="alert">{{ st.message }}</p>{% endif %}
-{{ investor_fields(v, errors) }}
+{% call investor_fields(v, errors) %}
 <label class="check"><input type="checkbox" name="notifications"{% if one(v, 'notifications') == "on" %} checked{% endif %}><span>IkonetU may email me about my account and my introductions (optional). IkonetU does not send these emails yet.</span></label>
 {% if ask_adult %}
 <div>
@@ -23,7 +27,9 @@
 <label class="check"><input type="checkbox" name="acceptedPrivacy"{{ invalid(errors, "acceptedPrivacy") }}><span>I have read the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>.</span></label>
 {{ field_error(errors, "acceptedPrivacy") }}
 </div>
-<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Saving…">Send for approval</button>
+{% endcall %}
+<div class="panel"><h2>{{ icon("eye", 18) }}What founders see</h2><p>Founders see your name, investor type and firm when you ask for an introduction. They do not see what you look for.</p></div>
+<button type="submit" class="btn btn-i btn-wide" data-pending="Saving…">Send for approval</button>
 </form>
 </div>
 {% endblock %}

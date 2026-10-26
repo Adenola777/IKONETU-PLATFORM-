@@ -1,18 +1,28 @@
 {% extends "app/shell.html" %}
+{# The investor's own profile (screen 10, when editing): the sign-up's three cards, with what founders see beside them from 1024px. #}
 {% from "app/investor_fields.html" import investor_fields %}
 {% from "app/ui.html" import form_status %}
 {% set role = "investor" %}
 {% set current = "profile" %}
+{% macro sees() %}Founders see your name, investor type and firm when you ask them for an introduction. They do not see what you look for. A request you already sent keeps the details it was sent with.{% endmacro %}
 {% block main %}
 {% set st = states.get("investor", {}) %}
 {% set v = st.get("values") if st.get("status") == "error" and st.get("values") else initial %}
-<div class="app-narrow">
-<h1 class="app-title">Your investor profile</h1>
-<p class="app-lede">Founders see your name, investor type and firm when you ask them for an introduction. A request you already sent keeps the details it was sent with.</p>
-<form class="form" method="post" action="/investor/profile" novalidate>
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Your investor profile</h1>
+<p class="fr-sub">What you invest in, and what founders see when you ask to meet them.</p>
+</div>
+<div class="fr-cols">
+<form class="form ob-form" method="post" action="/investor/profile" novalidate>
 {{ form_status(st) }}
 {{ investor_fields(v, st.get("errors", {})) }}
-<button type="submit" class="btn btn-i" style="align-self:flex-start" data-pending="Saving…">Save changes</button>
+<p class="hint fr-phone-only">{{ sees() }}</p>
+<button type="submit" class="btn btn-i btn-wide" data-pending="Saving…">Save changes</button>
 </form>
+<aside class="fr-aside" aria-label="About your profile">
+<section class="panel"><h2>{{ icon("eye", 18) }}What founders see</h2><p>{{ sees() }}</p></section>
+</aside>
+</div>
 </div>
 {% endblock %}

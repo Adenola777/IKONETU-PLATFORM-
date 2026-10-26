@@ -1,18 +1,30 @@
 {% extends "app/shell.html" %}
-{# Where an investor waits for an admin's decision, or learns it was declined. #}
+{# Where an investor waits for an admin's decision (screen 11), or learns it was declined. #}
 {% set role = "none" %}
+{% set tint = "i" %}
 {% block main %}
-<div class="app-narrow stack">
+<div class="fr-page" style="max-width:520px;margin:0 auto">
 {% if declined %}
-<h1 class="app-title">Your investor account is not approved</h1>
-<p class="app-lede" style="margin:0">An IkonetU admin did not approve this account, so it cannot browse founder profiles or request introductions. If you think this is a mistake, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.</p>
-{% else %}
-<h1 class="app-title">Your investor account is waiting for approval</h1>
-<p class="app-lede" style="margin:0">You sent your details on {{ date_text(sent_at) }}. An IkonetU admin checks each investor account before it can browse founder profiles and request introductions. Sign in again later to see the decision.</p>
-<div class="card card-i">
-<h2 class="app-h3">While you wait</h2>
-<p class="body2" style="margin:0">You can read <a href="/for-investors">what investors see</a> and the <a href="/terms#terms-investor">investor terms</a>.</p>
+<div class="wait-head">
+<span class="wait-ico" aria-hidden="true">{{ icon("circle-alert", 32) }}</span>
+<h1 class="fr-h1">Your investor account is not approved</h1>
+<p class="fr-sub">An IkonetU admin did not approve this account, so it cannot browse founder profiles or request introductions. If you think this is a mistake, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.</p>
 </div>
+{% else %}
+<div class="wait-head">
+<span class="wait-ico" aria-hidden="true">{{ icon("clock", 32) }}</span>
+<h1 class="fr-h1">Waiting for approval</h1>
+<p class="fr-sub">An IkonetU admin checks every investor account before it can browse founders and request introductions.</p>
+</div>
+<ol class="steps3" aria-label="Approval progress">
+<li><span class="dot3 done"><span>{{ icon("check", 16) }}</span><b></b></span><span><strong>Details sent</strong><small>{{ date_text(sent_at) }}</small></span></li>
+<li><span class="dot3 now"><span><i></i></span><b></b></span><span><strong>Admin check</strong><small>In progress</small></span></li>
+<li><span class="dot3"><span></span></span><span><strong>Browse founders</strong><small>Sign in again later to see the decision.</small></span></li>
+</ol>
+<details class="help">
+<summary>{{ icon("info", 18) }}<span class="q">While you wait</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<p>You can read <a href="/for-investors">what investors see</a> and the <a href="/terms#terms-investor">investor terms</a>.</p>
+</details>
 {% endif %}
 </div>
 {% endblock %}
