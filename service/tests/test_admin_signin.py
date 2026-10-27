@@ -43,7 +43,7 @@ def test_the_admin_sign_in_is_a_page_of_its_own_with_a_password_and_no_code():
 
 
 def test_a_signed_out_visit_to_any_admin_page_goes_to_the_admin_sign_in(client):
-    for path in ("/admin", "/admin/register", "/admin/people", "/admin/evidence"):
+    for path in ("/admin", "/admin/investors", "/admin/people", "/admin/content"):
         r = client.get(path)
         assert r.status_code == 307 and r.headers["location"] == "/admin/signin", path
 
@@ -119,8 +119,9 @@ def test_the_admin_pages_sign_out_returns_to_the_admin_sign_in(client, fake):
     client.cookies.set(ACCESS_COOKIE, jwt())
     fake.on("GET", "/auth/v1/user", httpx.Response(200, json={"id": "u-1", "user_metadata": {"confirmed_adult": True}}))
     fake.on("GET", "/rest/v1/profiles", httpx.Response(200, json=[{"role": "admin", "status": "active", "full_name": "Ada"}]))
-    fake.on("POST", "/rest/v1/rpc/admin_register_months", httpx.Response(200, json=[]))
     fake.on("POST", "/rest/v1/rpc/admin_register", httpx.Response(200, json=[]))
-    body = client.get("/admin/register").text
+    fake.on("POST", "/rest/v1/rpc/admin_shell", httpx.Response(200, json={"founders": 0, "investors": 0, "introductions": 0,
+                                                                          "waitlist": 0, "sample": False}))
+    body = client.get("/admin/investors").text
     assert '<input type="hidden" name="next" value="/admin/signin">' in body
     assert client.get("/admin/signin").headers["location"] == "/admin"

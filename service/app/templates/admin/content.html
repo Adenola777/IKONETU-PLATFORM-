@@ -1,0 +1,90 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import tabs %}
+{# The Reports and Evidence board: open reports about conversations, with a way to resolve each, and the evidence
+   waiting for a reviewer, each opening on its review page. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Reports and Evidence</h1>
+<p class="a-sub">{{ av.plural(reports | length, "open report") }} · {{ evidence | length }} Evidence {{ "item" if evidence | length == 1 else "items" }} waiting for review</p>
+</div>
+</header>
+{% if failed %}<p class="a-alert" role="alert">The reports or the evidence could not be read. Please reload the page.</p>{% endif %}
+{{ tabs("Moderation views", [
+  ("reports", "Reports", reports | length, "/admin/content"),
+  ("evidence", "Evidence", evidence | length, "/admin/content?tab=evidence"),
+], tab) }}
+
+{% if tab == "reports" %}
+<section aria-labelledby="open-h" class="a-card a-card-flush">
+<h2 id="open-h" class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">Open reports</h2>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:720px">
+<thead><tr><th scope="col">Reported</th><th scope="col">Item</th><th scope="col">Reported by</th><th scope="col">About</th><th scope="col">Reason</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for r in reports %}
+<tr>
+<td style="white-space:nowrap">{{ r.when }}</td>
+<td>Conversation about {{ r.venture_name }}</td>
+<td><div class="a-cell"><b>{{ r.reporter_name or "A deleted account" }}</b><span>{{ ROLE_NAME.get(r.reporter_role, "") }}</span></div></td>
+<td>{{ r.about_name or "A deleted account" }}</td>
+<td style="max-width:320px;overflow-wrap:anywhere">{{ r.reason }}</td>
+<td class="a-right">
+{% if resolving == r.id %}
+<form method="post" action="/admin/content/reports/{{ r.id }}/resolve" style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:240px;text-align:left">
+<label for="note-{{ r.id }}" class="a-label">What was done</label>
+<textarea id="note-{{ r.id }}" name="note" rows="3" class="a-textarea" maxlength="280" required></textarea>
+<div class="a-btns"><button type="submit" class="a-btn a-btn-sm">Resolve</button><a href="/admin/content" class="a-btn a-btn-n a-btn-sm">Cancel</a></div>
+</form>
+{% else %}
+<a href="/admin/content?resolve={{ r.id }}" class="a-btn a-btn-n a-btn-sm">Resolve</a>
+{% endif %}
+</td>
+</tr>
+{% else %}
+<tr><td colspan="6" class="a-empty">No open reports</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+
+{% else %}
+{% if score_failed %}<p class="a-alert" role="alert">The decision is saved, and the venture's score did not update. Use Recompute below.</p>{% endif %}
+<section aria-labelledby="ev-h" class="a-card a-card-flush">
+<h2 id="ev-h" class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">Evidence waiting for review</h2>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:720px">
+<thead><tr><th scope="col">Sent</th><th scope="col">Venture</th><th scope="col">Signal</th><th scope="col">Files</th><th scope="col">Waiting</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for e in evidence %}
+<tr>
+<td style="white-space:nowrap">{{ e.sent }}</td>
+<td><div class="a-cell"><b>{{ (e.ventures or {}).name }}</b><span title="{{ e.summary }}">{{ e.summary }}</span></div></td>
+<td>{{ e.signal }}</td>
+<td class="a-num">{{ e.files }}</td>
+<td>{{ "today" if e.waiting == 0 else av.plural(e.waiting, "day") }}</td>
+<td class="a-right"><a href="/admin/evidence/{{ e.id }}" class="a-btn a-btn-n a-btn-sm">Review</a></td>
+</tr>
+{% else %}
+<tr><td colspan="6" class="a-empty">Nothing waiting for review</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% if stale %}
+<section aria-labelledby="stale-h" class="a-card">
+<h2 id="stale-h" class="a-h2">Scores to update</h2>
+<p class="a-note">A decision was saved for these ventures and their score did not update afterwards.</p>
+{% for s in stale %}
+<form method="post" action="/admin/evidence/recompute" class="a-row" style="padding:8px 4px">
+<input type="hidden" name="venture" value="{{ s.venture_id }}">
+<span>{{ s.name or s.venture_id }}</span>
+<button type="submit" class="a-btn a-btn-n a-btn-sm">Recompute</button>
+</form>
+{% endfor %}
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

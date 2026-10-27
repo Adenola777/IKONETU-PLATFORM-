@@ -149,6 +149,7 @@
 .frame .ch-note{flex:none;background:var(--investor-tint)}
 .frame .ch-note summary{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;list-style:none;font-size:var(--t-label);font-weight:600;color:var(--investor);cursor:pointer}
 .frame .ch-note summary::-webkit-details-marker{display:none}
+.frame .ch-sent{flex:none;margin:8px 16px}
 .frame .ch-note summary .q{flex:1 1 auto}
 .frame .ch-note[open] summary .chev{transform:rotate(180deg)}
 .frame .ch-note p{margin:0;padding:0 16px 12px 39px;font-size:var(--t-label);line-height:19px;color:var(--text-3)}

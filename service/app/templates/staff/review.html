@@ -58,7 +58,7 @@
 </div>
 {%- endmacro %}
 {% block main %}
-<a href="/admin/evidence" class="back">{{ icon("arrow-left", 16) }} Evidence to review</a>
+<a href="/admin/content?tab=evidence" class="back">{{ icon("arrow-left", 16) }} Evidence to review</a>
 <p class="lbl" style="margin-bottom:8px">{{ area_label(category) }} · {{ (e.ventures or {}).get("name") or "" }}</p>
 <h1 class="app-title">{{ signal_label(e.signal_code) }}</h1>
 {% if hint %}<p class="app-lede">The founder was asked for: {{ lower_first(hint) }}</p>{% endif %}

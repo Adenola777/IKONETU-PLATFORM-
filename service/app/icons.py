@@ -12,6 +12,7 @@ from markupsafe import Markup
 
 SHAPES = {
     # The admin sidebar's own icons, drawn for the admin design the owner approved on 26 October 2026.
+    "admin-play": "<path d=\"M8 5v14l11-7z\" stroke=\"none\"></path>",
     "admin-dashboard": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"></rect><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"></rect><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"></rect><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"></rect>",
     "admin-founders": "<circle cx=\"12\" cy=\"8\" r=\"4\"></circle><path d=\"M4 21c0-4 3.6-7 8-7s8 3 8 7\"></path>",
     "admin-investors": "<rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"></rect><path d=\"M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2\"></path><path d=\"M3 13h18\"></path>",

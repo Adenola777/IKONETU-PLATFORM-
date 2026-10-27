@@ -6,6 +6,7 @@ The names below are made up. The real register is added through the admin page a
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 
 import httpx
@@ -126,95 +127,100 @@ def test_the_databases_refusals_are_explained():
     assert refusal_text("TypeError") == "Nothing was added. Please try again."
 
 
-# ---------------------------------------------------------------- the pages
-MONTHS = [
-    {"month": "2026-07-01", "registered": 10, "running_total": 10},
-    {"month": "2026-08-01", "registered": 0, "running_total": 10},
-    {"month": "2026-09-01", "registered": 28, "running_total": 38},
+# ---------------------------------------------------------------- the Investors page
+ENTRIES = [
+    {"register_no": "001", "full_name": "Ada Okafor", "registered_on": "2026-07-01", "added_at": "2026-10-24T09:00:00Z",
+     "account_id": None, "account_name": None, "account_email": None, "linked_at": None, "introductions": 1, "total_count": 3},
+    {"register_no": "002", "full_name": "Bayo Lawal", "registered_on": "2026-07-02", "added_at": "2026-10-24T09:00:00Z",
+     "account_id": None, "account_name": None, "account_email": None, "linked_at": None, "introductions": 0, "total_count": 3},
+    {"register_no": "003", "full_name": "Chidi Eze", "registered_on": "2026-09-01", "added_at": "2026-10-24T09:00:00Z",
+     "account_id": None, "account_name": None, "account_email": None, "linked_at": None, "introductions": 0, "total_count": 3},
 ]
+SHELL = {"founders": 216, "investors": 3, "introductions": 24, "waitlist": 239, "sample": False}
+ORIGIN = {"origin": "http://testserver"}
 
 
-def sign_in(client, fake, role: str = "admin"):
+def sign_in(client, fake, role: str = "admin", entries: list | None = None):
     client.cookies.set(ACCESS_COOKIE, jwt())
     fake.on("GET", "/auth/v1/user", httpx.Response(200, json={"id": "u-1", "user_metadata": {"confirmed_adult": True}}))
+
     def profiles(request: httpx.Request) -> httpx.Response:
-        # The session reads the role, status and name; the audit log reads names by user.
+        # The session reads the role; the Investors page reads the investor accounts; the audit log reads names.
+        if request.url.params.get("role") == "eq.investor":
+            return httpx.Response(200, json=[])
         if "user_id" in request.url.params.get("select", ""):
             return httpx.Response(200, json=[{"user_id": "u-1", "full_name": "Ada Admin"}])
         return httpx.Response(200, json=[{"role": role, "status": "active", "full_name": "Ada Admin"}])
 
     fake.on("GET", "/rest/v1/profiles", profiles)
+    fake.on("POST", "/rest/v1/rpc/admin_shell", httpx.Response(200, json=SHELL))
+    fake.on("POST", "/rest/v1/rpc/admin_register", httpx.Response(200, json=ENTRIES if entries is None else entries))
 
 
-def test_the_register_page_shows_each_month_with_its_running_total_and_the_entries(client, fake):
+def test_the_investors_page_shows_each_month_with_its_running_total_and_the_entries(client, fake):
     sign_in(client, fake)
-    fake.on("POST", "/rest/v1/rpc/admin_register_months", httpx.Response(200, json=MONTHS))
-    fake.on("POST", "/rest/v1/rpc/admin_register", httpx.Response(200, json=[
-        {"register_no": "001", "full_name": "Ada Okafor", "registered_on": "2026-07-01", "added_at": "2026-10-24T09:00:00Z",
-         "total_count": 38},
-    ]))
-    r = client.get("/admin/register")
+    r = client.get("/admin/investors")
     assert r.status_code == 200
     body = r.text
-    assert "38 investors are in the register, from July 2026 to September 2026." in body
-    assert '<a href="/admin/register?month=2026-07">July 2026</a></td>\n<td>10</td>\n<td>10</td>' in body
-    assert "<td>August 2026</td>\n<td>0</td>\n<td>10</td>" in body
-    assert "<td>001</td>\n<td>Ada Okafor</td>\n<td>1 July 2026</td>" in body
-    assert '<a href="/admin/register" aria-current="page">Investor register</a>' in body
-    sent = json.loads(fake.sent("POST", "/rest/v1/rpc/admin_register")[0].content)
-    assert sent == {"p_search": None, "p_month": None, "p_limit": 50, "p_offset": 0}
+    assert "3 on the register · 1 introduced to founders" in body
+    assert re.search(r'<span class="a-scard-label">July 2026</span>\n<span class="a-scard-count">2</span>\n'
+                     r'<span class="a-scard-range">Running total 2</span>', body)
+    assert re.search(r'<span class="a-scard-label">September 2026</span>\n<span class="a-scard-count">1</span>\n'
+                     r'<span class="a-scard-range">Running total 3</span>', body)
+    assert '<td class="a-num" style="font-weight:600">001</td>\n<td>Ada Okafor</td>\n<td>1 Jul 2026</td>' in body
+    assert '<a href="/admin/investors" class="adm-link" aria-current="page">' in body
+    assert json.loads(fake.sent("POST", "/rest/v1/rpc/admin_register")[0].content) == {"p_limit": 1000, "p_offset": 0}
 
 
-def test_a_month_and_a_search_are_sent_to_the_database(client, fake):
+def test_a_search_a_month_and_the_account_filter_narrow_the_list(client, fake):
     sign_in(client, fake)
-    fake.on("POST", "/rest/v1/rpc/admin_register_months", httpx.Response(200, json=MONTHS))
-    fake.on("POST", "/rest/v1/rpc/admin_register", httpx.Response(200, json=[]))
-    body = client.get("/admin/register?q=okafor&month=2026-09&page=2").text
-    assert "Nobody matches." in body
-    sent = json.loads(fake.sent("POST", "/rest/v1/rpc/admin_register")[0].content)
-    assert sent == {"p_search": "okafor", "p_month": "2026-09-01", "p_limit": 50, "p_offset": 50}
-    client.get("/admin/register?month=2026-13")
-    assert json.loads(fake.sent("POST", "/rest/v1/rpc/admin_register")[1].content)["p_month"] is None
+    assert "Bayo Lawal" not in client.get("/admin/investors?q=okafor").text
+    body = client.get("/admin/investors?month=2026-09").text
+    assert "Chidi Eze" in body and "Ada Okafor" not in body
+    assert "No register entry is linked to an account yet." in client.get("/admin/investors?account=linked").text
 
 
 def test_an_empty_register_says_so(client, fake):
-    sign_in(client, fake)
-    fake.on("POST", "/rest/v1/rpc/admin_register_months", httpx.Response(200, json=[]))
-    fake.on("POST", "/rest/v1/rpc/admin_register", httpx.Response(200, json=[]))
-    body = client.get("/admin/register").text
+    sign_in(client, fake, entries=[])
+    body = client.get("/admin/investors").text
     assert "The register is empty. Add entries to start it." in body
-    assert "The register has no entries yet." in body
+    assert "No register entry matches these filters." in body
 
 
-def test_a_reviewer_cannot_open_the_register(client, fake):
+def test_a_reviewer_cannot_open_the_investors_page(client, fake):
     sign_in(client, fake, role="reviewer")
-    for path in ("/admin/register", "/admin/register/add"):
+    for path in ("/admin/investors", "/admin/register", "/admin/register/add"):
         r = client.get(path)
         assert r.status_code == 307 and r.headers["location"] == "/admin", path
-    r = client.post("/admin/register/add", data={"entries": "001\tAda Okafor\t2026-07-01"}, headers={"origin": "http://testserver"})
+    r = client.post("/admin/investors/register", data={"entries": "001\tAda Okafor\t2026-07-01"}, headers=ORIGIN)
     assert r.status_code == 303 and r.headers["location"] == "/admin"
     assert not fake.sent("POST", "/rest/v1/rpc/admin_register_add")
+
+
+def test_the_old_register_addresses_lead_to_the_investors_page(client, fake):
+    sign_in(client, fake)
+    assert client.get("/admin/register").headers["location"] == "/admin/investors"
+    assert client.get("/admin/register/add").headers["location"] == "/admin/investors?add=1"
+    assert '<textarea id="add-text" name="entries"' in client.get("/admin/investors?add=1").text
 
 
 def test_a_pasted_list_is_sent_as_entries_and_the_admin_sees_the_counts(client, fake):
     sign_in(client, fake)
     fake.on("POST", "/rest/v1/rpc/admin_register_add", httpx.Response(200, json=[{"added": 4, "unchanged": 0}]))
-    r = client.post("/admin/register/add", data={"entries": AS_GIVEN}, headers={"origin": "http://testserver"})
-    assert r.status_code == 303 and r.headers["location"] == "/admin/register"
+    r = client.post("/admin/investors/register", data={"entries": AS_GIVEN}, headers=ORIGIN)
+    assert r.status_code == 303 and r.headers["location"] == "/admin/investors"
     sent = json.loads(fake.sent("POST", "/rest/v1/rpc/admin_register_add")[0].content)
     assert [e["register_no"] for e in sent["p_entries"]] == ["001", "002", "003", "004"]
     assert sent["p_entries"][0] == {"register_no": "001", "full_name": "Ada Okafor", "registered_on": "2026-07-01"}
-    fake.on("POST", "/rest/v1/rpc/admin_register_months", httpx.Response(200, json=MONTHS))
-    fake.on("POST", "/rest/v1/rpc/admin_register", httpx.Response(200, json=[]))
-    body = client.get("/admin/register").text
+    body = client.get("/admin/investors").text
     assert "4 entries added to the register. 9 lines without a date, such as headings or totals, were left out." in body
 
 
 def test_a_list_with_problems_is_shown_again_with_each_line_and_nothing_is_sent(client, fake):
     sign_in(client, fake)
     text = "001\tAda Okafor\t01/07/2026\n002\tBayo Lawal\t2026-07-02"
-    r = client.post("/admin/register/add", data={"entries": text}, headers={"origin": "http://testserver"})
-    assert r.status_code == 200
+    r = client.post("/admin/investors/register", data={"entries": text}, headers=ORIGIN)
+    assert r.status_code == 422
     assert "Nothing was added. Please correct the list." in r.text
     assert "<li>Line 1: write the date as 2026-07-01.</li>" in r.text
     assert "002\tBayo Lawal\t2026-07-02</textarea>" in r.text
@@ -225,10 +231,29 @@ def test_a_number_already_there_with_another_name_is_explained(client, fake):
     sign_in(client, fake)
     fake.on("POST", "/rest/v1/rpc/admin_register_add", httpx.Response(400, json={
         "code": "P0001", "message": "already in the register with a different name or date: 002", "details": None, "hint": None}))
-    r = client.post("/admin/register/add", data={"entries": "002\tBayo Lawal Jr\t2026-07-02"}, headers={"origin": "http://testserver"})
-    assert r.status_code == 200
+    r = client.post("/admin/investors/register", data={"entries": "002\tBayo Lawal Jr\t2026-07-02"}, headers=ORIGIN)
+    assert r.status_code == 422
     assert ("Nothing was added. These register numbers are already in the register with a different name or date: 002."
             in r.text)
+
+
+def test_an_entry_links_to_an_investor_account_by_email(client, fake):
+    sign_in(client, fake)
+    fake.on("POST", "/rest/v1/rpc/admin_register_link", httpx.Response(204))
+    r = client.post("/admin/investors/link", data={"no": "001", "email": "ada@fund.test"}, headers=ORIGIN)
+    assert r.status_code == 303 and r.headers["location"] == "/admin/investors"
+    assert json.loads(fake.sent("POST", "/rest/v1/rpc/admin_register_link")[0].content) == {"p_no": "001", "p_email": "ada@fund.test"}
+    assert "Linked register entry 001 to the account of ada@fund.test." in client.get("/admin/investors").text
+
+
+def test_an_email_no_investor_account_uses_is_explained(client, fake):
+    sign_in(client, fake)
+    fake.on("POST", "/rest/v1/rpc/admin_register_link", httpx.Response(400, json={
+        "code": "P0002", "message": "no investor account uses this email address", "details": None, "hint": None}))
+    r = client.post("/admin/investors/link", data={"no": "001", "email": "nobody@fund.test"}, headers=ORIGIN)
+    assert r.status_code == 422 and "No investor account uses nobody@fund.test." in r.text
+    r = client.post("/admin/investors/link", data={"no": "001", "email": "not an email"}, headers=ORIGIN)
+    assert r.status_code == 422 and "Enter the email address of the investor&#39;s account." in r.text
 
 
 def test_the_audit_log_shows_an_addition_with_its_numbers(client, fake):

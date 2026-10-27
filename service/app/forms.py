@@ -283,6 +283,13 @@ def parse_message(value: str) -> Parsed:
     return _done(e, {"body": body})
 
 
+def parse_report(value: str) -> Parsed:
+    """A report about a conversation, which the IkonetU team reads."""
+    e = Errors()
+    reason = _text(e, "reason", value, 10, "Say what happened, in at least 10 characters.", 2000, "Keep the report to 2,000 characters.")
+    return _done(e, {"reason": reason})
+
+
 # ---------------------------------------------------------------- venture details
 def parse_venture(name: str, sector: str, stage: str, description: str, website: str, ask: str | None = None) -> Parsed:
     e = Errors()

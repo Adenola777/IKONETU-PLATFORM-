@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
@@ -365,3 +366,437 @@ async def remove_signup(request: Request, user_id: str):
         (log_info if result.error.code in ("P0001", "42501") else log_error)("admin.signup_remove_failed", {"code": result.error.code})
         return _notice("/admin/founders?tab=unfinished", "The sign-up was not removed. Please try again.")
     return _notice("/admin/founders?tab=unfinished", f"Removed the sign-up for {found['email']}.")
+
+
+# ---------------------------------------------------------------- investors
+INVESTOR_PAGE = 15
+ACCOUNT_FILTERS = ("any", "linked", "not")
+
+
+def investor_filters(request: Request) -> dict:
+    acct = _get(request, "account", "any")
+    return {"q": _get(request, "q")[:120], "month": _get(request, "month", "all") or "all",
+            "account": acct if acct in ACCOUNT_FILTERS else "any"}
+
+
+def filter_register(rows: list[dict], f: dict) -> list[dict]:
+    """The Investors board's filter, on the whole register in register number order."""
+    q = f["q"].strip().lower()
+    return [r for r in rows if
+            (f["month"] == "all" or r["registered_on"][:7] == f["month"])
+            and (f["account"] == "any" or (f["account"] == "linked") == bool(r.get("account_id")))
+            and (not q or q in r["register_no"] or q in r["full_name"].lower())]
+
+
+def register_months(rows: list[dict]) -> list[dict]:
+    """Each month that holds entries, with the entries added in it and the running total, as the board counted them."""
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r["registered_on"][:7]] = counts.get(r["registered_on"][:7], 0) + 1
+    running, out = 0, []
+    total = len(rows) or 1
+    for k in sorted(counts):
+        running += counts[k]
+        out.append({"key": k, "label": av.month_name(k), "added": counts[k], "total": running,
+                    "style": f"width:{round(running / total * 100)}%"})
+    return out
+
+
+async def _investor_page(request: Request, v, states: dict | None = None, status_code: int = 200):
+    tab = _get(request, "tab", "register")
+    tab = tab if tab in ("register", "accounts", "pending") else "register"
+    register, accounts = await asyncio.gather(
+        v.db.rpc("admin_register", {"p_limit": 1000, "p_offset": 0}),
+        v.db.table("profiles").eq("role", "investor").order("created_at").limit(200).select(
+            "user_id, full_name, status, created_at, investor_profiles(investor_type, firm, website, based_in, sectors, stages, "
+            "countries, cheque_size, thesis)"),
+    )
+    rows = _rows(register, "admin.register_failed")
+    people = _rows(accounts, "admin.investors_failed")
+    f = investor_filters(request)
+    shown = filter_register(rows, f)
+    page = av.page_of(shown, av.page_number(_get(request, "page")), INVESTOR_PAGE)
+    linked_to = {r["account_id"]: r["register_no"] for r in rows if r.get("account_id")}
+    first = min((r["registered_on"][:7] for r in rows), default=None)
+    month_keys = []
+    if first:
+        y, m = int(first[:4]), int(first[5:7])
+        now = datetime.now(timezone.utc)
+        while (y, m) <= (now.year, now.month):
+            month_keys.append(f"{y:04d}-{m:02d}")
+            y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    base = {"q": f["q"], "month": f["month"], "account": f["account"]}
+    return await _page(request, v, "admin/investors.html", "investors", "Investors", {
+        "tab": tab, "f": f, "rows": page["rows"], "page": page, "total": len(rows), "shown": len(shown),
+        "failed": not register.ok or not accounts.ok, "months": register_months(rows), "month_keys": month_keys,
+        "introduced": sum(1 for r in rows if r["introductions"]),
+        "active": [p for p in people if p["status"] != "pending"], "pending": [p for p in people if p["status"] == "pending"],
+        "linked_to": linked_to, "linking": _get(request, "link"), "adding": _get(request, "add") == "1",
+        "link": lambda **changes: av.query("/admin/investors", {**base, **changes}),
+        "csv": av.query("/admin/investors.csv", base), "states": states or {},
+    }, status_code=status_code)
+
+
+@router.get("/admin/investors")
+async def investors(request: Request):
+    v = await require_staff(request, admin=True)
+    return await _investor_page(request, v)
+
+
+@router.get("/admin/investors.csv")
+async def investors_csv(request: Request):
+    v = await require_staff(request, admin=True)
+    rows = _rows(await v.db.rpc("admin_register", {"p_limit": 1000, "p_offset": 0}), "admin.register_failed")
+    shown = filter_register(rows, investor_filters(request))
+    return av.csv_response("ikonetu-investor-register.csv", ["Register number", "Name", "Registered", "Account"], [
+        [r["register_no"], r["full_name"], r["registered_on"], (r["account_email"] or "Linked") if r.get("account_id") else "Not linked"]
+        for r in shown])
+
+
+@router.post("/admin/investors/register")
+async def add_register_entries(request: Request):
+    """Adds a pasted list to the register through admin_register_add(), with the rules of the register import of
+    24 October: every entry or none, and an entry already there with the same name and date left as it was."""
+    from ..register import added_text, parse_register
+    from ..register import refusal_text as register_refusal
+
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    text = one(values, "entries")
+    parsed = parse_register(text)
+    if not parsed.ok:
+        return await _investor_page(request, v, {"add": {"message": "Nothing was added. Please correct the list.",
+                                                        "problems": parsed.errors[:20], "more": max(0, len(parsed.errors) - 20),
+                                                        "text": text}}, status_code=422)
+    result = await v.db.rpc("admin_register_add", {"p_entries": parsed.entries})
+    if not result.ok:
+        (log_info if result.error.code in ("P0001", "22023") else log_error)("admin.register_add_failed", {"code": result.error.code})
+        return await _investor_page(request, v, {"add": {"message": register_refusal(result.error.message), "problems": [],
+                                                        "more": 0, "text": text}}, status_code=422)
+    counts = _one(result, "admin.register_add_failed") or {}
+    added, unchanged = counts.get("added", 0), counts.get("unchanged", 0)
+    log_info("admin.register_added", {"added": added, "unchanged": unchanged})
+    return _notice("/admin/investors", added_text(added, unchanged, parsed.skipped))
+
+
+LINK_REFUSALS = (
+    (r"no investor account", "No investor account uses {email}."),
+    (r"already linked to register entry (\d+)", "That account is linked to register entry {0} already."),
+    (r"already linked to an account", "This register entry is linked to an account already."),
+    (r"not linked", "This register entry is not linked to an account."),
+)
+
+
+def link_refusal(message: str, email: str) -> str:
+    for pattern, text in LINK_REFUSALS:
+        m = re.search(pattern, message or "")
+        if m:
+            return text.format(*m.groups(), email=email)
+    return "The link was not saved. Please try again."
+
+
+@router.post("/admin/investors/link")
+async def link_register(request: Request):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    no, email = one(values, "no").strip(), one(values, "email").strip()
+    if not re.fullmatch(r"[0-9]{3,6}", no):
+        raise HTTPException(404)
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        return await _investor_page(request, v, {"link": {"no": no, "email": email,
+                                                         "message": "Enter the email address of the investor's account."}}, 422)
+    result = await v.db.rpc("admin_register_link", {"p_no": no, "p_email": email})
+    if not result.ok:
+        (log_info if result.error.code in ("P0001", "P0002") else log_error)("admin.register_link_failed", {"code": result.error.code})
+        return await _investor_page(request, v, {"link": {"no": no, "email": email,
+                                                         "message": link_refusal(result.error.message, email)}}, 422)
+    return _notice("/admin/investors", f"Linked register entry {no} to the account of {email}.")
+
+
+@router.post("/admin/investors/unlink")
+async def unlink_register(request: Request):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    no = one(values, "no").strip()
+    if not re.fullmatch(r"[0-9]{3,6}", no):
+        raise HTTPException(404)
+    result = await v.db.rpc("admin_register_unlink", {"p_no": no})
+    if not result.ok:
+        log_info("admin.register_unlink_failed", {"code": result.error.code})
+        return _notice("/admin/investors", link_refusal(result.error.message, ""))
+    return _notice("/admin/investors", f"Register entry {no} is no longer linked to an account.")
+
+
+@router.get("/admin/register")
+async def old_register(request: Request):
+    """The register page from before the redesign now lives on Investors."""
+    await require_staff(request, admin=True)
+    return redirect("/admin/investors")
+
+
+@router.get("/admin/register/add")
+async def old_register_add(request: Request):
+    await require_staff(request, admin=True)
+    return redirect("/admin/investors?add=1")
+
+
+# ---------------------------------------------------------------- introductions
+INTRO_SORTS = {"number": "Register number", "new": "Newest first", "founder": "Founder, A to Z", "messages": "Most messages"}
+INTRO_STATUSES = ("pending", "accepted", "declined", "withdrawn")
+STATUS_DONE = {"accepted": ("Marked accepted", "Marked accepted."), "declined": ("Marked declined", "Marked declined."),
+               "withdrawn": ("Withdrawn", "Introduction withdrawn."), "pending": ("Returned to pending", "Introduction pending again.")}
+
+
+def intro_row(n: dict) -> dict:
+    inv_sample, f_sample = n["sample"], n["founder_sample"]
+    f_no = "FND-" + n["record_id"][1:]
+    return {
+        **n, "inv_no_text": "Not on the register" if inv_sample else f"Register number {n['investor_no']}",
+        "inv_no_shown": "None" if inv_sample else n["investor_no"], "inv_tag": "Not on the register" if inv_sample else "On the register",
+        "f_tag": "Not on the register" if f_sample else "On the register", "f_name": n["founder_name"] or "(no name given)",
+        "f_no": "None" if f_sample else f_no, "f_no_text": "Not on the register" if f_sample else f_no,
+        "startup_text": n["startup"] or "Not given", "sector_text": n["sector"] or "Not given", "made": av.day_text(n["made_on"]),
+        "chip": av.INTRO_CHIPS[n["status"]], "inv_on": av.day_text(n["investor_registered_on"]),
+        "search": " ".join([n["investor_no"] or "", n["investor_name"], n["founder_name"], "" if f_sample else f_no.lower(),
+                            n["founder_email"], n["startup"]]).lower(),
+    }
+
+
+def filter_intros(rows: list[dict], q: str, status: str, sort: str) -> list[dict]:
+    q = q.strip().lower()
+    shown = [r for r in rows if (status == "any" or r["status"] == status) and (not q or q in r["search"])]
+    if sort == "messages":
+        return sorted(shown, key=lambda r: (-r["messages"], r["intro_id"]))
+    if sort == "founder":
+        return sorted(shown, key=lambda r: (av.name_key(r["f_name"]), r["intro_id"]))
+    if sort == "new":
+        return sorted(shown, key=lambda r: r["intro_id"], reverse=True)
+    return sorted(shown, key=lambda r: (r["investor_no"] or "~", r["intro_id"]))
+
+
+def intro_query(request: Request) -> tuple[str, str, str]:
+    status, sort = _get(request, "status", "any"), _get(request, "sort", "number")
+    return _get(request, "q")[:120], status if status in INTRO_STATUSES else "any", sort if sort in INTRO_SORTS else "number"
+
+
+@router.get("/admin/introductions")
+async def introductions(request: Request):
+    v = await require_staff(request, admin=True)
+    result = await v.db.rpc("admin_register_introductions")
+    rows = [intro_row(n) for n in _rows(result, "admin.introductions_failed")]
+    q, status, sort = intro_query(request)
+    shown = filter_intros(rows, q, status, sort)
+    page = av.page_of(shown, av.page_number(_get(request, "page")), PAGE)
+    counts = {k: sum(1 for r in rows if r["status"] == k) for k in INTRO_STATUSES}
+    base = {"q": q, "status": status, "sort": None if sort == "number" else sort}
+    return await _page(request, v, "admin/introductions.html", "introductions", "Introductions", {
+        "rows": page["rows"], "page": page, "total": len(rows), "shown": len(shown), "counts": counts, "failed": not result.ok,
+        "q": q, "status": status, "sort": sort, "INTRO_SORTS": INTRO_SORTS,
+        "link": lambda **changes: av.query("/admin/introductions", {**base, **changes}), "csv": av.query("/admin/introductions.csv", base),
+        "subtitle": (f"{av.plural(len(rows), 'introduction')} · {counts['pending']} pending · {counts['accepted']} accepted"),
+    })
+
+
+@router.get("/admin/introductions.csv")
+async def introductions_csv(request: Request):
+    v = await require_staff(request, admin=True)
+    rows = [intro_row(n) for n in _rows(await v.db.rpc("admin_register_introductions"), "admin.introductions_failed")]
+    shown = filter_intros(rows, *intro_query(request))
+    head = ["Made", "Register number", "Investor", "Founder", "Founder register number", "Founder email", "Founder phone", "Startup",
+            "Sector", "Status", "Messages", "Note"]
+    return av.csv_response("ikonetu-introductions.csv", head, [
+        [r["made"], r["investor_no"] or "S01", r["investor_name"], r["f_name"], r["f_no"], r["founder_email"], r["founder_phone"],
+         r["startup_text"], r["sector_text"], r["chip"], r["messages"], r["note"] or "None"] for r in shown])
+
+
+@router.get("/admin/introductions/{intro_id}")
+async def introduction(request: Request, intro_id: str):
+    v = await require_staff(request, admin=True)
+    if not re.fullmatch(r"[ns][0-9]{3,6}", intro_id):
+        raise HTTPException(404)
+    found, log = await asyncio.gather(
+        v.db.rpc("admin_register_introductions", {"p_id": intro_id}),
+        v.db.table("audit_log").eq("entity", "register_introductions").eq("entity_id", intro_id).order("id", ascending=False)
+        .limit(50).select("id, actor_id, after, created_at"))
+    rows = _rows(found, "admin.introduction_failed")
+    if not rows:
+        raise HTTPException(404)
+    n = intro_row(rows[0])
+    history = [{"text": STATUS_DONE.get((e.get("after") or {}).get("status"), ("Changed",))[0], "at": av.long_text(e["created_at"])}
+               for e in _rows(log, "admin.introduction_log_failed")]
+    if n.get("accepted_on"):
+        history.append({"text": f"Accepted by {n['f_name']}, which opened their conversation", "at": av.day_text(n["accepted_on"])})
+    history.append({"text": "Introduction made", "at": n["made"]})
+    return await _page(request, v, "admin/introduction.html", "introductions", "Introduction", {
+        "n": n, "history": history, "tel": av.tel(n["founder_phone"]) if n["founder_phone"] else None,
+        "joined": av.long_text(n["founder_joined_at"])})
+
+
+@router.post("/admin/introductions/{intro_id}/status")
+async def introduction_status(request: Request, intro_id: str):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    status = one(values, "status")
+    if not re.fullmatch(r"[ns][0-9]{3,6}", intro_id) or status not in INTRO_STATUSES:
+        raise HTTPException(404)
+    result = await v.db.rpc("admin_register_introduction_status", {"p_id": intro_id, "p_status": status})
+    if not result.ok:
+        (log_info if result.error.code in ("P0001", "P0002") else log_error)("admin.introduction_status_failed", {"code": result.error.code})
+        return _notice(f"/admin/introductions/{intro_id}", "The status did not change, because the introduction changed meanwhile.")
+    return _notice(f"/admin/introductions/{intro_id}", STATUS_DONE[status][1])
+
+
+# ---------------------------------------------------------------- pitch videos in Google Drive
+VIDEO_TABS = (("pending", "Pending review"), ("approved", "Approved"), ("rejected", "Rejected"), ("all", "All"))
+
+
+def video_row(r: dict) -> dict:
+    added = av.day_text(r["added_on"])
+    decided = None
+    if r["status"] != "pending":
+        who = r.get("decided_by_name") or "an admin"
+        verb = "Approved" if r["status"] == "approved" else "Rejected"
+        decided = f"{verb} by {who}, {av.long_text(r['decided_at'])}." + (f" Reason: {r['reason']}" if r.get("reason") else "")
+    return {**r, "kind": f"{r['file_type']} · {r['size_text']}", "source": r["folder"].split(" / ")[0] + " folder",
+            "uploaded": f"to Google Drive {added}", "chip": av.VIDEO_CHIPS[r["status"]], "decided": decided,
+            "meta": f"{r['file_type']} · {r['size_text']} · {r['folder']} · added to Google Drive {added}",
+            "transcript_text": r.get("transcript") or "No transcript came with this file."}
+
+
+def in_tab(r: dict, tab: str) -> bool:
+    return tab == "all" or r["status"] == tab
+
+
+async def _videos(v) -> list[dict]:
+    return [video_row(r) for r in _rows(await v.db.rpc("admin_pitch_videos"), "admin.videos_failed")]
+
+
+@router.get("/admin/videos")
+async def videos(request: Request):
+    v = await require_staff(request, admin=True)
+    result = await v.db.rpc("admin_pitch_videos")
+    rows = [video_row(r) for r in _rows(result, "admin.videos_failed")]
+    tab = _get(request, "tab", "pending")
+    tab = tab if tab in dict(VIDEO_TABS) else "pending"
+    shown = [r for r in rows if in_tab(r, tab)]
+    chosen = _get(request, "video")
+    sel = next((r for r in shown if r["video_id"] == chosen), shown[0] if shown else None)
+    pending = sum(1 for r in rows if r["status"] == "pending")
+    return await _page(request, v, "admin/videos.html", "videos", "Pitch videos", {
+        "tab": tab, "tabs": [(k, label, sum(1 for r in rows if in_tab(r, k))) for k, label in VIDEO_TABS],
+        "items": shown, "sel": sel, "failed": not result.ok, "reason_missing": _get(request, "reason") == "missing",
+        "subtitle": f"{pending} {'video waits' if pending == 1 else 'videos wait'} for review · {av.plural(len(rows), 'video')} in all",
+    })
+
+
+def _next_video(rows: list[dict], tab: str, done_id: str) -> str | None:
+    """After a decision the board kept the video if it stays in the list, and otherwise moved to the next one waiting."""
+    shown = [r for r in rows if in_tab(r, tab)]
+    if any(r["video_id"] == done_id for r in shown):
+        return done_id
+    nxt = next((r for r in shown if r["status"] == "pending"), shown[0] if shown else None)
+    return nxt["video_id"] if nxt else None
+
+
+async def _after_video(v, tab: str, video_id: str, message: str):
+    rows = await _videos(v)
+    nxt = _next_video(rows, tab if tab in dict(VIDEO_TABS) else "pending", video_id)
+    return _notice(av.query("/admin/videos", {"tab": None if tab == "pending" else tab, "video": nxt}), message)
+
+
+@router.post("/admin/videos/{video_id}/approve")
+async def approve_video(request: Request, video_id: str):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    if not re.fullmatch(r"t[0-9]{2,6}", video_id):
+        raise HTTPException(404)
+    tab = one(values, "tab")
+    checks = {k: one(values, k) == "on" for k, _ in av.VIDEO_CHECKS}
+    result = await v.db.rpc("admin_pitch_video_decide", {"p_id": video_id, "p_decision": "approved", "p_checks": checks})
+    name = next((r["file_name"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
+    if not result.ok:
+        log_info("admin.video_decide_refused", {"video": video_id, "code": result.error.code})
+        text = "Tick all four to approve." if result.error.code == "22023" else "This video has been reviewed already."
+        return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id}), text)
+    return await _after_video(v, tab, video_id, f"Approved the {name} pitch video.")
+
+
+@router.post("/admin/videos/{video_id}/reject")
+async def reject_video(request: Request, video_id: str):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    if not re.fullmatch(r"t[0-9]{2,6}", video_id):
+        raise HTTPException(404)
+    tab, reason = one(values, "tab"), one(values, "reason")
+    if reason not in av.REJECT_REASONS:
+        return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id, "reason": "missing"}), "Choose a reason first.")
+    result = await v.db.rpc("admin_pitch_video_decide", {"p_id": video_id, "p_decision": "rejected", "p_reason": reason})
+    name = next((r["file_name"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
+    if not result.ok:
+        log_info("admin.video_decide_refused", {"video": video_id, "code": result.error.code})
+        return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id}), "This video has been reviewed already.")
+    return await _after_video(v, tab, video_id,
+                              f"Rejected the {name} pitch video. The reason is kept with the file, because no founder account is linked to it.")
+
+
+@router.post("/admin/videos/{video_id}/reopen")
+async def reopen_video(request: Request, video_id: str):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    if not re.fullmatch(r"t[0-9]{2,6}", video_id):
+        raise HTTPException(404)
+    tab = one(values, "tab")
+    result = await v.db.rpc("admin_pitch_video_reopen", {"p_id": video_id})
+    name = next((r["file_name"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
+    if not result.ok:
+        log_info("admin.video_reopen_refused", {"video": video_id, "code": result.error.code})
+        return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id}), "This video is waiting for review already.")
+    return await _after_video(v, tab, video_id, f"The {name} pitch video is pending review again.")
+
+
+# ---------------------------------------------------------------- reports and evidence
+@router.get("/admin/content")
+async def content(request: Request):
+    """Open reports and the evidence waiting for a decision. Reviewers and admins both work here."""
+    from ..forms import signal_label
+
+    v = await require_staff(request)
+    tab = "evidence" if _get(request, "tab") == "evidence" else "reports"
+    reports, evidence, stale = await asyncio.gather(
+        v.db.rpc("admin_reports"),
+        v.db.table("evidence").in_("status", list(legacy.WAITING)).order("created_at").limit(200)
+        .select("id, signal_code, summary, created_at, ventures(name), evidence_files(id)"),
+        v.db.rpc("ventures_with_stale_scores"))
+    now = datetime.now(timezone.utc)
+    open_reports = [{**r, "when": av.day_text(r["created_at"])} for r in _rows(reports, "admin.reports_failed")]
+    waiting = [{**e, "sent": av.day_text(e["created_at"]), "signal": signal_label(e["signal_code"]),
+                "files": len(e.get("evidence_files") or []), "waiting": (now - av.moment(e["created_at"])).days}
+               for e in _rows(evidence, "admin.evidence_failed")]
+    return await _page(request, v, "admin/content.html", "moderation", "Reports and Evidence", {
+        "tab": tab, "reports": open_reports, "evidence": waiting, "stale": _rows(stale, "admin.stale_failed"),
+        "resolving": _get(request, "resolve"), "score_failed": _get(request, "score") == "failed",
+        "failed": not reports.ok or not evidence.ok,
+    })
+
+
+@router.get("/admin/evidence")
+async def old_queue(request: Request):
+    """The evidence queue from before the redesign now lives on Reports and Evidence."""
+    await require_staff(request)
+    return redirect("/admin/content?tab=evidence")
+
+
+@router.post("/admin/content/reports/{report_id}/resolve")
+async def resolve_report(request: Request, report_id: str):
+    values = await form_data(request)
+    v = await require_staff(request)
+    if not ID.fullmatch(report_id):
+        raise HTTPException(404)
+    note = one(values, "note").strip()
+    if not 5 <= len(note) <= 280:
+        return _notice(f"/admin/content?resolve={report_id}", "Say what was done in 5 to 280 characters.")
+    result = await v.db.rpc("admin_report_resolve", {"p_id": report_id, "p_note": note})
+    if not result.ok:
+        log_info("admin.report_resolve_refused", {"code": result.error.code})
+        return _notice("/admin/content", "The report was not resolved, because it changed meanwhile.")
+    return _notice("/admin/content", "The report is resolved.")

@@ -40,8 +40,10 @@
 </header>
 <details class="ch-note">
 <summary>{{ icon("lock", 15) }}<span class="q">Only the two of you can read this conversation.</span><span class="chev">{{ icon("chevron-down", 16) }}</span></summary>
-<p>IkonetU does not provide investment advice and takes no part in any investment. Your own diligence decides. New messages appear when the page reloads. To report anything that makes you uncomfortable, use Report this conversation in the menu, and your email program opens with the conversation's reference filled in.</p>
+<p>IkonetU does not provide investment advice and takes no part in any investment. Your own diligence decides. New messages appear when the page reloads. To report anything that makes you uncomfortable, use Report this conversation in the menu. The report goes to the IkonetU team with the conversation's reference.</p>
 </details>
+{% set sent_report = states.get("report", {}) %}
+{% if sent_report.get("status") == "sent" %}<p class="status status-ok ch-sent" role="status">{{ sent_report.message }}</p>{% endif %}
 <div class="ch-scroll">
 <ol class="ch-list" aria-label="Messages">
 {% for m in thread %}

@@ -1,0 +1,63 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import chip %}
+{# The introduction detail board: the investor and the founder, the status and its actions, the note, the count of
+   messages and the history. #}
+{% block main %}
+<a href="/admin/introductions" class="a-back">Back to introductions</a>
+<header class="a-card" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<h1 class="a-h1" style="font-size:24px;line-height:1.3;overflow-wrap:anywhere">{{ n.investor_name }} and {{ n.f_name }}</h1>
+<p class="a-sub">Made {{ n.made }}</p>
+</div>
+{{ chip(n.status, n.chip) }}
+</header>
+<div class="a-grid-2">
+<section aria-labelledby="iv-h" class="a-card" style="gap:12px">
+<div class="a-titled"><h2 id="iv-h" class="a-h2">Investor</h2>{{ chip("muted" if n.sample else "i", n.inv_tag) }}</div>
+<dl class="a-pairs">
+<dt>Name</dt><dd class="a-strong">{{ n.investor_name }}</dd>
+<dt>Register number</dt><dd>{{ n.inv_no_shown }}</dd>
+<dt>Registered</dt><dd>{{ n.inv_on }}</dd>
+</dl>
+<a href="/admin/investors" class="a-go">Open the investor register</a>
+</section>
+<section aria-labelledby="fo-h" class="a-card" style="gap:12px">
+<div class="a-titled"><h2 id="fo-h" class="a-h2">Founder</h2>{{ chip("muted" if n.founder_sample else "i", n.f_tag) }}</div>
+<dl class="a-pairs">
+<dt>Name</dt><dd class="a-strong">{{ n.f_name }}</dd>
+<dt>Register number</dt><dd>{{ n.f_no }}</dd>
+<dt>Startup</dt><dd>{{ n.startup_text }}</dd>
+<dt>Sector</dt><dd>{{ n.sector_text }}</dd>
+<dt>Country</dt><dd>{{ n.country_key or "Not given" }}</dd>
+<dt>Email</dt><dd>{% if n.founder_email %}<a href="mailto:{{ n.founder_email }}">{{ n.founder_email }}</a>{% else %}Not given{% endif %}</dd>
+<dt>Phone</dt><dd>{% if tel %}<a href="{{ tel }}">{{ n.founder_phone }}</a>{% else %}Not given{% endif %}</dd>
+<dt>Joined</dt><dd>{{ joined }}</dd>
+</dl>
+<a href="/admin/founders" class="a-go">Open founders</a>
+</section>
+</div>
+<div class="a-grid-2" style="align-items:start">
+<section aria-labelledby="st-h" class="a-card" style="gap:12px">
+<h2 id="st-h" class="a-h2">Status</h2>
+{% if n.status == "pending" %}
+<div class="a-btns">
+{% for status, label, cls in [("accepted", "Mark accepted", "a-btn-ok"), ("declined", "Mark declined", "a-btn-n"), ("withdrawn", "Withdraw", "a-btn-quiet")] %}
+<form method="post" action="/admin/introductions/{{ n.intro_id }}/status"><input type="hidden" name="status" value="{{ status }}"><button type="submit" class="a-btn {{ cls }}">{{ label }}</button></form>
+{% endfor %}
+</div>
+{% else %}
+<form method="post" action="/admin/introductions/{{ n.intro_id }}/status" style="align-self:flex-start"><input type="hidden" name="status" value="pending"><button type="submit" class="a-btn a-btn-n">Return to pending</button></form>
+{% endif %}
+<dl class="a-pairs">
+<dt>Note</dt><dd>{{ n.note or "None" }}</dd>
+<dt>Messages</dt><dd>{{ n.messages }} sent</dd>
+</dl>
+</section>
+<section aria-labelledby="hi-h" class="a-card" style="gap:4px">
+<h2 id="hi-h" class="a-h2" style="margin-bottom:8px">History</h2>
+<div class="a-history">
+{% for h in history %}<div><span>{{ h.text }}</span><span>{{ h.at }}</span></div>{% endfor %}
+</div>
+</section>
+</div>
+{% endblock %}

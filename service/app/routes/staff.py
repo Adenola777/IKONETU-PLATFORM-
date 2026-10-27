@@ -18,8 +18,7 @@ from ..activity import feed_entry, load_feed
 from ..forms import REVIEW_LANES, parse_decision
 from ..jsfmt import number_text, parse_int, search_params, to_fixed
 from ..log import log_error, log_info
-from ..register import added_text, parse_register, register_lines
-from ..register import refusal_text as register_refusal
+from ..register import register_lines
 from ..score_engine import RUBRIC_V3
 from ..scoring import record_venture_score
 from ..session import require_staff
@@ -90,22 +89,6 @@ def _actor(names: dict[str, str], actor_id: str | None) -> str:
 
 
 # ---------------------------------------------------------------- investors
-@router.get("/admin/investors")
-async def investors(request: Request):
-    """Admins approve or decline investor accounts. Pending accounts come first, oldest first."""
-    v = await require_staff(request, admin=True)
-    result = await v.db.table("profiles").eq("role", "investor").order("created_at").limit(200).select(
-        "user_id, full_name, status, created_at, investor_profiles(investor_type, firm, website, based_in, sectors, stages, "
-        "countries, cheque_size, thesis)"
-    )
-    rows = result.data or []
-    return render(request, "staff/investors.html", {
-        "role": _role(v), "failed": not result.ok,
-        "pending": [r for r in rows if r["status"] == "pending"],
-        "decided": [r for r in rows if r["status"] != "pending"][::-1],
-    }, _meta("Investors"))
-
-
 @router.post("/admin/investors/decide")
 async def decide_investor(request: Request):
     """An admin approves or declines an investor. The database checks the role again and writes the audit log."""
@@ -116,34 +99,22 @@ async def decide_investor(request: Request):
         result = await v.db.rpc("decide_investor", {"p_user": user, "p_approve": one(values, "approve") == "yes"})
         if not result.ok:
             log_error("investor.decide_failed", {"code": result.error.code})
-    return redirect("/admin/investors")
+        else:
+            done = "approved" if one(values, "approve") == "yes" else "declined or suspended"
+            return redirect("/admin/investors?tab=pending", {"form": "notice", "status": "sent", "message": f"The investor is {done}."})
+    return redirect("/admin/investors?tab=pending")
 
 
 # ---------------------------------------------------------------- evidence
-@router.get("/admin/evidence")
-async def queue(request: Request):
-    """Evidence waiting for a decision, oldest first, and any venture whose score missed an update."""
-    v = await require_staff(request)
-    stale, result = await asyncio.gather(
-        v.db.rpc("ventures_with_stale_scores"),
-        v.db.table("evidence").in_("status", list(WAITING)).order("created_at").limit(200)
-        .select("id, signal_code, summary, created_at, ventures(name)"),
-    )
-    return render(request, "staff/queue.html", {
-        "role": _role(v), "score_failed": _single(request, "score") == "failed", "stale": stale.data or [],
-        "rows": result.data or [], "failed": not result.ok,
-    }, _meta("Evidence to review"))
-
-
 @router.post("/admin/evidence/recompute")
 async def recompute(request: Request):
     """Recomputes the score of a venture whose score missed an update after a decision."""
     v = await require_staff(request)
     venture = one(await form_data(request), "venture")
     if not ID.fullmatch(venture):
-        return redirect("/admin/evidence")
+        return redirect("/admin/content?tab=evidence")
     scored = await record_venture_score(v.db, venture, None)
-    return redirect("/admin/evidence" if scored else "/admin/evidence?score=failed")
+    return redirect("/admin/content?tab=evidence" if scored else "/admin/content?tab=evidence&score=failed")
 
 
 async def _review_page(request: Request, v, evidence_id: str, states: dict | None = None):
@@ -219,7 +190,7 @@ async def decide(request: Request, evidence_id: str):
         return await _review_page(request, v, evidence_id, failed("decision", message, values=values))
     ev = await v.db.table("evidence").eq("id", ident).maybe_single("venture_id")
     scored = await record_venture_score(v.db, ev.data["venture_id"], ident) if ev.data else False
-    return redirect("/admin/evidence" if scored else "/admin/evidence?score=failed")
+    return redirect("/admin/content?tab=evidence" if scored else "/admin/content?tab=evidence&score=failed")
 
 
 # ---------------------------------------------------------------- ventures
@@ -422,71 +393,6 @@ async def set_status(request: Request, user_id: str):
 
 # ---------------------------------------------------------------- investor register
 MONTH = re.compile(r"([0-9]{4})-(0[1-9]|1[0-2])")
-
-
-@router.get("/admin/register")
-async def register(request: Request):
-    """The investor register, in register number order, with the entries of each month and the running total."""
-    v = await require_staff(request, admin=True)
-    q = _search(request)
-    asked = _single(request, "month") or ""
-    month = asked if MONTH.fullmatch(asked) else None
-    page = _page(request)
-    result, months = await asyncio.gather(
-        v.db.rpc("admin_register", {"p_search": q or None, "p_month": f"{month}-01" if month else None,
-                                    "p_limit": PAGE, "p_offset": (page - 1) * PAGE}),
-        v.db.rpc("admin_register_months"),
-    )
-    if not result.ok:
-        log_error("admin.register_failed", {"code": result.error.code})
-    if not months.ok:
-        log_error("admin.register_months_failed", {"code": months.error.code})
-    rows = result.data or []
-    month_rows = months.data or []
-
-    def link(p: int) -> str:
-        pairs = [*((("q", q),) if q else ()), *((("month", month),) if month else ()), ("page", str(p))]
-        return "/admin/register?" + search_params(pairs)
-
-    return render(request, "staff/register.html", {
-        "q": q, "month": month, "page": page, "rows": rows, "total": rows[0]["total_count"] if rows else 0,
-        "failed": not result.ok, "months": month_rows, "months_failed": not months.ok,
-        "in_register": month_rows[-1]["running_total"] if month_rows else 0, "PAGE": PAGE, "link": link,
-    }, _meta("Investor register"))
-
-
-def _register_add_page(request: Request, states: dict | None = None):
-    return render(request, "staff/register_add.html", {"states": states or {}}, _meta("Add to the investor register"))
-
-
-@router.get("/admin/register/add")
-async def register_add_form(request: Request):
-    await require_staff(request, admin=True)
-    return _register_add_page(request)
-
-
-@router.post("/admin/register/add")
-async def register_add(request: Request):
-    """Adds a pasted list to the register through admin_register_add(), which adds every entry or none and writes the
-    audit log. An entry already there with the same name and date stays as it was."""
-    values = await form_data(request)
-    v = await require_staff(request, admin=True)
-    text = one(values, "entries")
-    parsed = parse_register(text)
-    if not parsed.ok:
-        return _register_add_page(request, {"add": {"status": "error", "message": "Nothing was added. Please correct the list.",
-                                                    "problems": parsed.errors[:20], "more": max(0, len(parsed.errors) - 20),
-                                                    "values": values}})
-    result = await v.db.rpc("admin_register_add", {"p_entries": parsed.entries})
-    if not result.ok:
-        (log_info if result.error.code in ("P0001", "22023") else log_error)("admin.register_add_failed", {"code": result.error.code})
-        return _register_add_page(request, {"add": {"status": "error", "message": register_refusal(result.error.message),
-                                                    "values": values}})
-    data = result.data
-    counts = (data[0] if data else None) if isinstance(data, list) else data
-    added, unchanged = (counts or {}).get("added", 0), (counts or {}).get("unchanged", 0)
-    log_info("admin.register_added", {"added": added, "unchanged": unchanged})
-    return redirect("/admin/register", {"form": "added", "status": "sent", "message": added_text(added, unchanged, parsed.skipped)})
 
 
 # ---------------------------------------------------------------- audit log

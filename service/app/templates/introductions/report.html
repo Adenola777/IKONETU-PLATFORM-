@@ -1,0 +1,32 @@
+{% extends "app/shell.html" %}
+{# Reporting a conversation to the IkonetU team. The founder or the investor in it says what happened; the report
+   reaches the team's Reports list with the conversation's reference, and the other person is not told who sent it. #}
+{% from "app/ui.html" import field_error, invalid, form_status %}
+{% set role = "founder" if i_am_founder else "investor" %}
+{% set current = "introductions" if i_am_founder else "requests" %}
+{% block main %}
+{% set st = states.get("report", {}) %}
+{% set errors = st.get("errors", {}) %}
+{% set values = st.get("values", {}) %}
+<div class="fr-page">
+<a href="/introductions/{{ i.id }}" class="back">{{ icon("arrow-left", 16) }} Back to the conversation</a>
+<div>
+<h1 class="fr-h1">Report this conversation</h1>
+<p class="fr-sub">Your conversation with {{ other }} about {{ i.venture_name }}. The IkonetU team reads your report. We do not tell {{ other }} who sent it.</p>
+</div>
+<form class="form" method="post" action="/introductions/{{ i.id }}/report" novalidate style="max-width:640px">
+{{ form_status(st) }}
+<div class="field">
+<label for="r-reason">What happened</label>
+<textarea id="r-reason" name="reason" class="input" rows="6" maxlength="2000" required{{ invalid(errors, "reason", "r-hint") }}>{{ values.get("reason", "") }}</textarea>
+<p id="r-hint" class="hint">Say what happened and when. If you believe that someone is in immediate danger, contact the police first.</p>
+{{ field_error(errors, "reason") }}
+</div>
+<div class="row">
+<button type="submit" class="btn {{ 'btn-f' if i_am_founder else 'btn-i' }}" data-pending="Sending…">Send the report</button>
+<a href="/introductions/{{ i.id }}" class="btn btn-n">Cancel</a>
+</div>
+<p class="hint">You can also email <a href="mailto:info@ikonetu.com">info@ikonetu.com</a>. The <a href="/complaints">reporting and complaints policy</a> says what happens next.</p>
+</form>
+</div>
+{% endblock %}

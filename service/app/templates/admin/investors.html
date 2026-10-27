@@ -1,0 +1,201 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import tabs, pager, chip %}
+{# The Investors board: the investor register with its monthly progression, adding entries, linking an entry to an
+   investor's account, and the investor accounts and the ones awaiting approval. #}
+{% macro investor_details(r) -%}
+{% set d = r.investor_profiles %}
+{% if d %}
+<dl class="a-pairs">
+<dt>Type</dt><dd>{{ INVESTOR_TYPE_NAME.get(d.investor_type, d.investor_type) }}</dd>
+<dt>Fund or firm</dt><dd>{{ d.firm if d.firm is not none else "None given" }}</dd>
+<dt>Website</dt><dd>{% if d.website %}<a href="{{ d.website }}" target="_blank" rel="noopener nofollow">{{ d.website }}</a>{% else %}None given{% endif %}</dd>
+<dt>Based in</dt><dd>{{ based_in_name(d.based_in) }}</dd>
+<dt>Sectors</dt><dd>{{ d.sectors | join(", ") }}</dd>
+<dt>Stages</dt><dd>{{ d.stages | map("stage_label_of") | join(", ") if d.stages else "Any" }}</dd>
+<dt>Countries</dt><dd>{{ d.countries | map("country_name_of") | join(", ") if d.countries else "Any" }}</dd>
+<dt>Cheque size</dt><dd>{{ d.cheque_size }}</dd>
+<dt>Looks for</dt><dd>{{ d.thesis if d.thesis is not none else "Not given" }}</dd>
+</dl>
+{% else %}
+<p class="a-note">This person has not finished their investor details.</p>
+{% endif %}
+{%- endmacro %}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Investors</h1>
+<p class="a-sub">{{ total }} on the register · {{ introduced }} introduced to founders</p>
+</div>
+<div class="a-btns">
+<a href="{{ csv }}" class="a-btn a-btn-n" download>Export CSV</a>
+<a href="{{ '/admin/investors' if adding else '/admin/investors?add=1' }}" class="a-btn" aria-expanded="{{ 'true' if adding or states.add else 'false' }}">Add register entries</a>
+</div>
+</header>
+{% if failed %}<p class="a-alert" role="alert">The register or the investor accounts could not be read. Please reload the page.</p>{% endif %}
+
+{% if adding or states.add %}
+<section aria-labelledby="add-h" class="a-card">
+<h2 id="add-h" class="a-h2">Add register entries</h2>
+<form method="post" action="/admin/investors/register" style="display:flex;flex-direction:column;gap:10px">
+<label for="add-text" class="a-label">One entry a line: register number, name and date, such as 054, Ada Okafor, 2026-10-24</label>
+<textarea id="add-text" name="entries" rows="5" class="a-textarea"{% if states.add %} aria-invalid="true"{% endif %}>{{ states.add.text if states.add else "" }}</textarea>
+{% if states.add %}
+<div class="a-alert" role="alert">{{ states.add.message }}
+{% if states.add.problems %}<ul>{% for p in states.add.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+{% if states.add.more %}<p style="margin:6px 0 0;font-weight:400">{{ states.add.more }} more lines have problems.</p>{% endif %}
+</div>
+{% endif %}
+<div class="a-btns">
+<button type="submit" class="a-btn">Add to the register</button>
+<a href="/admin/investors" class="a-btn a-btn-n">Cancel</a>
+</div>
+</form>
+</section>
+{% endif %}
+
+{{ tabs("Investor views", [
+  ("register", "Register", total, "/admin/investors"),
+  ("accounts", "Accounts", active | length, "/admin/investors?tab=accounts"),
+  ("pending", "Awaiting approval", pending | length, "/admin/investors?tab=pending"),
+], tab) }}
+
+{% if tab == "register" %}
+<section aria-labelledby="months-h" style="display:flex;flex-direction:column;gap:10px">
+<h2 id="months-h" class="a-h2">Monthly progression</h2>
+<div class="a-scards" style="grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:16px">
+{% for m in months %}
+<a href="{{ link(month=none if f.month == m.key else m.key, page=none) }}" class="a-scard" aria-current="{{ 'true' if f.month == m.key else 'false' }}" style="padding:16px 20px">
+<span class="a-scard-label">{{ m.label }}</span>
+<span class="a-scard-count">{{ m.added }}</span>
+<span class="a-scard-range">Running total {{ m.total }}</span>
+<span aria-hidden="true" class="a-track a-track-i" style="width:100%;height:6px"><i style="{{ m.style }}"></i></span>
+</a>
+{% else %}
+<p class="a-note">The register is empty. Add entries to start it.</p>
+{% endfor %}
+</div>
+</section>
+
+<form role="search" method="get" action="/admin/investors" class="a-filters" data-auto>
+<div class="a-field a-field-grow">
+<label for="i-q">Number or name</label>
+<input id="i-q" name="q" type="search" class="a-input" value="{{ f.q }}">
+</div>
+<div class="a-field">
+<label for="i-month">Month registered</label>
+<select id="i-month" name="month" class="a-select">
+<option value="all">All months</option>
+{% for k in month_keys %}<option value="{{ k }}"{% if f.month == k %} selected{% endif %}>{{ av.month_name(k) }}</option>{% endfor %}
+</select>
+</div>
+<div class="a-field">
+<label for="i-acct">Account</label>
+<select id="i-acct" name="account" class="a-select">
+<option value="any"{% if f.account == "any" %} selected{% endif %}>Any</option>
+<option value="linked"{% if f.account == "linked" %} selected{% endif %}>Linked to an account</option>
+<option value="not"{% if f.account == "not" %} selected{% endif %}>Not linked</option>
+</select>
+</div>
+<button type="submit" class="a-btn a-btn-n" data-apply>Show</button>
+<a href="/admin/investors" class="a-btn a-btn-n">Clear</a>
+</form>
+
+{% set link_state = states.link if states.link else none %}
+{% set link_no = link_state.no if link_state else linking %}
+{% if link_no %}
+<section aria-labelledby="link-h" class="a-card">
+<h2 id="link-h" class="a-h2">Link register entry {{ link_no }} to an investor account</h2>
+<form method="post" action="/admin/investors/link" class="a-btns" style="align-items:flex-end">
+<input type="hidden" name="no" value="{{ link_no }}">
+<div class="a-field" style="flex:1 1 280px">
+<label for="link-email">Email of the investor's account</label>
+<input id="link-email" name="email" type="email" class="a-input" value="{{ link_state.email if link_state else '' }}" style="min-height:40px"{% if link_state %} aria-invalid="true"{% endif %}>
+</div>
+<button type="submit" class="a-btn">Link</button>
+<a href="{{ link(link=none) }}" class="a-btn a-btn-n">Cancel</a>
+</form>
+{% if link_state %}<p class="a-alert" role="alert">{{ link_state.message }}</p>{% endif %}
+</section>
+{% endif %}
+
+<section aria-labelledby="reg-h" class="a-card a-card-flush">
+<div class="a-card-head">
+<h2 id="reg-h" class="a-h2">Register</h2>
+<span class="a-note">{{ av.shown_text(shown, total, "entries") }}</span>
+</div>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:760px">
+<thead><tr><th scope="col">No.</th><th scope="col">Name</th><th scope="col">Registered</th><th scope="col">Introductions</th><th scope="col">Account</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td class="a-num" style="font-weight:600">{{ r.register_no }}</td>
+<td>{{ r.full_name }}</td>
+<td>{{ av.day_text(r.registered_on) }}</td>
+<td>{% if r.introductions %}<a href="/admin/introductions?q={{ r.register_no }}" style="font-weight:600">{{ r.introductions }}</a>{% else %}<span class="a-muted">0</span>{% endif %}</td>
+<td>{% if r.account_id %}{{ chip("i", "Linked to " ~ (r.account_name or r.account_email or "an account")) }}{% else %}{{ chip("none", "Not linked") }}{% endif %}</td>
+<td class="a-right">
+{% if r.account_id %}
+<form method="post" action="/admin/investors/unlink"><input type="hidden" name="no" value="{{ r.register_no }}"><button type="submit" class="a-btn a-btn-n a-btn-sm a-btn-xs">Unlink</button></form>
+{% else %}
+<a href="{{ link(link=r.register_no) }}" class="a-btn a-btn-n a-btn-sm a-btn-xs">Link to account</a>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if not rows %}<div class="a-empty">{{ "No register entry is linked to an account yet." if f.account == "linked" else "No register entry matches these filters." }}</div>{% endif %}
+{{ pager(page, link) }}
+</section>
+
+{% elif tab == "accounts" %}
+{% if not active %}
+<section class="a-card"><h2 class="a-h2">No investor has signed up yet</h2></section>
+{% else %}
+<section aria-labelledby="acc-h" class="a-card a-card-flush">
+<div class="a-card-head"><h2 id="acc-h" class="a-h2">Investor accounts</h2><span class="a-note">{{ av.plural(active | length, "account") }}</span></div>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:760px">
+<thead><tr><th scope="col">Investor</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col">Register</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for r in active %}
+{% set d = r.investor_profiles or {} %}
+<tr>
+<td><div class="a-cell"><a href="/admin/people/{{ r.user_id }}" class="a-name">{{ r.full_name }}</a><span>{{ d.firm or "No fund or firm given" }}</span></div></td>
+<td>{{ INVESTOR_TYPE_NAME.get(d.investor_type or "", "") }}</td>
+<td>{% if r.status == "active" %}{{ chip("approved", "Approved") }}{% else %}{{ chip("rejected", "Not approved") }}{% endif %}</td>
+<td>{{ "Register number " ~ linked_to[r.user_id] if r.user_id in linked_to else "Not linked" }}</td>
+<td class="a-right">
+<form method="post" action="/admin/investors/decide"><input type="hidden" name="user" value="{{ r.user_id }}"><input type="hidden" name="approve" value="{{ 'no' if r.status == 'active' else 'yes' }}"><button type="submit" class="a-btn a-btn-n a-btn-sm">{{ "Suspend" if r.status == "active" else "Approve" }}</button></form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% endif %}
+
+{% else %}
+{% if not pending %}
+<section class="a-card"><h2 class="a-h2">No investor is waiting for approval</h2></section>
+{% else %}
+<p class="a-note" style="font-size:14px">An investor account can browse published founder profiles and request introductions once you approve it. Check that the person and any fund or firm they name exist before you approve. Each decision goes to the audit log.</p>
+{% for r in pending %}
+<section class="a-card" aria-labelledby="p-{{ r.user_id }}">
+<div class="a-split">
+<h2 id="p-{{ r.user_id }}" class="a-h2">{{ r.full_name }}</h2>
+<span class="a-note">Sent on {{ av.day_text(r.created_at) }}</span>
+</div>
+{{ investor_details(r) }}
+<div class="a-btns">
+<form method="post" action="/admin/investors/decide"><input type="hidden" name="user" value="{{ r.user_id }}"><input type="hidden" name="approve" value="yes"><button type="submit" class="a-btn">Approve {{ r.full_name }}</button></form>
+<form method="post" action="/admin/investors/decide"><input type="hidden" name="user" value="{{ r.user_id }}"><input type="hidden" name="approve" value="no"><button type="submit" class="a-btn a-btn-n">Decline</button></form>
+</div>
+</section>
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endblock %}
