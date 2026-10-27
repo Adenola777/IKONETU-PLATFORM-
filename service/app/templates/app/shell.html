@@ -6,38 +6,8 @@
   A founder's and an investor's pages use the app frame of the design (the app flow board, 26
   October 2026): on a phone a header with the mark and the account menu, and a bar of sections
   at the bottom; from 1024px a sidebar with every section and the account at its foot. Staff
-  pages keep the header with sections along the top.
+  pages have their own frame, admin/shell.html, so any other page keeps a plain header.
 #}
-{% set NAV = {
-  "founder": [
-    ("overview", "/dashboard", "Overview"),
-    ("pitch", "/dashboard/pitch", "Pitch"),
-    ("evidence", "/dashboard/evidence", "Evidence"),
-    ("activity", "/activity", "Activity"),
-    ("introductions", "/dashboard/introductions", "Introductions"),
-    ("preview", "/dashboard/preview", "What investors see"),
-  ],
-  "investor": [
-    ("discover", "/investor", "Discover founders"),
-    ("activity", "/activity", "Activity"),
-    ("requests", "/investor/introductions", "Introductions"),
-    ("profile", "/investor/profile", "Your profile"),
-  ],
-  "reviewer": [
-    ("overview", "/admin", "Overview"),
-    ("founders", "/admin/founders", "Founders"),
-    ("queue", "/admin/evidence", "Evidence to review"),
-  ],
-  "admin": [
-    ("overview", "/admin", "Overview"),
-    ("founders", "/admin/founders", "Founders"),
-    ("queue", "/admin/evidence", "Evidence to review"),
-    ("investors", "/admin/investors", "Investors"),
-    ("register", "/admin/register", "Investor register"),
-    ("people", "/admin/people", "People and roles"),
-    ("audit", "/admin/audit", "Audit log"),
-  ],
-} %}
 {# The app frame's sections: key, address, name in the sidebar, name in the bottom bar, icon. #}
 {% set FRAME = {
   "founder": [
@@ -112,7 +82,6 @@
 <main id="main" class="fr-main">{{ self.main() }}</main>
 </div>
 {% else %}
-{% set links = NAV.get(role, []) if role else [] %}
 <div class="site pg-app {{ 'app-i' if role == 'investor' else 'app-f' }}">
 <div class="page">
 <a class="skip" href="#main">Skip to content</a>
@@ -120,19 +89,9 @@
 <div class="app-hdr-in">
 <a href="/" aria-label="IkonetU home" class="app-logo">{{ logo("default", 30) }}</a>
 <form method="post" action="/signout">
-{% if role == "admin" %}<input type="hidden" name="next" value="/admin/signin">{% endif %}
 <button type="submit" class="btn btn-n btn-sm">Sign out</button>
 </form>
 </div>
-{% if links %}
-<nav aria-label="Sections" class="app-nav">
-<ul>
-{% for key, href, label in links %}
-<li><a href="{{ href }}"{% if key == current %} aria-current="page"{% endif %}>{{ label }}</a></li>
-{% endfor %}
-</ul>
-</nav>
-{% endif %}
 </header>
 <main id="main" class="app-main">{{ self.main() }}</main>
 </div>

@@ -19,6 +19,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.datastructures import UploadFile
 
+from .. import platform
 from ..activity import load_feed
 from ..config import settings
 from ..forms import (
@@ -258,14 +259,31 @@ async def update_venture(request: Request):
 
 
 # ---------------------------------------------------------------- pitch
+def pitch_refusal(text: str) -> str | None:
+    """The pitch trigger's refusal in the page's words, for rules an admin changed while the founder uploaded."""
+    if "type of video is not accepted" in text:
+        return "This type of video is no longer accepted. Please reload the page to see the types allowed."
+    found = re.search(r"larger than (\d+) MB", text)
+    if found:
+        return f"The video must be {found.group(1)} MB or smaller."
+    found = re.search(r"longer than (\d+) seconds", text)
+    if found:
+        return f"Keep the pitch to {found.group(1)} seconds or less."
+    return None
+
+
 async def _pitch_page(request: Request, v, venture: dict, states: dict | None = None):
     pitch = await v.db.table("pitches").eq("venture_id", venture["id"]).maybe_single(
         "storage_path, duration_seconds, transcript, updated_at"
     )
     signed = await v.storage.signed_url("pitches", pitch.data["storage_path"], 3600) if pitch.data else None
+    rules = await platform.rules(request.app.state.supabase)
     context = {
         "venture": venture, "pitch": pitch.data, "signed": signed, "user_id": v.id,
         "storage_url": settings.supabase_url or "", "storage_key": settings.supabase_key or "",
+        "pitch_rules": {"types": list(rules.pitch_types), "names": platform.or_list(rules.type_names),
+                        "article": platform.video_article(rules.type_names), "mb": rules.pitch_max_mb,
+                        "seconds": rules.pitch_max_seconds},
     }
     if states:
         context["states"] = states
@@ -302,7 +320,8 @@ async def record_pitch(request: Request):
         body = await request.json()
     except ValueError:
         body = None
-    parsed = parse_pitch(body)
+    rules = await platform.rules(request.app.state.supabase)
+    parsed = parse_pitch(body, rules)
     if not parsed.ok:
         message = next(iter(parsed.errors.values()), "Please check the pitch.")
         return JSONResponse({"status": "error", "message": message, "errors": parsed.errors})
@@ -320,9 +339,12 @@ async def record_pitch(request: Request):
     else:
         saved = await v.db.table("pitches").insert({"venture_id": venture["id"], **row})
     if not saved.ok:
-        log_error("pitch.save_failed", {"venture": venture["id"], "code": saved.error.code})
         await v.storage.remove("pitches", [p["path"]])
-        return JSONResponse({"status": "error", "message": "We could not save your pitch. Please try again.", "errors": {}})
+        refused = pitch_refusal(saved.error.message or "") if saved.error.code == "22023" else None
+        (log_info if refused else log_error)("pitch.save_refused" if refused else "pitch.save_failed",
+                                             {"venture": venture["id"], "code": saved.error.code})
+        return JSONResponse({"status": "error", "message": refused or "We could not save your pitch. Please try again.",
+                             "errors": {}})
     if old.data and old.data["storage_path"] != p["path"]:
         await v.storage.remove("pitches", [old.data["storage_path"]])
     response = JSONResponse({"status": "sent", "message": "Your pitch is saved."})

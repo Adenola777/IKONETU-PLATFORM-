@@ -1,0 +1,152 @@
+{% extends "admin/shell.html" %}
+{# The Settings board: the pitch rules, the introduction rules and the platform's mode, which the app and the
+   database both hold founders and investors to, the admin's own account, and the staff accounts. #}
+{% macro said(form) -%}
+{% set st = states.get(form) %}
+{% if st and st.status == "error" %}<p class="a-say a-say-err" role="alert">{{ st.message }}</p>
+{% elif st %}<p class="a-say a-say-ok" role="status">{{ st.message }}</p>{% endif %}
+{%- endmacro %}
+{% block main %}
+<header class="a-head">
+<div><h1 class="a-h1">Settings</h1></div>
+</header>
+{% if failed %}
+<p class="a-alert" role="alert">The settings could not be read. Please reload the page.</p>
+{% else %}
+{% if s.mode == "maintenance" %}
+<div role="status" class="a-banner"><strong>Maintenance mode is on.</strong> Founders and investors see: {{ s.maintenance_message }}</div>
+{% endif %}
+
+<div class="a-grid-2" style="grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));align-items:start">
+
+{% set pv = (states.get("pitch") or {}).get("values") %}
+<section id="pitch" aria-labelledby="pitch-h" class="a-card" style="gap:14px">
+<h2 id="pitch-h" class="a-h2">Pitch videos</h2>
+<form method="post" action="/admin/settings/pitch" class="a-set">
+<fieldset>
+<legend>File types allowed</legend>
+{% for key, mime, label in TYPES %}
+<label class="a-check"><input type="checkbox" name="types" value="{{ key }}"{% if (pv and key in pv.types) or (not pv and mime in s.pitch_types) %} checked{% endif %}> {{ label }}</label>
+{% endfor %}
+</fieldset>
+<div class="a-set-row">
+<div class="a-field">
+<label for="p-size">Largest file, MB (up to 50)</label>
+<input id="p-size" name="max_mb" class="a-input" inputmode="numeric" value="{{ pv.max_mb if pv else s.pitch_max_mb }}">
+</div>
+<div class="a-field">
+<label for="p-len">Longest pitch, seconds (up to 90)</label>
+<input id="p-len" name="max_seconds" class="a-input" inputmode="numeric" value="{{ pv.max_seconds if pv else s.pitch_max_seconds }}">
+</div>
+</div>
+{{ said("pitch") }}
+<button type="submit" class="a-btn">Save pitch rules</button>
+</form>
+</section>
+
+{% set iv = (states.get("introductions") or {}).get("values") %}
+{% set intros_on = iv.on if iv else s.introductions_on %}
+<section id="introductions" aria-labelledby="intro-h" class="a-card" style="gap:14px">
+<h2 id="intro-h" class="a-h2">Introductions</h2>
+<form method="post" action="/admin/settings/introductions" class="a-set">
+<label class="a-check"><input type="checkbox" name="on" value="1" data-enables="i-day"{% if intros_on %} checked{% endif %}> Investors may ask founders for an introduction</label>
+<div class="a-field" style="max-width:240px">
+<label for="i-day">Requests per investor per day</label>
+<input id="i-day" name="per_day" class="a-input" inputmode="numeric" value="{{ iv.per_day if iv else s.introductions_per_day }}"{% if not intros_on %} disabled{% endif %}>
+</div>
+{{ said("introductions") }}
+<button type="submit" class="a-btn">Save introduction rules</button>
+</form>
+</section>
+
+{% set mv = (states.get("mode") or {}).get("values") %}
+{% set mode = mv.mode if mv else s.mode %}
+<section id="status" aria-labelledby="mode-h" class="a-card" style="gap:14px">
+<h2 id="mode-h" class="a-h2">Platform status</h2>
+<form method="post" action="/admin/settings/mode" class="a-set">
+<fieldset>
+<legend>Mode</legend>
+<label class="a-check"><input type="radio" name="mode" value="live"{% if mode == "live" %} checked{% endif %}> Live: everyone can sign in</label>
+<label class="a-check"><input type="radio" name="mode" value="maintenance"{% if mode == "maintenance" %} checked{% endif %}> Maintenance: only staff can sign in</label>
+</fieldset>
+<div class="a-field">
+<label for="m-msg">Message shown during maintenance</label>
+<textarea id="m-msg" name="message" rows="2" class="a-textarea" maxlength="280">{{ mv.message if mv else s.maintenance_message }}</textarea>
+</div>
+{{ said("mode") }}
+<button type="submit" class="a-btn">Save status</button>
+</form>
+</section>
+
+{% set pw = states.get("password") %}
+<section id="account" aria-labelledby="me-h" class="a-card" style="gap:14px">
+<h2 id="me-h" class="a-h2">My account</h2>
+<dl class="a-pairs" style="gap:6px 16px">
+<dt>Name</dt><dd>{{ me.name }}</dd>
+<dt>Email</dt><dd>{{ me.email }}</dd>
+<dt>Role</dt><dd>{{ me.role }}</dd>
+<dt>Last sign-in</dt><dd>{{ me.last }}</dd>
+</dl>
+<details class="a-pw"{% if pw and pw.status == "error" %} open{% endif %}>
+<summary class="a-btn a-btn-n">Change password</summary>
+<form method="post" action="/admin/settings/password" class="a-set" style="gap:10px">
+<div class="a-field">
+<label for="pw1">New password</label>
+<input id="pw1" name="password" type="password" autocomplete="new-password" class="a-input">
+</div>
+<div class="a-field">
+<label for="pw2">Type it again</label>
+<input id="pw2" name="again" type="password" autocomplete="new-password" class="a-input">
+</div>
+{% if pw and pw.status == "error" %}<p class="a-say a-say-err" role="alert">{{ pw.message }}</p>{% endif %}
+<div class="a-btns">
+<button type="submit" class="a-btn">Change password</button>
+<a href="/admin/settings#account" class="a-btn a-btn-n">Cancel</a>
+</div>
+</form>
+</details>
+{% if pw and pw.status == "sent" %}<p class="a-say a-say-ok" role="status">{{ pw.message }}</p>{% endif %}
+</section>
+
+</div>
+
+{% set sv = (states.get("staff") or {}).get("values") or {} %}
+<section id="staff" aria-labelledby="staff-h" class="a-card a-card-flush">
+<h2 id="staff-h" class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">Staff accounts</h2>
+{% if staff_failed %}<p class="a-alert" role="alert" style="margin:16px 20px">The staff list could not be read. Please reload the page.</p>{% endif %}
+<div class="a-tablebox">
+<table class="a-table" style="min-width:620px">
+<thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Since</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for m in staff %}
+<tr>
+<td style="padding-top:12px;padding-bottom:12px;font-weight:600">{{ m.full_name }}</td>
+<td style="overflow-wrap:anywhere">{{ m.email }}</td>
+<td><span class="a-chip a-chip-{{ 'i' if m.role == 'admin' else 'f' }}">{{ m.role_name }}</span></td>
+<td>{{ m.since }}</td>
+<td class="a-right">
+{% if m.you %}<span class="a-note">You</span>
+{% else %}<form method="post" action="/admin/settings/staff/{{ m.user_id }}/remove"><button type="submit" class="a-btn a-btn-n a-btn-sm a-btn-xs">Remove from staff</button></form>{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<form method="post" action="/admin/settings/staff" class="a-staff-add">
+<div class="a-field" style="flex:2 1 220px">
+<label for="a-email">Email of an existing account</label>
+<input id="a-email" name="email" type="email" class="a-input" value="{{ sv.email or '' }}">
+</div>
+<div class="a-field" style="flex:1 1 140px">
+<label for="a-role">Role</label>
+<select id="a-role" name="role" class="a-select">
+{% for key, label in STAFF_ROLES %}<option value="{{ key }}"{% if sv.role == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>
+</div>
+<button type="submit" class="a-btn">Add staff member</button>
+<div style="flex-basis:100%">{{ said("staff") }}</div>
+</form>
+</section>
+{% endif %}
+{% endblock %}

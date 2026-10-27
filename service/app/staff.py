@@ -52,15 +52,6 @@ ACTION_TEXT = {
     "settings.mode": "changed the platform mode",
 }
 
-# The filters of the audit log page, by the first part of the action.
-ACTION_GROUPS = (
-    {"code": "investor", "label": "Investor approvals"},
-    {"code": "evidence", "label": "Evidence decisions"},
-    {"code": "venture", "label": "Profile holds"},
-    {"code": "account", "label": "Roles and suspensions"},
-    {"code": "register", "label": "Investor register"},
-)
-
 ID = re.compile(r"[0-9a-f-]{36}")
 
 
@@ -78,8 +69,17 @@ def entity_href(entity: str, entity_id: str | None) -> str | None:
 
 FIELD_NAME = {
     "status": "Status", "role": "Role", "lane": "Checked by", "published_at": "Published to investors", "hidden_at": "Hold",
-    "public_note": "Note for investors",
+    "public_note": "Note for investors", "pitch_types": "File types", "pitch_max_mb": "Largest file, MB",
+    "pitch_max_seconds": "Longest pitch, seconds", "introductions_on": "Introduction requests",
+    "introductions_per_day": "Requests per investor per day", "mode": "Mode", "maintenance_message": "Maintenance message",
 }
+# The status of a record other than an account, in the words of the page that shows it.
+STATUS_BY_ENTITY = {
+    "register_introductions": {"pending": "Pending", "accepted": "Accepted", "declined": "Declined", "withdrawn": "Withdrawn"},
+    "pitch_video_files": {"pending": "Pending review", "approved": "Approved", "rejected": "Rejected"},
+    "reports": {"open": "Open", "resolved": "Resolved"},
+}
+VIDEO_TYPE_NAME = {"video/mp4": "MP4", "video/webm": "WebM", "video/quicktime": "MOV"}
 EVIDENCE_STATUS_NAME = {
     "submitted": "Waiting for review", "checking": "Waiting for review", "needs_review": "Waiting for review",
     "approved": "Approved", "rejected": "Rejected", "needs_more": "More asked for", "expired": "Expired",
@@ -100,14 +100,22 @@ def _js_string(v) -> str:
     return str(v)
 
 
-def _value_text(key: str, v) -> str:
+def _value_text(key: str, v, entity: str | None = None) -> str:
     empty = v is None or v == ""
     if key == "published_at":
         return "no" if empty else "yes"
     if key == "hidden_at":
         return "off" if empty else "on"
+    if key == "introductions_on" and isinstance(v, bool):
+        return "on" if v else "off"
     if empty:
         return "none"
+    if key == "pitch_types" and isinstance(v, list):
+        return ", ".join(VIDEO_TYPE_NAME.get(x, str(x)) for x in v)
+    if key == "status" and entity in STATUS_BY_ENTITY and v in STATUS_BY_ENTITY[entity]:
+        return STATUS_BY_ENTITY[entity][v]
+    if key == "mode" and v in ("live", "maintenance"):
+        return v.capitalize()
     if isinstance(v, str):
         if key == "role" and v in ROLE_NAME:
             return ROLE_NAME[v]
@@ -120,8 +128,9 @@ def _value_text(key: str, v) -> str:
     return _js_string(v)
 
 
-def change_lines(before: dict | None, after: dict | None) -> list[str]:
-    """The fields an audit log entry changed, as "Status: Waiting for approval to Active".
+def change_lines(before: dict | None, after: dict | None, entity: str | None = None) -> list[str]:
+    """The fields an audit log entry changed, as "Status: Waiting for approval to Active". The entity names the
+    kind of record, because a status means something else on an introduction than on an account.
 
     The reason, the note and the count of hidden profiles are shown apart, so they are left out here.
     """
@@ -132,7 +141,7 @@ def change_lines(before: dict | None, after: dict | None) -> list[str]:
             keys.append(k)
     lines = []
     for k in keys:
-        a, b = _value_text(k, (before or {}).get(k)), _value_text(k, (after or {}).get(k))
+        a, b = _value_text(k, (before or {}).get(k), entity), _value_text(k, (after or {}).get(k), entity)
         if a != b:
             lines.append(f"{FIELD_NAME.get(k, k)}: {a} to {b}")
     return lines

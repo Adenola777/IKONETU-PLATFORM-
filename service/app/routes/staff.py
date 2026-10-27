@@ -16,16 +16,13 @@ from starlette.exceptions import HTTPException
 from .. import admin_view
 from ..activity import feed_entry, load_feed
 from ..forms import REVIEW_LANES, parse_decision
-from ..jsfmt import number_text, parse_int, search_params, to_fixed
+from ..jsfmt import parse_int, search_params, to_fixed
 from ..log import log_error, log_info
-from ..register import register_lines
 from ..score_engine import RUBRIC_V3
 from ..scoring import record_venture_score
 from ..session import require_staff
 from ..staff import (
-    ACTION_GROUPS,
     change_lines,
-    entity_href,
     entry_reason,
     parse_hold,
     parse_lift,
@@ -393,41 +390,3 @@ async def set_status(request: Request, user_id: str):
 
 # ---------------------------------------------------------------- investor register
 MONTH = re.compile(r"([0-9]{4})-(0[1-9]|1[0-2])")
-
-
-# ---------------------------------------------------------------- audit log
-@router.get("/admin/audit")
-async def audit(request: Request):
-    """Every staff decision, newest first. Older entries are reached page by page."""
-    v = await require_staff(request, admin=True)
-    asked = _single(request, "group")
-    group = asked if asked in {g["code"] for g in ACTION_GROUPS} else None
-    before_text = _single(request, "before")
-    before = int(before_text) if before_text and re.fullmatch(r"[0-9]+", before_text) else None
-    query = v.db.table("audit_log").order("id", ascending=False).limit(PAGE + 1)
-    if group:
-        query = query.like("action", f"{group}.%")
-    if before:
-        query = query.lt("id", before)
-    result = await query.select("id, actor_id, action, entity, entity_id, before, after, created_at")
-    if not result.ok:
-        log_error("admin.audit_failed", {"code": result.error.code})
-    everything = result.data or []
-    raw = everything[:PAGE]
-    names = await _actor_names(v, raw)
-    entries = []
-    for e in raw:
-        hidden = (e.get("after") or {}).get("profiles_hidden")
-        counted = isinstance(hidden, (int, float)) and not isinstance(hidden, bool) and hidden > 0
-        lines = register_lines(e.get("after")) if e["action"] == "register.add" else change_lines(e.get("before"), e.get("after"))
-        entries.append({
-            **e, "actor": _actor(names, e.get("actor_id")), "href": entity_href(e["entity"], e.get("entity_id")),
-            "lines": lines, "reason": entry_reason(e.get("after")),
-            "hidden": number_text(hidden) if counted else None,
-        })
-    older = None
-    if len(everything) > PAGE and raw:
-        older = "/admin/audit?" + search_params([*((("group", group),) if group else ()), ("before", str(raw[-1]["id"]))])
-    return render(request, "staff/audit.html", {
-        "group": group, "before": before, "entries": entries, "older": older, "failed": not result.ok,
-    }, _meta("Audit log"))

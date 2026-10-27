@@ -16,10 +16,15 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
 
+from .. import admin_analytics as aa
+from .. import admin_settings as aset
+from .. import admin_schema as ad
 from .. import admin_view as av
+from .. import platform
 from ..log import log_error, log_info
 from ..session import require_staff
-from ..web import Meta, form_data, one, redirect, render
+from ..staff import ROLE_NAME
+from ..web import Meta, form_data, many, one, redirect, render
 from . import staff as legacy
 
 router = APIRouter()
@@ -154,17 +159,19 @@ async def dashboard(request: Request):
 # ---------------------------------------------------------------- staff actions, in words
 def describe_staff(e: dict) -> tuple[str, list[tuple[str, str]], str | None]:
     """What a staff action did, for the audit log and the dashboard: a sentence, its details and the record's page."""
+    from ..register import register_lines
     from ..staff import action_text, change_lines, entity_href, entry_reason
 
     text = action_text(e["action"])
     text = text[:1].upper() + text[1:]
-    details = [("Changed", line) for line in change_lines(e.get("before"), e.get("after"))]
+    if e["action"] == "register.add":
+        # An addition says how many entries it added and which numbers, as the register page counts them.
+        details = [tuple(line.split(": ", 1)) for line in register_lines(e.get("after"))]
+    else:
+        details = [("Changed", line) for line in change_lines(e.get("before"), e.get("after"), e["entity"])]
     reason = entry_reason(e.get("after"))
     if reason:
         details.append(("Reason", reason))
-    after = e.get("after") or {}
-    if e["action"] == "register.add" and isinstance(after.get("added"), int):
-        details.append(("Entries added", str(after["added"])))
     if e.get("entity_id"):
         details.append(("Record", f"{e['entity']} {e['entity_id']}"))
     href = entity_href(e["entity"], e.get("entity_id"))
@@ -800,3 +807,247 @@ async def resolve_report(request: Request, report_id: str):
         log_info("admin.report_resolve_refused", {"code": result.error.code})
         return _notice("/admin/content", "The report was not resolved, because it changed meanwhile.")
     return _notice("/admin/content", "The report is resolved.")
+
+
+# ---------------------------------------------------------------- analytics
+def _range(request: Request) -> str:
+    key = _get(request, "range", "year")
+    return key if key in aa.RANGES else "year"
+
+
+async def _analytics(v, key: str) -> tuple[dict | None, bool]:
+    source, intros = await asyncio.gather(v.db.rpc("admin_analytics_source"), v.db.rpc("admin_register_introductions"))
+    data = _one(source, "admin.analytics_failed")
+    rows = _rows(intros, "admin.introductions_failed")
+    if data is None:
+        return None, True
+    return aa.build(data, rows, key, datetime.now(timezone.utc).date()), not intros.ok
+
+
+@router.get("/admin/analytics")
+async def analytics(request: Request):
+    v = await require_staff(request, admin=True)
+    key = _range(request)
+    a, failed = await _analytics(v, key)
+    return await _page(request, v, "admin/analytics.html", "analytics", "Analytics", {
+        "a": a, "failed": a is None, "table_failed": failed and a is not None,
+        "link": lambda k: av.query("/admin/analytics", {"range": None if k == "year" else k}),
+        "csv": av.query("/admin/analytics.csv", {"range": None if key == "year" else key}),
+    })
+
+
+@router.get("/admin/analytics.csv")
+async def analytics_csv(request: Request):
+    v = await require_staff(request, admin=True)
+    a, _ = await _analytics(v, _range(request))
+    if a is None:
+        raise HTTPException(503)
+    return av.csv_response(a["csv_name"], aa.CSV_HEAD, a["csv_rows"])
+
+
+# ---------------------------------------------------------------- the database
+@router.get("/admin/database")
+async def database(request: Request):
+    v = await require_staff(request, admin=True)
+    q, with_rows = _get(request, "q")[:80], _get(request, "rows") == "1"
+    data = _one(await v.db.rpc("admin_database"), "admin.database_failed")
+    db = ad.build(data, q, with_rows, datetime.now(timezone.utc).date()) if data else None
+    return await _page(request, v, "admin/database.html", "database", "Database", {
+        "db": db, "failed": db is None, "q": q, "with_rows": with_rows})
+
+
+# ---------------------------------------------------------------- settings
+def _refusal(result, fallback: str) -> str:
+    """A setting the database refused, in its own words when it explains them."""
+    text = result.error.message or ""
+    return text[:1].upper() + text[1:] + "." if result.error.code == "22023" and text else fallback
+
+
+async def _settings(request: Request, v, states: dict | None = None, status_code: int = 200):
+    s, people = await asyncio.gather(v.db.rpc("admin_settings"), v.db.rpc("admin_staff"))
+    row = _one(s, "admin.settings_failed")
+    last = v.user.get("last_sign_in_at")
+    staff_rows = [{**m, "role_name": ROLE_NAME.get(m["role"], m["role"]), "since": av.day_text(m["since"]),
+                   "you": m["user_id"] == v.id} for m in _rows(people, "admin.staff_failed")]
+    context = {
+        "s": row, "failed": row is None, "staff": staff_rows, "staff_failed": not people.ok, "TYPES": aset.TYPES,
+        "STAFF_ROLES": aset.STAFF_ROLES,
+        "me": {"name": v.profile.full_name, "email": v.email, "role": ROLE_NAME.get(v.profile.role, v.profile.role),
+               "last": av.long_text(last) if last else "Not recorded"},
+    }
+    if states:
+        context["states"] = states
+    return await _page(request, v, "admin/settings.html", "settings", "Settings", context, status_code=status_code)
+
+
+def _saved(form: str, anchor: str, message: str = aset.SAVED):
+    return redirect(f"/admin/settings#{anchor}", {"form": form, "status": "sent", "message": message})
+
+
+def _not_saved(form: str, message: str, values: dict | None = None) -> dict:
+    return {form: {"status": "error", "message": message, "values": values or {}}}
+
+
+@router.get("/admin/settings")
+async def settings_page(request: Request):
+    v = await require_staff(request, admin=True)
+    return await _settings(request, v)
+
+
+@router.post("/admin/settings/pitch")
+async def save_pitch_rules(request: Request):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    typed = {"types": many(values, "types"), "max_mb": one(values, "max_mb"), "max_seconds": one(values, "max_seconds")}
+    f = aset.parse_pitch_rules(typed["types"], typed["max_mb"], typed["max_seconds"])
+    if f.error:
+        return await _settings(request, v, _not_saved("pitch", f.error, typed), 400)
+    result = await v.db.rpc("admin_set_pitch_rules", f.data)
+    if not result.ok:
+        log_info("admin.settings_refused", {"form": "pitch", "code": result.error.code})
+        return await _settings(request, v, _not_saved("pitch", _refusal(result, "The pitch rules were not saved. Please try again."), typed), 400)
+    platform.forget()
+    return _saved("pitch", "pitch")
+
+
+@router.post("/admin/settings/introductions")
+async def save_introduction_rules(request: Request):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    typed = {"on": one(values, "on") == "1", "per_day": one(values, "per_day")}
+    f = aset.parse_introduction_rules(typed["on"], typed["per_day"])
+    if f.error:
+        return await _settings(request, v, _not_saved("introductions", f.error, typed), 400)
+    result = await v.db.rpc("admin_set_introduction_rules", f.data)
+    if not result.ok:
+        log_info("admin.settings_refused", {"form": "introductions", "code": result.error.code})
+        return await _settings(request, v, _not_saved(
+            "introductions", _refusal(result, "The introduction rules were not saved. Please try again."), typed), 400)
+    platform.forget()
+    return _saved("introductions", "introductions")
+
+
+@router.post("/admin/settings/mode")
+async def save_mode(request: Request):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    typed = {"mode": one(values, "mode"), "message": one(values, "message")}
+    f = aset.parse_mode(typed["mode"], typed["message"])
+    if f.error:
+        return await _settings(request, v, _not_saved("mode", f.error, typed), 400)
+    result = await v.db.rpc("admin_set_platform_mode", f.data)
+    if not result.ok:
+        log_info("admin.settings_refused", {"form": "mode", "code": result.error.code})
+        return await _settings(request, v, _not_saved("mode", _refusal(result, "The status was not saved. Please try again."), typed), 400)
+    platform.forget()
+    return _saved("mode", "status")
+
+
+@router.post("/admin/settings/password")
+async def change_password(request: Request):
+    """Changes the signed-in admin's own password through Supabase Auth. The password is never logged or shown again."""
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    f = aset.parse_password(one(values, "password"), one(values, "again"))
+    if f.error:
+        return await _settings(request, v, _not_saved("password", f.error), 400)
+    result = await request.app.state.supabase.update_password(v.access_token, f.data["password"])
+    if not result.ok:
+        log_info("admin.password_refused", {"status": result.error.status, "code": result.error.code})
+        return await _settings(request, v, _not_saved("password", aset.password_refusal(result.error.code, result.error.status)), 400)
+    log_info("admin.password_changed", {})
+    return _saved("password", "account", "Password changed.")
+
+
+@router.post("/admin/settings/staff")
+async def add_staff(request: Request):
+    values = await form_data(request)
+    v = await require_staff(request, admin=True)
+    typed = {"email": one(values, "email"), "role": one(values, "role")}
+    f = aset.parse_staff_add(typed["email"], typed["role"])
+    if f.error:
+        return await _settings(request, v, _not_saved("staff", f.error, typed), 400)
+    result = await v.db.rpc("admin_staff_add", f.data)
+    if not result.ok:
+        log_info("admin.staff_add_refused", {"code": result.error.code})
+        return await _settings(request, v, _not_saved("staff", aset.staff_refusal(result.error.message or "", f.data["p_email"]), typed), 400)
+    return _saved("staff", "staff", f"Added {f.data['p_email']} as {f.data['p_role']}.")
+
+
+@router.post("/admin/settings/staff/{user_id}/remove")
+async def remove_staff(request: Request, user_id: str):
+    await form_data(request)
+    v = await require_staff(request, admin=True)
+    if not ID.fullmatch(user_id):
+        raise HTTPException(404)
+    people = {m["user_id"]: m for m in _rows(await v.db.rpc("admin_staff"), "admin.staff_failed")}
+    if user_id not in people or user_id == v.id:
+        return _saved("staff", "staff", "This person is not on the staff list, or is you.")
+    result = await v.db.rpc("admin_staff_remove", {"p_user": user_id})
+    if not result.ok:
+        log_info("admin.staff_remove_refused", {"code": result.error.code})
+        return await _settings(request, v, _not_saved("staff", "The staff list was not changed. Please try again."), 400)
+    return _saved("staff", "staff", aset.removed_text(people[user_id]["email"], result.data))
+
+
+# ---------------------------------------------------------------- the audit log
+AUDIT_ORDERS = ("new", "old")
+DAY = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+AUDIT_STAFF_ROWS = 1000
+
+
+def audit_filters(request: Request) -> dict:
+    kind, order = _get(request, "kind", "all"), _get(request, "order", "new")
+    start, end = _get(request, "from"), _get(request, "to")
+    return {"q": _get(request, "q")[:120], "kind": kind if kind in av.KINDS else "all",
+            "from": start if DAY.fullmatch(start) else "", "to": end if DAY.fullmatch(end) else "",
+            "order": order if order in AUDIT_ORDERS else "new"}
+
+
+def filter_audit(entries: list[dict], f: dict) -> list[dict]:
+    """The audit board's filter, on entries that are newest first."""
+    q = f["q"].strip().lower()
+    shown = [e for e in entries if (f["kind"] == "all" or e["kind"] == f["kind"])
+             and (not f["from"] or e["at"][:10] >= f["from"]) and (not f["to"] or e["at"][:10] <= f["to"])
+             and (not q or q in e["search"])]
+    return shown[::-1] if f["order"] == "old" else shown
+
+
+async def _audit_entries(v) -> tuple[list[dict], bool]:
+    history, (log, names) = await asyncio.gather(v.db.rpc("admin_register_history"), staff_log(v, AUDIT_STAFF_ROWS))
+    hist = _one(history, "admin.history_failed") or {}
+    return av.newest_first(av.register_entries(hist) + av.staff_entries(log, names, describe_staff)), not history.ok
+
+
+@router.get("/admin/audit")
+async def audit(request: Request):
+    v = await require_staff(request, admin=True)
+    entries, failed = await _audit_entries(v)
+    f = audit_filters(request)
+    shown = filter_audit(entries, f)
+    page = av.page_of(shown, av.page_number(_get(request, "page")), PAGE)
+    base = {"q": f["q"], "kind": f["kind"], "from": f["from"], "to": f["to"], "order": None if f["order"] == "new" else f["order"]}
+    cards = []
+    for kind, (label, _) in av.KINDS.items():
+        ats = sorted(e["at"] for e in entries if e["kind"] == kind)
+        cards.append({"kind": kind, "label": label, "count": len(ats), "on": f["kind"] == kind,
+                      "range": f"{av.when_text(ats[0], True)} to {av.when_text(ats[-1], True)}" if ats else "None",
+                      "href": av.query("/admin/audit", {**base, "kind": None if f["kind"] == kind else kind, "page": None})})
+    subtitle = (f"{av.plural(len(entries), 'entry', 'entries')} from {av.when_text(entries[-1]['at'], True)} to "
+                f"{av.when_text(entries[0]['at'], True)}") if entries else "No entries yet"
+    return await _page(request, v, "admin/audit.html", "audit", "Audit log", {
+        "rows": [{**e, "when": av.when_text(e["at"], e["date_only"]), "kind_text": av.KINDS[e["kind"]][0],
+                  "chip": av.KINDS[e["kind"]][1]} for e in page["rows"]],
+        "page": page, "cards": cards, "f": f, "failed": failed, "subtitle": subtitle, "KINDS": av.KINDS,
+        "count_text": av.shown_text(len(shown), len(entries), "entries"),
+        "link": lambda **changes: av.query("/admin/audit", {**base, **changes}), "csv": av.query("/admin/audit.csv", base),
+    })
+
+
+@router.get("/admin/audit.csv")
+async def audit_csv(request: Request):
+    v = await require_staff(request, admin=True)
+    entries, _ = await _audit_entries(v)
+    shown = filter_audit(entries, audit_filters(request))
+    return av.csv_response("ikonetu-audit-log.csv", ["When", "Who", "Action", "What"],
+                           [[e["at"].replace("T", " "), e["who"], av.KINDS[e["kind"]][0], e["text"]] for e in shown])

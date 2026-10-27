@@ -6,12 +6,6 @@
 .pg-app .app-hdr{background:#FFFFFF;border-bottom:1px solid var(--line)}
 .pg-app .app-hdr-in{max-width:1288px;margin:0 auto;padding:12px 24px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .pg-app .app-logo{display:inline-flex;align-items:center;min-height:44px}
-.pg-app .app-nav{max-width:1288px;margin:0 auto;padding:0 24px;box-sizing:border-box;overflow-x:auto}
-.pg-app .app-nav ul{display:flex;gap:4px;margin:0;padding:0;list-style:none}
-.pg-app .app-nav a{display:inline-flex;align-items:center;min-height:48px;padding:0 12px;border-bottom:3px solid transparent;color:var(--text-3);font-size:var(--t-small);font-weight:600;text-decoration:none;white-space:nowrap}
-.pg-app .app-nav a:hover{color:var(--ink);background:var(--fill-panel)}
-.pg-app.app-f .app-nav a[aria-current="page"]{border-bottom-color:var(--founder);color:var(--ink)}
-.pg-app.app-i .app-nav a[aria-current="page"]{border-bottom-color:var(--investor);color:var(--investor)}
 .pg-app .app-main{max-width:1288px;margin:0 auto;padding:48px 24px 96px;box-sizing:border-box}
 .pg-app .app-narrow{max-width:720px}
 .pg-app .app-title{margin:0 0 12px;font-family:var(--font-serif),Georgia,serif;font-weight:600;font-size:var(--t-title);line-height:1.15;letter-spacing:-0.02em;color:var(--ink);text-wrap:balance}
@@ -158,7 +152,6 @@
 @media (max-width: 720px){
   .pg-app .app-main{padding:32px 16px 72px}
   .pg-app .app-hdr-in{padding:8px 16px}
-  .pg-app .app-nav{padding:0 8px}
   .pg-app .grid2,.pg-app .grid3,.pg-app .choice,.pg-app .opts,.pg-app .opts-3{grid-template-columns:minmax(0,1fr)}
   .pg-app .res{flex-direction:column}
   .pg-app .thumb{width:100%}

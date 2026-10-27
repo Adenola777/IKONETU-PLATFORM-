@@ -499,6 +499,10 @@ select pg_temp.ok('M104 the analytics source leaves out the sample founder and h
   (select not (a -> 'founders' @> '[{"record_id": "s91"}]'::jsonb) and a -> 'founders' @> '[{"record_id": "p901"}]'::jsonb
       and a::text not like '%Name One%' and a::text not like '%one@register.test%'
    from public.admin_analytics_source() a));
+select pg_temp.ok('M104a the analytics source gives each founder''s country by its grouped name, as the dashboard counts it',
+  (select a -> 'founders' @> '[{"record_id": "p901", "country": "Ghana"}]'::jsonb
+      and not (a -> 'founders' @> '[{"record_id": "p901", "country": "GHANA"}]'::jsonb)
+   from public.admin_analytics_source() a));
 select pg_temp.ok('M105 the register history marks the first response of each founder, with the name it was sent under',
   (select h -> 'responses' @> '[{"response_id": "f901", "first": true, "full_name": "Name One First"}, {"response_id": "f902", "first": false}]'::jsonb
       and not (h -> 'responses' @> '[{"record_id": "s91"}]'::jsonb)
@@ -509,6 +513,17 @@ select pg_temp.ok('M106 the database page lists every table with its rows and ro
    from public.admin_database() d, jsonb_array_elements(d -> 'tables') t)
   and (select (t ->> 'rows')::int >= 2 and t -> 'columns' @> '["record_id", "joined_at"]'::jsonb
        from public.admin_database() d, jsonb_array_elements(d -> 'tables') t where t ->> 'name' = 'founder_register'));
+reset role;
+create schema supabase_migrations;
+create table supabase_migrations.schema_migrations (version text primary key, name text);
+insert into supabase_migrations.schema_migrations values ('20261024000001', 'investor_register'), ('20261027000002', 'admin_records');
+select pg_temp.as_user('ad000000-0000-0000-0000-00000000000a');
+select pg_temp.ok('M106a the database page counts the migrations Supabase recorded and names the latest',
+  (select d -> 'migrations' = '{"count": 2, "latest": "20261027000002", "name": "admin_records"}'::jsonb
+   from public.admin_database() d));
+reset role;
+drop schema supabase_migrations cascade;
+select pg_temp.as_user('ad000000-0000-0000-0000-00000000000a');
 select pg_temp.ok('M105a a limit keeps the newest response and the newest register entry',
   (select jsonb_array_length(h -> 'responses') = 1 and jsonb_array_length(h -> 'investors') = 1
    from public.admin_register_history(1) h));

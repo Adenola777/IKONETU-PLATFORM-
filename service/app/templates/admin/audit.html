@@ -1,0 +1,90 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import pager %}
+{# The Audit log board: every response to the founder form and every entry added to the investor register, with
+   the staff actions the audit_log table keeps, newest first, filtered by kind, words and dates. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Audit log</h1>
+<p class="a-sub">{{ subtitle }}</p>
+</div>
+<a href="{{ csv }}" class="a-btn a-btn-n" download>Export CSV</a>
+</header>
+{% if failed %}<p class="a-alert" role="alert">The register's history could not be read. Please reload the page.</p>{% endif %}
+
+<section aria-label="Entries by type" class="a-scards" style="grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px">
+{% for c in cards %}
+<a href="{{ c.href }}" class="a-scard" aria-current="{{ 'true' if c.on else 'false' }}">
+<span class="a-scard-label">{{ c.label }}</span>
+<span class="a-scard-count" style="font-size:28px">{{ c.count }}</span>
+<span class="a-scard-range">{{ c.range }}</span>
+</a>
+{% endfor %}
+</section>
+
+<form role="search" method="get" action="/admin/audit" class="a-filters" data-auto>
+<div class="a-field" style="flex:2 1 200px">
+<label for="a-q">Name, email, startup or number</label>
+<input id="a-q" name="q" type="search" class="a-input" value="{{ f.q }}">
+</div>
+<div class="a-field" style="flex:1 1 170px">
+<label for="a-type">Action</label>
+<select id="a-type" name="kind" class="a-select">
+<option value="all">All actions</option>
+{% for key, (label, _) in KINDS.items() %}<option value="{{ key }}"{% if f.kind == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>
+</div>
+<div class="a-field" style="flex:1 1 140px">
+<label for="a-from">From</label>
+<input id="a-from" name="from" type="date" class="a-input" value="{{ f.from }}">
+</div>
+<div class="a-field" style="flex:1 1 140px">
+<label for="a-to">To</label>
+<input id="a-to" name="to" type="date" class="a-input" value="{{ f.to }}">
+</div>
+<div class="a-field" style="flex:1 1 140px">
+<label for="a-sort">Order</label>
+<select id="a-sort" name="order" class="a-select">
+<option value="new"{% if f.order == "new" %} selected{% endif %}>Newest first</option>
+<option value="old"{% if f.order == "old" %} selected{% endif %}>Oldest first</option>
+</select>
+</div>
+<button type="submit" class="a-btn a-btn-n" data-apply>Show</button>
+<a href="/admin/audit" class="a-btn a-btn-n">Clear</a>
+</form>
+
+<section aria-labelledby="log-h" class="a-card a-card-flush">
+<div class="a-card-head">
+<h2 id="log-h" class="a-h2">Entries</h2>
+<span class="a-note">{{ count_text }}</span>
+</div>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:900px;table-layout:fixed">
+<thead><tr><th scope="col" style="width:170px">When</th><th scope="col" style="width:220px">Who</th><th scope="col" style="width:190px">Action</th><th scope="col">What</th></tr></thead>
+<tbody>
+{% for e in rows %}
+<tr class="a-rowtop">
+<td style="padding-top:12px;padding-bottom:12px">{{ e.when }}</td>
+<td style="padding-top:12px;padding-bottom:12px;overflow-wrap:anywhere">{{ e.who }}</td>
+<td style="padding-top:12px;padding-bottom:12px"><span class="a-chip {{ e.chip }}" style="white-space:normal">{{ e.kind_text }}</span></td>
+<td style="padding-top:12px;padding-bottom:12px">
+<div class="a-what">
+<span>{{ e.text }}</span>
+{% if e.details or e.href %}
+<details class="a-more">
+<summary><span class="a-when-closed">Show the details</span><span class="a-when-open">Hide the details</span></summary>
+<dl>{% for k, val in e.details %}<dt>{{ k }}</dt><dd>{{ val }}</dd>{% endfor %}</dl>
+{% if e.href %}<a href="{{ e.href }}" class="a-link">Open the record</a>{% endif %}
+</details>
+{% endif %}
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if not rows %}<div class="a-empty" style="border-top:1px solid var(--line);padding:24px 20px">No entry matches these filters.</div>{% endif %}
+{{ pager(page, link) }}
+</section>
+{% endblock %}

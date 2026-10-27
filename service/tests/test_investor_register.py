@@ -263,7 +263,8 @@ def test_the_audit_log_shows_an_addition_with_its_numbers(client, fake):
         "before": None, "after": {"added": 53, "unchanged": 0, "numbers": [f"{n:03d}" for n in range(1, 54)]},
         "created_at": "2026-10-24T09:00:00Z",
     }]))
-    body = client.get("/admin/audit?group=register").text
-    assert "Ada Admin added entries to the investor register." in body
-    assert "<li>Entries added: 53</li>" in body and "<li>Register numbers: 001 to 053</li>" in body
-    assert '<option value="register" selected>Investor register</option>' in body
+    fake.on("POST", "/rest/v1/rpc/admin_register_history", httpx.Response(200, json={"responses": [], "investors": []}))
+    body = client.get("/admin/audit?kind=staff").text
+    assert "<span>Added entries to the investor register</span>" in body
+    assert "<dt>Entries added</dt><dd>53</dd><dt>Register numbers</dt><dd>001 to 053</dd>" in body
+    assert '<option value="staff" selected>Staff action</option>' in body

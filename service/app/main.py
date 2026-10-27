@@ -18,7 +18,7 @@ from .config import settings
 from .log import log_error, start_sentry
 from .routes import activity, admin, auth, founder, introductions, investor, site, staff, system
 from .security import SecurityMiddleware
-from .session import ACCESS_COOKIE, REFRESH_COOKIE, SESSION_MAX_AGE, RedirectTo
+from .session import ACCESS_COOKIE, REFRESH_COOKIE, SESSION_MAX_AGE, InMaintenance, RedirectTo
 from .supabase import make_client
 from .web import HERE, Meta, render
 
@@ -51,6 +51,12 @@ async def session_cookies(request: Request, call_next):
 
 
 app.add_middleware(SecurityMiddleware, settings=settings)
+
+
+@app.exception_handler(InMaintenance)
+async def on_maintenance(request: Request, exc: InMaintenance):
+    return render(request, "maintenance.html", {"message": exc.message},
+                  Meta(title="IkonetU is closed for a short while", noindex=True), status_code=503)
 
 
 @app.exception_handler(RedirectTo)

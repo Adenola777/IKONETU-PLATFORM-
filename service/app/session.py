@@ -18,6 +18,7 @@ from typing import Literal
 
 from fastapi import Request
 
+from . import platform
 from .supabase import Database, Session, Storage, Supabase
 
 ACCESS_COOKIE = "ik_access"
@@ -53,6 +54,14 @@ class Viewer:
     @property
     def email(self) -> str | None:
         return self.user.get("email")
+
+
+class InMaintenance(Exception):
+    """Ends a founder's or an investor's request with the maintenance page, while an admin has it on."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
 
 
 class RedirectTo(Exception):
@@ -161,11 +170,19 @@ def home_for(profile: Profile | None) -> str:
 
 
 async def require_viewer(request: Request) -> Viewer:
-    """Sends anyone who is not signed in to the sign-in page."""
+    """Sends anyone who is not signed in to the sign-in page. While the platform is in maintenance, anyone who is
+    not staff sees the maintenance page instead. Staff pages do not come through here."""
     v = await viewer(request)
     if v is None:
         raise RedirectTo("/signin")
+    await refuse_in_maintenance(request, v.profile)
     return v
+
+
+async def refuse_in_maintenance(request: Request, profile: Profile | None) -> None:
+    rules = await platform.rules(request.app.state.supabase)
+    if rules.maintenance and not (profile is not None and profile.role in platform.STAFF and profile.status == "active"):
+        raise InMaintenance(rules.maintenance_message)
 
 
 VENTURE_COLUMNS = "id, name, sector, stage, country, description, website, ask, published_at, hidden_at, hidden_reason"

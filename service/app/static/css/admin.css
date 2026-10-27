@@ -96,7 +96,6 @@
 .a-key-f{background:var(--founder)}
 .a-key-i{background:var(--investor)}
 .a-chart{display:flex;align-items:flex-end;gap:10px;height:220px;border-bottom:1px solid var(--line)}
-.a-chart-tall{height:200px}
 .a-col{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;gap:4px}
 .a-bar{flex:1 1 0;max-width:36px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch}
 .a-bar b{font-size:12px;font-weight:600;text-align:center}
@@ -104,14 +103,77 @@
 .a-bar-f i{background:var(--founder)}
 .a-bar-i i{background:var(--investor)}
 .a-bar i.a-top{border-radius:4px 4px 0 0}
-.a-stack{flex:1 1 0;max-width:48px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch}
-.a-stack b{font-size:12px;font-weight:600;text-align:center}
-.a-stack i{display:block}
-.a-stack .a-seg-f{background:var(--founder)}
-.a-stack .a-seg-i{background:var(--investor)}
-.a-stack i.a-top{border-radius:4px 4px 0 0}
 .a-axis{display:flex;gap:10px}
 .a-axis span{flex:1 1 0;min-width:0;font-size:12px;color:var(--text-2);text-align:center;white-space:nowrap;overflow:hidden}
+
+/* The Analytics page: a range picker, totals, and one stacked bar a month or a week */
+.a-range{display:inline-flex;border:1px solid var(--line-control);border-radius:8px;overflow:hidden}
+.adm .a-range a{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;background:#FFFFFF;color:var(--ink);font-size:14px;font-weight:600;text-decoration:none}
+.adm .a-range a:hover{background:var(--fill);color:var(--ink)}
+.adm .a-range a[aria-current="true"]{background:var(--investor);color:#FFFFFF}
+.a-stat{display:flex;flex-direction:column;gap:6px;padding:18px 20px;background:#FFFFFF;border:1px solid var(--line);border-radius:12px}
+.a-schart{display:flex;align-items:flex-end;gap:6px;height:200px;padding:0 2px;border-bottom:1px solid var(--line)}
+.a-schart > div{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch}
+.a-schart b{font-size:12px;font-weight:600;text-align:center}
+.a-schart i{display:block}
+.a-schart .a-seg-f{background:var(--founder)}
+.a-schart .a-seg-i{background:var(--investor)}
+.a-schart i.a-top{border-radius:4px 4px 0 0}
+.a-saxis{display:flex;gap:6px;padding:0 2px}
+.a-saxis span{flex:1 1 0;min-width:0;font-size:11px;color:var(--text-2);text-align:center;white-space:nowrap;overflow:hidden}
+.a-none{margin:0;padding:24px 0;text-align:center;color:var(--text-2);font-size:14px}
+
+/* The Database page: a table a row, opening on its columns */
+.a-mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;overflow-wrap:anywhere}
+.a-dbt{border-top:1px solid var(--line)}
+.a-card-flush > h2 + .a-dbt{border-top:0}
+.a-dbt summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 20px;list-style:none;cursor:pointer}
+.a-dbt summary::-webkit-details-marker{display:none}
+.a-dbt summary .a-mono{flex:1 1 200px;min-width:0}
+.a-dbt-what{flex:3 1 260px;min-width:0;font-size:14px;color:var(--text-3)}
+.a-dbt-rows{flex:0 0 64px;text-align:right;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.a-dbt-toggle{flex:none}
+.a-dbt summary:focus-visible .a-dbt-toggle{outline:2px solid var(--investor);outline-offset:2px}
+.a-dbt-cols{padding:0 20px 14px;display:flex;flex-direction:column;gap:8px}
+.a-dbt-cols > div{display:flex;flex-wrap:wrap;gap:6px}
+.a-colname{padding:2px 8px;border-radius:6px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;background:var(--fill);color:var(--text-3)}
+.a-colname-hit{background:var(--founder-tint);color:var(--founder-text);font-weight:600}
+.a-colname-private{background:var(--error-tint);color:var(--error)}
+.a-dbt-private{margin:0;font-size:13px;color:var(--error)}
+
+/* A disclosure whose summary says what pressing it does */
+.a-when-open,details[open] > summary .a-when-closed{display:none}
+details[open] > summary .a-when-open{display:inline}
+
+/* The Audit log page: each entry's sentence, with its details behind a link */
+.a-what{display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0}
+.a-what > span{overflow-wrap:anywhere}
+.a-more{display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:100%}
+.a-more > summary{display:inline-flex;align-items:center;min-height:28px;list-style:none;color:var(--investor);font-size:13px;font-weight:600;text-decoration:underline;cursor:pointer}
+.a-more > summary::-webkit-details-marker{display:none}
+.a-more dl{margin:6px 0 0;padding:10px 12px;border-radius:8px;background:var(--fill-panel);display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;font-size:13px;max-width:100%}
+.a-more dt{color:var(--text-2)}
+.a-more dd{margin:0;overflow-wrap:anywhere}
+
+/* The Settings page: a form in each card, a message under it, and the staff list */
+.a-set{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.a-set > .a-btn,.a-set > .a-btns{align-self:flex-start}
+.a-set fieldset{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:6px}
+.a-set legend{padding:0;margin-bottom:8px;font-size:13px;font-weight:600}
+.a-set-row{display:flex;gap:12px;flex-wrap:wrap}
+.a-set-row > .a-field{flex:1 1 220px}
+.a-set .a-input,.a-set .a-select,.a-staff-add .a-input,.a-staff-add .a-select{min-height:40px;font-size:14px}
+.a-set .a-textarea{min-height:0;font-size:14px}
+.a-set .a-input:disabled{background:var(--fill);color:var(--text-2)}
+.a-say{margin:0;font-size:13px;font-weight:600}
+.a-say-err{color:var(--error)}
+.a-say-ok{color:var(--verified)}
+.a-banner{padding:12px 16px;border-radius:8px;background:var(--warning-tint);color:var(--warning);font-size:14px}
+.a-pw > summary{list-style:none;align-self:flex-start;display:inline-flex}
+.a-pw > summary::-webkit-details-marker{display:none}
+.a-pw{display:flex;flex-direction:column}
+.a-pw[open] > summary{display:none}
+.a-staff-add{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:16px 20px;border-top:1px solid var(--line);background:var(--fill-panel)}
 
 /* Lists with a count, such as the queues and the latest records */
 .adm .a-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 4px;border-top:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:14px}
@@ -210,7 +272,8 @@
 .a-table-fixed td{overflow:hidden}
 .a-trunc{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .a-table thead tr{background:var(--fill-panel);text-align:left;color:var(--text-2);font-size:13px}
-.a-table th{padding:10px 12px;font-weight:600;white-space:nowrap}
+.a-table th{box-sizing:border-box;padding:10px 12px;font-weight:600;white-space:nowrap}
+.a-table tr.a-rowtop td{vertical-align:top}
 .a-table td{padding:10px 12px;vertical-align:middle;border-top:1px solid var(--line)}
 .a-table th:first-child,.a-table td:first-child{padding-left:20px}
 .a-table th:last-child,.a-table td:last-child{padding-right:20px}

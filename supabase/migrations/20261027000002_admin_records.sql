@@ -1053,7 +1053,7 @@ begin
   end if;
   return jsonb_build_object(
     'founders', (select coalesce(jsonb_agg(jsonb_build_object('record_id', f.record_id, 'joined_at', f.joined_at,
-        'country', f.country, 'university', f.university, 'support', f.support) order by f.joined_at, f.record_id), '[]')
+        'country', f.country_key, 'university', f.university, 'support', f.support) order by f.joined_at, f.record_id), '[]')
       from public.founder_register f where not f.sample),
     'investors', (select coalesce(jsonb_agg(r.registered_on order by r.registered_on), '[]') from public.investor_register r),
     'introductions', (select coalesce(jsonb_agg(jsonb_build_object('record_id', i.record_id, 'made_on', i.made_on,
@@ -1105,7 +1105,8 @@ $$;
 
 -- ---------------------------------------------------------------- 15. the database page
 -- Each table in public with its exact row count and whether row level security
--- is on, each column, the stored files by bucket, and the migrations applied.
+-- is on, each column, the stored files by bucket, and the migrations Supabase
+-- recorded with the name of the latest.
 -- Message text and other values are never read here, only counted.
 create or replace function public.admin_database()
 returns jsonb
@@ -1132,7 +1133,8 @@ begin
                   where a.attrelid = ('public.' || quote_ident(t.relname))::regclass and a.attnum > 0 and not a.attisdropped));
   end loop;
   if to_regclass('supabase_migrations.schema_migrations') is not null then
-    execute 'select jsonb_build_object(''count'', count(*), ''latest'', max(version)) from supabase_migrations.schema_migrations'
+    execute 'select jsonb_build_object(''count'', count(*), ''latest'', max(version),
+               ''name'', (array_agg(name order by version desc))[1]) from supabase_migrations.schema_migrations'
       into migrations;
   end if;
   return jsonb_build_object(

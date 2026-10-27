@@ -30,6 +30,13 @@
     focused.setSelectionRange(focused.value.length, focused.value.length);
   }
 
+  // A box that switches a rule off disables the field that rule uses, as the Settings board did.
+  document.querySelectorAll("input[data-enables]").forEach(function (box) {
+    var field = document.getElementById(box.getAttribute("data-enables"));
+    if (!field) return;
+    box.addEventListener("change", function () { field.disabled = !box.checked; });
+  });
+
   // Delete permanently waits until DELETE is typed.
   document.querySelectorAll("form[data-confirm-word]").forEach(function (form) {
     var word = form.getAttribute("data-confirm-word");
