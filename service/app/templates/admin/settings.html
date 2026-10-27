@@ -112,7 +112,10 @@
 
 {% set sv = (states.get("staff") or {}).get("values") or {} %}
 <section id="staff" aria-labelledby="staff-h" class="a-card a-card-flush">
-<h2 id="staff-h" class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">Staff accounts</h2>
+<div class="a-card-head">
+<h2 id="staff-h" class="a-h2">Staff accounts</h2>
+<a href="/admin/people" class="a-link">People and roles</a>
+</div>
 {% if staff_failed %}<p class="a-alert" role="alert" style="margin:16px 20px">The staff list could not be read. Please reload the page.</p>{% endif %}
 <div class="a-tablebox">
 <table class="a-table" style="min-width:620px">

@@ -38,6 +38,9 @@ Each colour has one job. The contrast figures were measured with the WCAG formul
 | Investor tint | `--investor-tint` | #EEF4FF | investor text 9.74:1 | Investor labels and panels |
 | Investor chosen | `--investor-wash` | #F7FAFF | ink text 16.96:1, grey text 7.35:1 | The investor card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
 | Google button | `--google-line`, `--google-text` | #747775, #1F1F1F | border 4.53:1, text 16.48:1 on white | Continue with Google, in the light theme of Google's sign-in asset bundle, which their branding rules require. Added on 26 October 2026 |
+| Admin sidebar, quiet | `--footer-muted` | #8FA0BA | 6.53:1 on the footer navy | The admin sidebar's section names and icons. Added on 27 October 2026 with the admin redesign |
+| Admin sample badge | `--sample-on-dark` | #FEC84B | 11.22:1 on the footer navy | The Sample data badge in the admin sidebar. Added on 27 October 2026 |
+| Waiting bar | `--waiting-bar` | #F79009 | 2.35:1 on white | The bar under a count of what waits for review, as the admin boards drew it. It measures under 3:1, so it is decoration only: the card's label and number say the same thing. Added on 27 October 2026 |
 | Verified | `--verified` on `--verified-tint` | #067647 on #ECFDF3 | 5.40:1 | "Platform reviewed", and a Strong area |
 | Third party | `--third-party` on `--third-party-tint` | #5925DC on #F4F3FF | 7.02:1 | "Third-party evidence available" |
 | Error | `--error` on `--error-tint` | #B42318 on #FEF3F2 | 6.05:1 | Form errors, failed actions, staff danger buttons |
