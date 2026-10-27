@@ -162,6 +162,6 @@ do $$ begin
   insert into public.introductions (venture_id, note)
   select id, 'A note of at least twenty characters.' from public.ventures where name = 'Limit Venture 10';
   perform pg_temp.ok('R11 an eleventh request on the same day is refused', false, 'insert succeeded');
-exception when others then perform pg_temp.ok('R11 an eleventh request on the same day is refused', sqlerrm like '%ten requests a day%', sqlerrm);
+exception when others then perform pg_temp.ok('R11 an eleventh request on the same day is refused', sqlerrm like '%limit of 10 requests a day%', sqlerrm);
 end $$;
 reset role;

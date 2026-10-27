@@ -9,16 +9,15 @@ from __future__ import annotations
 
 import asyncio
 import re
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
 
+from .. import admin_view
 from ..activity import feed_entry, load_feed
 from ..forms import REVIEW_LANES, parse_decision
-from ..jsfmt import month_long, month_short, number_text, parse_int, search_params, to_fixed
+from ..jsfmt import number_text, parse_int, search_params, to_fixed
 from ..log import log_error, log_info
-from ..product import days_between
 from ..register import added_text, parse_register, register_lines
 from ..register import refusal_text as register_refusal
 from ..score_engine import RUBRIC_V3
@@ -47,6 +46,11 @@ PAGE = 50
 
 def _meta(title: str) -> Meta:
     return Meta(title=title, noindex=True)
+
+
+async def _frame(v) -> dict:
+    """The admin frame for a page from before the redesign: the sidebar, and app.css for the page's own styles."""
+    return {"shell": await admin_view.shell(v), "legacy": True}
 
 
 def _role(v) -> str:
@@ -83,53 +87,6 @@ async def _actor_names(v, entries: list[dict]) -> dict[str, str]:
 def _actor(names: dict[str, str], actor_id: str | None) -> str:
     name = names.get(actor_id) if actor_id else None
     return "The system" if name is None else name
-
-
-# ---------------------------------------------------------------- overview
-def age_text(iso: str) -> str:
-    d = days_between(iso, datetime.now(timezone.utc))
-    return "today" if d == 0 else "yesterday" if d == 1 else f"{d} days ago"
-
-
-def month_bars(months: list[dict]) -> dict:
-    """The last six months as bars drawn to scale from zero, with the geometry the Next.js page drew."""
-    width, height, top, base, bw = 360, 160, 22, 132, 36
-    peak = max([1, *(m["count"] for m in months)])
-    gap = (width - bw * len(months)) / len(months) if months else 0
-    bars = []
-    for i, m in enumerate(months):
-        h = ((base - top) * m["count"]) / peak
-        x = gap / 2 + i * (bw + gap)
-        date = f"{m['month']}-01T00:00:00Z"
-        bars.append({
-            "count": m["count"], "month": month_short(date), "month_long": month_long(date),
-            "title": f"{month_long(date)}: {m['count']}",
-            "path": _bar(x, base, bw, h) if m["count"] > 0 else None,
-            "x": number_text(x + bw / 2), "value_y": number_text(base - h - 6), "month_y": number_text(base + 18),
-        })
-    return {"width": width, "height": height, "base": base, "bars": bars}
-
-
-def _bar(x: float, base: float, w: float, h: float) -> str:
-    """A bar anchored to the baseline, with its top corners rounded by four pixels."""
-    r = min(4, h, w / 2)
-    t = base - h
-    n = number_text
-    return f"M{n(x)} {n(base)}V{n(t + r)}Q{n(x)} {n(t)} {n(x + r)} {n(t)}H{n(x + w - r)}Q{n(x + w)} {n(t)} {n(x + w)} {n(t + r)}V{n(base)}Z"
-
-
-@router.get("/admin")
-async def overview(request: Request):
-    v = await require_staff(request)
-    result = await v.db.rpc("admin_overview")
-    if not result.ok:
-        log_error("admin.overview_failed", {"code": result.error.code})
-    data = result.data
-    o = (data[0] if data else None) if isinstance(data, list) else data
-    return render(request, "staff/overview.html", {
-        "role": _role(v), "admin": v.profile.role == "admin", "o": o, "age_text": age_text,
-        "chart": month_bars((o or {}).get("north_star_months") or []),
-    }, _meta("Overview"))
 
 
 # ---------------------------------------------------------------- investors
@@ -218,7 +175,7 @@ async def _review_page(request: Request, v, evidence_id: str, states: dict | Non
     }
     if states:
         context["states"] = states
-    return render(request, "staff/review.html", context, _meta("Review evidence"))
+    return render(request, "staff/review.html", {**context, **await _frame(v)}, _meta("Review evidence"))
 
 
 @router.get("/admin/evidence/{evidence_id}")
@@ -265,38 +222,7 @@ async def decide(request: Request, evidence_id: str):
     return redirect("/admin/evidence" if scored else "/admin/evidence?score=failed")
 
 
-# ---------------------------------------------------------------- founders
-STATES = (
-    {"code": "all", "label": "Every venture"},
-    {"code": "published", "label": "Published to investors"},
-    {"code": "unpublished", "label": "Not published"},
-    {"code": "hidden", "label": "Hidden by IkonetU"},
-)
-
-
-@router.get("/admin/founders")
-async def founders(request: Request):
-    """Every venture and its founder, sorted by name, for reviewers and admins."""
-    v = await require_staff(request)
-    q = _search(request)
-    asked = _single(request, "state")
-    state = asked if asked in {s["code"] for s in STATES} else "all"
-    page = _page(request)
-    result = await v.db.rpc("admin_ventures", {"p_search": q or None, "p_state": state, "p_limit": PAGE, "p_offset": (page - 1) * PAGE})
-    if not result.ok:
-        log_error("admin.ventures_failed", {"code": result.error.code})
-    rows = result.data or []
-
-    def link(p: int) -> str:
-        return "/admin/founders?" + search_params([*((("q", q),) if q else ()), ("state", state), ("page", str(p))])
-
-    return render(request, "staff/founders.html", {
-        "role": _role(v), "admin": v.profile.role == "admin", "q": q, "state": state, "page": page, "rows": rows,
-        "total": rows[0]["total_count"] if rows else 0, "failed": not result.ok, "STATES": STATES, "PAGE": PAGE, "link": link,
-        "now": datetime.now(timezone.utc),
-    }, _meta("Founders"))
-
-
+# ---------------------------------------------------------------- ventures
 VENTURE_DONE = {
     "hidden": "The profile is hidden from investors. The founder sees your reason on their dashboard.",
     "lifted": "The hold is lifted. The founder can publish the profile again when they choose.",
@@ -351,13 +277,7 @@ async def _venture_page(request: Request, v, venture_id: str, states: dict | Non
     }
     if states:
         context["states"] = states
-    return render(request, "staff/venture.html", context, _meta("Venture"))
-
-
-@router.get("/admin/founders/{venture_id}")
-async def venture(request: Request, venture_id: str):
-    v = await require_staff(request)
-    return await _venture_page(request, v, venture_id)
+    return render(request, "staff/venture.html", {**context, **await _frame(v)}, _meta("Venture"))
 
 
 @router.post("/admin/founders/{venture_id}/hide")
@@ -420,6 +340,7 @@ async def people(request: Request):
         return "/admin/people?" + search_params(pairs)
 
     return render(request, "staff/people.html", {
+        **await _frame(v),
         "q": q, "role_filter": role, "status": status, "page": page, "rows": rows,
         "total": rows[0]["total_count"] if rows else 0, "failed": not result.ok, "ROLES": ROLES, "STATUSES": STATUSES,
         "PAGE": PAGE, "link": link,
@@ -458,7 +379,7 @@ async def _person_page(request: Request, v, user_id: str, states: dict | None = 
     }
     if states:
         context["states"] = states
-    return render(request, "staff/person.html", context, _meta("Person"))
+    return render(request, "staff/person.html", {**context, **await _frame(v)}, _meta("Person"))
 
 
 @router.get("/admin/people/{user_id}")

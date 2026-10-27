@@ -24,10 +24,11 @@
 .pg-signin .link-button{align-self:flex-start;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;color:var(--investor);text-decoration:underline;cursor:pointer}
 .pg-signin .link-button:disabled{color:var(--text-disabled);cursor:progress}
 /* The admin sign-in: the navy band of the footer marks it as the staff side, with the navy logo and an Admin tag. */
-.pg-admin .si-hdr{background:var(--footer);border-bottom-color:var(--footer-line)}
+/* The admin sign-in board of 26 October 2026: a navy header over an orange rule, and an orange ADMIN pill. */
+.pg-admin .si-hdr{background:var(--footer);border-bottom:3px solid var(--founder)}
 .pg-admin .ad-brand{display:inline-flex;align-items:center;gap:12px;min-height:44px}
-.pg-admin .ad-tag{padding:2px 10px;border:1px solid var(--footer-line);border-radius:999px;font-size:var(--t-label);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--footer-text)}
-.pg-admin .si-lbl{color:var(--investor)}
+.pg-admin .ad-tag{padding:2px 10px;border:1px solid var(--founder);border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF}
+.pg-admin .si-lbl{color:var(--founder-text)}
 
 /* ---------------------------------------------------------------- screens 01 and 02, from the app flow design */
 /* On a phone the page fills the screen and its buttons sit at the foot. From 640px it is a card under the lockup. */

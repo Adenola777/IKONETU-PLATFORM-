@@ -1,0 +1,53 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import tabs, chip %}
+{# The founders who have an IkonetU account, with their ventures. It is the founders list from before the
+   redesign, kept so a profile can still be opened, hidden from investors or have its hold lifted. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Founders</h1>
+<p class="a-sub">Founders with an IkonetU account and their ventures, whether or not they are published.</p>
+</div>
+</header>
+{% if admin %}
+{{ tabs("Founder views", [
+  ("founders", "Founders", shell.counts.founders if shell.counts else none, "/admin/founders"),
+  ("accounts", "Accounts", rows | length, "/admin/founders?tab=accounts"),
+  ("unfinished", "Sign-ups not finished", none, "/admin/founders?tab=unfinished"),
+], "accounts") }}
+{% endif %}
+<form role="search" method="get" action="/admin/founders" class="a-filters">
+<input type="hidden" name="tab" value="accounts">
+<div class="a-field a-field-grow">
+<label for="f-q">Venture or founder</label>
+<input id="f-q" name="q" type="search" class="a-input" value="{{ q }}" maxlength="80">
+</div>
+<button type="submit" class="a-btn a-btn-n">Search</button>
+{% if q %}<a href="/admin/founders?tab=accounts" class="a-btn a-btn-n">Clear</a>{% endif %}
+</form>
+{% if failed %}<p class="a-alert" role="alert">The list could not be read. Please reload the page.</p>{% endif %}
+<section aria-labelledby="acc-h" class="a-card a-card-flush">
+<div class="a-card-head">
+<h2 id="acc-h" class="a-h2">Ventures</h2>
+<span class="a-note">{{ av.plural(rows | length, "venture") }}</span>
+</div>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:860px">
+<thead><tr><th scope="col">Venture</th><th scope="col">Founder</th><th scope="col">Investors see it</th><th scope="col">Evidence</th><th scope="col">Introductions</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td><div class="a-cell"><a href="/admin/founders/{{ r.venture_id }}" class="a-name">{{ r.name }}</a><span>{{ r.sector }} · {{ country_name(r.country) }}</span></div></td>
+<td><div class="a-cell"><b>{{ r.founder_name }}</b>{% if r.founder_status != "active" %}<span>Suspended</span>{% endif %}{% if r.founder_role != "founder" %}<span>Now {{ "an admin" if r.founder_role == "admin" else "a " ~ r.founder_role }}</span>{% endif %}</div></td>
+<td>{% if r.hidden_at %}{{ chip("rejected", "Hidden by IkonetU") }}{% elif r.published_at %}{{ chip("approved", "Since " ~ av.day_text(r.published_at)) }}{% else %}{{ chip("none", "Not published") }}{% endif %}</td>
+<td><div class="a-cell"><b>{{ r.evidence_total }}</b><span>{{ r.evidence_reviewed }} approved, {{ r.evidence_waiting }} waiting</span></div></td>
+<td class="a-num">{{ r.introductions }}</td>
+<td class="a-right"><a href="/admin/founders/{{ r.venture_id }}" class="a-btn a-btn-n a-btn-sm">Open</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if not rows %}<div class="a-empty">No venture matches.</div>{% endif %}
+</section>
+{% endblock %}

@@ -17,6 +17,8 @@
   --footer: #0B1A33;
   --footer-text: #B9C4D6;
   --footer-line: #1E3150;
+  --footer-muted: #8FA0BA; /* the admin sidebar's section names and icons, on the footer navy */
+  --sample-on-dark: #FEC84B; /* the admin sidebar's Sample data badge, on the footer navy */
 
   /* Founder context. The orange is a fill only: as text it measures 3.05:1 on white. */
   --founder: #F26B1D;
@@ -48,6 +50,7 @@
   --error-line: #FECDCA;
   --warning: #93370D;
   --warning-tint: #FFFAEB;
+  --waiting-bar: #F79009; /* the bar on a card that counts what waits for review, beside its text */
 
   /* Measures: the readiness meter and the dated progress strip */
   --mark-on: #344054;

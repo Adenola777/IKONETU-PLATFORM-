@@ -1,0 +1,117 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import chip %}
+{# The founder detail board: one record from the register form, its responses, the introductions made for it,
+   its pitch video, how to reach the founder, deleting the record, and its history. #}
+{% block main %}
+<a href="/admin/founders" class="a-back">Back to founders</a>
+<header class="a-card" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+<div class="a-person">
+<div aria-hidden="true" class="a-avatar">{{ avatar }}</div>
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<div class="a-tags">
+<h1 class="a-h1" style="font-size:24px">{{ name }}</h1>
+{{ chip("f", "Founder") }}
+{% if r.sample %}{{ chip("muted", "Sample, not on the register") }}{% else %}{{ chip("i", "Register") }}{% endif %}
+</div>
+<p class="a-sub" style="overflow-wrap:anywhere">{% if r.sample %}Sample record{% else %}Register number {{ reg_no }}{% endif %}{% if r.email %} · {{ r.email }}{% endif %}{% if r.phone %} · {{ r.phone }}{% endif %} · joined {{ joined }}</p>
+</div>
+</div>
+</header>
+
+<div class="a-detail">
+<div>
+<section aria-labelledby="su-h" class="a-card" style="gap:12px">
+<h2 id="su-h" class="a-h2">Startup and studies</h2>
+<dl class="a-facts">
+{% for k, v in facts %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}
+</dl>
+</section>
+
+<section aria-labelledby="id-h" class="a-card" style="gap:14px">
+<h2 id="id-h" class="a-h2">The idea</h2>
+{% for k, v in answers %}
+<div class="a-answer" style="display:flex;flex-direction:column;gap:4px">
+<h3 class="a-h3" style="font-size:13px;color:var(--text-2);margin:0">{{ k }}</h3>
+<p>{{ v }}</p>
+</div>
+{% endfor %}
+</section>
+
+<section aria-labelledby="wr-h" class="a-card" style="gap:4px">
+<h2 id="wr-h" class="a-h2" style="margin-bottom:8px">Register responses ({{ responses | length }})</h2>
+{% for w in responses %}
+<div class="a-item"><span><b>{{ w.startup }}</b> · {{ w.sector }}</span><span>{{ w.at }}</span></div>
+{% else %}
+<p class="a-note" style="padding:10px 0;border-top:1px solid var(--line)">This sample record holds no responses.</p>
+{% endfor %}
+</section>
+
+<section aria-labelledby="sp-h" class="a-card" style="gap:12px">
+<h2 id="sp-h" class="a-h2">Support asked for</h2>
+{% if r.support %}
+<div class="a-chips">{% for s in r.support %}<span class="a-pill-i">{{ s }}</span>{% endfor %}</div>
+{% else %}
+<p class="a-note" style="font-size:14px">None given.</p>
+{% endif %}
+</section>
+
+<section aria-labelledby="in-h" class="a-card" style="gap:4px">
+<div class="a-split" style="margin-bottom:8px">
+<h2 id="in-h" class="a-h2">Introductions</h2>
+<a href="/admin/introductions" class="a-link">Open introductions</a>
+</div>
+{% for x in intros %}
+<div class="a-item" style="align-items:center">
+<span><b>{{ x.investor_name }}</b> · {% if x.investor_no %}register number {{ x.investor_no }}{% else %}not on the register{% endif %} · made {{ x.made }} · {{ x.messages_text }}</span>
+{{ chip(x.status, x.chip) }}
+</div>
+{% else %}
+<p class="a-note" style="padding:10px 0;border-top:1px solid var(--line);font-size:14px">No introductions yet.</p>
+{% endfor %}
+{% if intros %}
+<p class="a-note" style="padding:10px 0 0;border-top:1px solid var(--line);font-size:14px"><b style="color:var(--ink)">Messages: {{ message_total }} sent</b> · A conversation opens when the founder accepts an introduction, and staff see only the count.</p>
+{% endif %}
+</section>
+
+<section aria-labelledby="pv-h" class="a-card" style="gap:12px">
+<div class="a-split" style="align-items:center">
+<h2 id="pv-h" class="a-h2">Pitch video</h2>
+{{ chip(video_status, av.VIDEO_CHIPS[video_status]) }}
+</div>
+{% if video %}
+<p class="a-note" style="font-size:14px"><a href="/admin/videos?video={{ video.video_id }}">{{ video.file_name }}</a> in Google Drive.</p>
+{% else %}
+<p class="a-dashed">No pitch video uploaded.</p>
+{% endif %}
+</section>
+</div>
+
+<aside>
+<section aria-labelledby="ct-h" class="a-card">
+<h2 id="ct-h" class="a-h2">Contact</h2>
+{% if mailto %}<a href="{{ mailto }}" style="font-size:14px;font-weight:600;overflow-wrap:anywhere;min-height:32px;display:inline-flex;align-items:center">{{ r.email }}</a>{% endif %}
+{% if tel %}<a href="{{ tel }}" style="font-size:14px;font-weight:600;min-height:32px;display:inline-flex;align-items:center">{{ r.phone }}</a>{% endif %}
+{% if not mailto and not tel %}<p class="a-note">No email address or phone number was given.</p>{% endif %}
+</section>
+
+<section aria-labelledby="de-h" class="a-card a-danger" style="gap:12px">
+<h2 id="de-h" class="a-h2">Delete record</h2>
+<form method="post" action="/admin/founders/{{ r.record_id }}/delete" style="display:flex;flex-direction:column;gap:12px" data-confirm-word="DELETE">
+{% if delete_error %}<p class="a-alert" role="alert">{{ delete_error }}</p>{% endif %}
+<div class="a-field">
+<label for="d-confirm">Type DELETE to confirm</label>
+<input id="d-confirm" name="confirm" class="a-input" autocomplete="off" style="min-height:40px;font-size:14px"{% if delete_error %} aria-invalid="true"{% endif %}>
+</div>
+<button type="submit" class="a-btn a-btn-bad">Delete permanently</button>
+</form>
+</section>
+
+<section aria-labelledby="hi-h" class="a-card" style="gap:4px">
+<h2 id="hi-h" class="a-h2" style="margin-bottom:8px">History</h2>
+<div class="a-history">
+{% for h in history %}<div><span>{{ h.text }}</span><span>{{ h.at }}</span></div>{% endfor %}
+</div>
+</section>
+</aside>
+</div>
+{% endblock %}

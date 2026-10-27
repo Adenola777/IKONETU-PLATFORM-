@@ -2,7 +2,7 @@
 the staff pages show and the chart the overview draws."""
 
 from app.jsfmt import month_long, month_short, parse_int, search_params, to_fixed, when_text
-from app.routes.staff import evidence_state, month_bars
+from app.routes.staff import evidence_state
 from app.staff import (
     action_text,
     change_lines,
@@ -111,15 +111,3 @@ class TestJavaScriptFormats:
     def test_writes_json_as_json_stringify_does(self):
         assert js_json({"revenue": 18000.0, "duration": 58.2, "bad": float("inf"), "text": "é"}) == \
             '{"revenue":18000,"duration":58.2,"bad":null,"text":"é"}'
-
-
-def test_the_chart_draws_six_months_to_scale_from_zero():
-    months = [{"month": f"2026-{m:02d}", "count": c} for m, c in zip(range(5, 11), [0, 1, 3, 0, 2, 6], strict=True)]
-    chart = month_bars(months)
-    bars = chart["bars"]
-    assert [b["month"] for b in bars] == ["May", "Jun", "Jul", "Aug", "Sept", "Oct"]
-    # The figures below were printed by Node from the Next.js page's own arithmetic.
-    assert bars[0]["path"] is None and bars[5]["path"] == "M312 132V26Q312 22 316 22H344Q348 22 348 26V132Z"
-    assert [b["x"] for b in bars] == ["30", "90", "150", "210", "270", "330"]
-    assert [b["value_y"] for b in bars] == ["126", "107.66666666666667", "71", "126", "89.33333333333334", "16"]
-    assert month_bars([])["bars"] == []

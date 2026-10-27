@@ -1,7 +1,7 @@
-{% extends "app/shell.html" %}
+{% extends "admin/shell.html" %}
 {# Every account, newest first, with its email address. Admins only. #}
 {% set role = "admin" %}
-{% set current = "people" %}
+{% set current = "settings" %}
 {% block main %}
 <h1 class="app-title">People and roles</h1>
 <p class="app-lede">Every account that has finished sign-up, newest first. Open a person to make them a reviewer or an admin, or to suspend their account. You cannot change your own account. Investors waiting for approval are on the Investors page.</p>

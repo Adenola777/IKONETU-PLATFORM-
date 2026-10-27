@@ -37,6 +37,19 @@ ACTION_TEXT = {
     "account.suspend": "suspended an account",
     "account.reactivate": "made an account active again",
     "register.add": "added entries to the investor register",
+    "register.import": "loaded the founder register, the introductions and the pitch videos from the admin design",
+    "register.founder_delete": "deleted a founder record",
+    "register.link": "linked a register entry to an investor account",
+    "register.unlink": "unlinked a register entry from an investor account",
+    "account.remove_signup": "removed a sign-up that had chosen no role",
+    "introduction.status": "changed the status of an introduction",
+    "video.approve": "approved a pitch video",
+    "video.reject": "rejected a pitch video",
+    "video.reopen": "returned a pitch video to review",
+    "report.resolve": "resolved a report",
+    "settings.pitch": "changed the pitch rules",
+    "settings.introductions": "changed the introduction rules",
+    "settings.mode": "changed the platform mode",
 }
 
 # The filters of the audit log page, by the first part of the action.

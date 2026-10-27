@@ -1,7 +1,7 @@
-{% extends "app/shell.html" %}
+{% extends "admin/shell.html" %}
 {% from "app/ui.html" import field_error, invalid %}
-{% set current = "queue" %}
-{% block scripts %}<script src="/static/js/app/decision-form.js" defer></script>{% endblock %}
+{% set current = "moderation" %}
+{% block page_scripts %}<script src="/static/js/app/decision-form.js" defer></script>{% endblock %}
 {# One branch of the decision form: what an approval asks, or the reason for the other two decisions. #}
 {% macro approve_fields(values, errors) -%}
 <fieldset class="field">

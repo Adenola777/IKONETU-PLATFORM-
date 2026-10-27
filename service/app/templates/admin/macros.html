@@ -1,0 +1,35 @@
+{# The pieces the admin boards repeat: tabs, status cards that filter a list, the pager and the chip. #}
+
+{% macro tabs(label, items, current) -%}
+<nav aria-label="{{ label }}" class="a-tabs">
+{% for key, text, count, href in items %}
+<a href="{{ href }}" class="a-tab"{% if key == current %} aria-current="page"{% endif %}>{{ text }}{% if count is not none %} <span>{{ count }}</span>{% endif %}</a>
+{% endfor %}
+</nav>
+{%- endmacro %}
+
+{% macro scards(label, items) -%}
+{# items: (label, count, bar class, href, chosen, range text or none) #}
+<section aria-label="{{ label }}" class="a-scards">
+{% for text, count, bar, href, chosen, range in items %}
+<a href="{{ href }}" class="a-scard" aria-current="{{ 'true' if chosen else 'false' }}">
+<span class="a-scard-label">{{ text }}</span>
+<span class="a-scard-count">{{ count }}</span>
+{% if range %}<span class="a-scard-range">{{ range }}</span>{% endif %}
+{% if bar %}<span class="a-scard-bar {{ bar }}" aria-hidden="true"></span>{% endif %}
+</a>
+{% endfor %}
+</section>
+{%- endmacro %}
+
+{% macro pager(p, link) -%}
+<div class="a-pager">
+<span>{{ p.text }}</span>
+<div class="a-btns">
+{% if p.prev is not none %}<a class="a-btn a-btn-n a-btn-sm" href="{{ link(page=(p.prev + 1) if p.prev else none) }}">Previous</a>{% else %}<span class="a-btn a-btn-n a-btn-sm" aria-disabled="true">Previous</span>{% endif %}
+{% if p.next is not none %}<a class="a-btn a-btn-n a-btn-sm" href="{{ link(page=p.next + 1) }}">Next</a>{% else %}<span class="a-btn a-btn-n a-btn-sm" aria-disabled="true">Next</span>{% endif %}
+</div>
+</div>
+{%- endmacro %}
+
+{% macro chip(kind, text) -%}<span class="a-chip a-chip-{{ kind }}">{{ text }}</span>{%- endmacro %}
