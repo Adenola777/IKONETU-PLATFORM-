@@ -81,16 +81,5 @@
 </section>
 </div>
 
-<section aria-labelledby="recent-h" class="a-card" style="gap:4px">
-<div class="a-split" style="margin-bottom:8px">
-<h2 id="recent-h" class="a-h2">Recent activity</h2>
-<a href="/admin/audit" class="a-link">Full audit log</a>
-</div>
-{% for r in d.recent %}
-<div class="a-recent"><span>{{ r.when }}</span><span><b>{{ r.who }}</b> · {{ r.text }}</span></div>
-{% else %}
-<p class="a-note" style="padding:10px 4px">Nothing has happened yet.</p>
-{% endfor %}
-</section>
 {% endif %}
 {% endblock %}

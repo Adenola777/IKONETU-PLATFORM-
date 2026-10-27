@@ -1,0 +1,25 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import pager %}
+{# The activity the dashboard listed under Recent activity until 27 October 2026: every response to the founder
+   form, every entry added to the investor register and every staff action, newest first. The audit log filters
+   the same entries and exports them. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Activity</h1>
+<p class="a-sub">{{ subtitle }}</p>
+</div>
+<a href="/admin/audit" class="a-btn a-btn-n">Open the audit log</a>
+</header>
+{% if failed %}<p class="a-alert" role="alert">The register's history could not be read. Please reload the page.</p>{% endif %}
+<section aria-label="Activity" class="a-card a-card-flush">
+<div style="padding:4px 20px">
+{% for r in rows %}
+<div class="a-recent"{% if loop.first %} style="border-top:0"{% endif %}><span>{{ r.when }}</span><span><b>{{ r.who }}</b> · {{ r.text }}</span></div>
+{% else %}
+<p class="a-note" style="padding:14px 4px">Nothing has happened yet.</p>
+{% endfor %}
+</div>
+{% if total %}{{ pager(page, link) }}{% endif %}
+</section>
+{% endblock %}
