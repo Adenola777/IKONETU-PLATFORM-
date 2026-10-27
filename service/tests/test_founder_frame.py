@@ -69,12 +69,10 @@ def test_the_pitch_page_without_a_pitch_offers_the_upload_form(client, fake):
     assert "/dashboard/pitch/remove" not in body
 
 
-def test_the_updates_page_marks_this_week_and_lists_each_update(client, fake):
+def test_founders_no_longer_post_updates_and_the_old_address_leads_to_the_feed(client, fake):
     sign_in(client, fake)
-    fake.on("GET", "/rest/v1/venture_updates",
-            httpx.Response(200, json=[{"id": "u1", "body": "We signed our tenth trader.", "created_at": NOW}]))
-    body = client.get("/dashboard/updates").text
-    assert "1 week with an update" in body
-    assert re.search(r'<div class="weeks" role="img" aria-label="Updates in 1 of the last 13 weeks">', body)
-    assert body.count('<i class="on"></i>') == 1
-    assert "We signed our tenth trader." in body and 'action="/dashboard/updates/remove"' in body
+    r = client.get("/dashboard/updates", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/activity"
+    r = client.post("/dashboard/updates", data={"body": "We signed our tenth trader."}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/activity"
+    assert fake.sent("POST", "/rest/v1/venture_updates") == []

@@ -54,7 +54,7 @@ After sign-in, a new person chooses at `/onboarding` whether they are a founder 
 | `/dashboard` | Sees the IkonetU Score with its league, a chart of the eleven areas, the next three steps and the monthly record; publishes or hides the profile; sees the readiness check investors see; and edits the venture's details and its ask. Investors do not see the score |
 | `/dashboard/pitch` | Uploads a pitch of up to 90 seconds and 50 MB, with a typed transcript. The video goes from the browser straight to the founder's folder in the private `pitches` bucket. The captions are made from the transcript |
 | `/dashboard/evidence` | Adds evidence with up to three files or a link, and sees each item's status and the reviewer's note or reason |
-| `/dashboard/updates` | Posts and removes progress updates |
+| `/activity` | Reads the activity feed: every published venture's steps of progress, newest first, with new entries added while the page is open. A founder cannot open another founder's profile from it. `/dashboard/updates`, where founders used to post updates, now leads here |
 | `/dashboard/introductions` | Accepts or declines investors' requests. Accepting opens a conversation |
 | `/dashboard/preview` | Sees the profile exactly as approved investors see it |
 
@@ -65,8 +65,9 @@ A profile is hidden until the founder publishes it, and it cannot be published w
 | Address | What the investor does |
 |---|---|
 | `/onboarding/investor` | Gives their name, investor type, fund or firm, sectors, stages, countries and cheque size. The account then waits at `/investor/pending` |
-| `/investor` | Searches published founders by sector, stage, geography, evidence and recent activity. Each result shows the ask, the updates in the last 90 days and the readiness check, and pointing at a pitch plays a muted preview of five seconds with captions. Results are sorted by company name, never by a score |
-| `/investor/ventures/<id>` | Watches the pitch with captions, reads the transcript, the ask, the readiness check with the evidence in each area and its status, Momentum and the progress updates, and asks for an introduction with a short note |
+| `/investor` | Searches published founders by sector, stage, geography, evidence and recent activity. Each result shows the ask, how many of the last 13 weeks hold an entry in the activity feed and the readiness check, and pointing at a pitch plays a muted preview of five seconds with captions. Results are sorted by company name, never by a score |
+| `/investor/ventures/<id>` | Watches the pitch with captions, reads the transcript, the ask, the readiness check with the evidence in each area and its status, Momentum and the venture's own activity, and asks for an introduction with a short note |
+| `/activity` | Reads the activity feed, and opens any venture in it |
 | `/investor/introductions` | Follows their requests, and withdraws one the founder has not answered |
 | `/investor/profile` | Changes their details |
 
@@ -157,7 +158,7 @@ Sign-in answers "not open yet", and the waitlist endpoint answers 503, until Sup
 
 - Every call from the server to Supabase gives up after 15 seconds, or 120 seconds for a file upload (`service/app/supabase.py`).
 - Evidence and its file records are saved in one transaction. If saving fails, the files just uploaded are removed.
-- Evidence, progress updates and messages carry a request key made when the form is shown, so a form sent twice is saved once.
+- Evidence and messages carry a request key made when the form is shown, so a form sent twice is saved once.
 - After a decision, the founder's score is recorded with up to three attempts. A score that still fails appears under "Scores to update" on `/admin/evidence`, with a button to recompute it, and is counted on the overview at `/admin`.
 - The daily limit on introduction requests takes a lock per investor, so simultaneous requests cannot pass it.
 - Each failure is written as one line of JSON (`service/app/log.py`) and, once `SENTRY_DSN` is set, sent to Sentry without cookies, headers, form text or the person's details.

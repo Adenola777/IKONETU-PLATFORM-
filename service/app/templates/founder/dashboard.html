@@ -140,7 +140,7 @@
 <ul class="todo">
 {{ todo(has_pitch, "/dashboard/pitch", "Your one-minute pitch is added." if has_pitch else "Add your one-minute pitch.") }}
 {{ todo(evidence_count > 0, "/dashboard/evidence", (evidence_count ~ " " ~ ("piece" if evidence_count == 1 else "pieces") ~ " of evidence added, " ~ reviewed ~ " reviewed.") if evidence_count else "Add your first piece of evidence.") }}
-{{ todo(last_update, "/dashboard/updates", ("Last progress update: " ~ activity_text(last_update, now).replace("Updated ", "") ~ ".") if last_update else "Post your first progress update.") }}
+{{ todo(last_activity, "/activity", ("Your latest step in the activity feed: " ~ activity_text(last_activity, now).replace("Updated ", "") ~ ".") if last_activity else "Your progress appears in the activity feed as you make it.") }}
 </ul>
 </section>
 

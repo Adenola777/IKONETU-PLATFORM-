@@ -21,7 +21,7 @@ DETAILS = {
 CARD = {
     "venture_id": VENTURE["id"], "name": "Kola Pay", "sector": "Fintech", "stage": "revenue", "country": "NG",
     "description": "Market traders take card payments by phone.", "ask": "A pre-seed round", "founder_name": "Kemi Bello",
-    "city": "Lagos", "pitch_seconds": 58, "last_activity": NOW, "updates_90d": 3, "areas": [], "total_count": 1,
+    "city": "Lagos", "pitch_seconds": 58, "last_activity": NOW, "active_weeks": 3, "areas": [], "total_count": 1,
 }
 
 
@@ -89,7 +89,7 @@ def test_discover_shows_each_founder_as_a_card_with_its_activity_and_readiness(c
     assert "1 founder is on IkonetU. Sorted by company name." in body
     assert body.count('<li class="dc">') == 1
     assert f'<h3 class="dc-name"><a href="/investor/ventures/{VENTURE["id"]}">Kola Pay</a></h3>' in body
-    assert "Kemi Bello, Lagos, Nigeria · 3 updates in 90 days" in body
+    assert "Kemi Bello, Lagos, Nigeria · active in 3 of the last 13 weeks" in body
     assert "<span>0:58 pitch</span>" in body and "<b>Ask:</b> A pre-seed round" in body
     assert 'id="pv-label"' in body
 

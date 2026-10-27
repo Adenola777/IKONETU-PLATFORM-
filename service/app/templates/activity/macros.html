@@ -1,0 +1,11 @@
+{#
+  One entry of the activity feed. The page and /activity/new both draw entries with it, so an entry
+  the script adds looks the same as one the page drew.
+#}
+{% macro entry(e, now) -%}
+<li class="act-{{ e.kind }}{% if e.icon == 'link' %} act-3p{% elif e.icon == 'shield-check' %} act-ok{% endif %}" data-id="{{ e.id }}">
+<span class="act-ico" aria-hidden="true">{{ icon(e.icon, 18) }}</span>
+<p>{{ e.text }}</p>
+<p class="act-meta"><span>{{ e.place }}</span><time datetime="{{ e.at }}">{{ ago_text(e.at, now) }}</time>{% if e.href %}<a href="{{ e.href }}">View profile</a>{% endif %}</p>
+</li>
+{%- endmacro %}

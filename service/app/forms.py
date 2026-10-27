@@ -271,12 +271,6 @@ def parse_transcript(value: str) -> Parsed:
 
 
 # ---------------------------------------------------------------- updates, notes and messages
-def parse_update(value: str) -> Parsed:
-    e = Errors()
-    body = _text(e, "body", value, 10, "Write at least 10 characters.", 600, "Keep the update to 600 characters.")
-    return _done(e, {"body": body})
-
-
 def parse_introduction_note(value: str) -> Parsed:
     e = Errors()
     note = _text(e, "note", value, 20, "Say why you want to talk, in at least 20 characters.", 600, "Keep the note to 600 characters.")

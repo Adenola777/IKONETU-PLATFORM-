@@ -1,0 +1,42 @@
+{% extends "app/shell.html" %}
+{#
+  The activity feed: progress across IkonetU, recorded by the system as it happens. Founders and
+  approved investors see the same entries. An investor can open a venture's profile from an entry; a
+  founder cannot, because founders do not see each other's profiles. feed-live.js adds new entries at
+  the top while the page is open, and the page works without it.
+#}
+{% from "activity/macros.html" import entry %}
+{% block scripts %}{% if not paged and not failed %}<script src="/static/js/app/feed-live.js" defer></script>{% endif %}{% endblock %}
+{% macro what() %}
+<p>IkonetU adds an entry when a founder publishes their profile, adds or replaces their pitch, sets out what they are raising, has evidence approved by a reviewer or backed by an outside source, or accepts an introduction.</p>
+<p>An entry names the venture, its sector and its country. It describes an investor by type only, never by name or firm. The IkonetU Score, the documents behind evidence and the messages of a conversation never appear here.</p>
+{% endmacro %}
+{% block main %}
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Activity</h1>
+<p class="fr-sub">Progress across IkonetU, recorded as it happens.</p>
+</div>
+<div class="fr-cols">
+<div class="fr-page" style="gap:12px">
+{% if paged %}<p class="c-p" style="margin:0"><a href="/activity">Back to the newest entries</a></p>{% endif %}
+<p id="act-live" class="sr-only" role="status" aria-live="polite"></p>
+{% if failed %}
+<p class="status status-err" role="alert">The activity feed could not be loaded. Please try again in a moment.</p>
+{% else %}
+<p class="fr-empty" data-activity-empty{% if entries %} hidden{% endif %}>Nothing has happened yet. Entries appear here as founders publish their profiles, add pitches and evidence, and accept introductions.</p>
+<ul class="act" aria-label="Activity, newest first" data-activity data-newest="{{ newest or '1970-01-01T00:00:00Z' }}"{% if not entries %} hidden{% endif %}>
+{% for e in entries %}
+{{ entry(e, now) }}
+{% endfor %}
+</ul>
+{% if older %}<p class="c-p" style="margin:0"><a href="/activity?before={{ older | urlencode }}">Show older entries</a></p>{% endif %}
+{% endif %}
+</div>
+<div class="fr-rail">
+<details class="help fr-phone-only"><summary>{{ icon("info", 18) }}<span class="q">What appears here</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>{{ what() }}</details>
+<section class="panel fr-desk-only"><h2>{{ icon("info", 18) }}What appears here</h2>{{ what() }}</section>
+</div>
+</div>
+</div>
+{% endblock %}

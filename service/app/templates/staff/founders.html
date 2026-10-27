@@ -30,7 +30,7 @@
 <thead>
 <tr>
 <th scope="col">Venture</th><th scope="col">Founder</th><th scope="col">Investors see it</th>
-<th scope="col">Evidence</th><th scope="col">Updates in 90 days</th><th scope="col">Introductions</th><th scope="col">Last activity</th>
+<th scope="col">Evidence</th><th scope="col">Active weeks of the last 13</th><th scope="col">Introductions</th><th scope="col">Last activity</th>
 </tr>
 </thead>
 <tbody>
@@ -40,7 +40,7 @@
 <td>{{ r.founder_name }}{% if r.founder_status != "active" %}<span class="sub"><span class="chip chip-n">Suspended</span></span>{% endif %}{% if r.founder_role != "founder" %}<span class="sub">Now {{ "an admin" if r.founder_role == "admin" else "a " ~ r.founder_role }}</span>{% endif %}</td>
 <td>{% if r.hidden_at %}<span class="chip chip-f">Hidden by IkonetU</span>{% elif r.published_at %}Since {{ date_text(r.published_at) }}{% else %}No{% if not r.has_pitch %}<span class="sub">No pitch yet</span>{% endif %}{% endif %}</td>
 <td>{{ r.evidence_total }}<span class="sub">{{ r.evidence_reviewed }} approved, {{ r.evidence_waiting }} waiting</span></td>
-<td>{{ r.updates_90d }}</td>
+<td>{{ r.active_weeks }}</td>
 <td>{{ r.introductions }}</td>
 <td>{{ activity_text(r.last_activity, now) }}</td>
 </tr>

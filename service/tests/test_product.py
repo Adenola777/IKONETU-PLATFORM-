@@ -129,18 +129,17 @@ class TestCaptions:
 
 
 class TestMomentum:
-    def test_counts_updates_in_90_days_and_marks_the_weeks_that_had_one(self):
+    def test_counts_the_weeks_of_the_last_13_that_hold_an_entry(self):
         m = momentum(["2026-10-14T09:00:00Z", "2026-10-13T09:00:00Z", "2026-09-20T09:00:00Z", "2026-06-01T09:00:00Z"], NOW)
-        assert m["in90"] == 3
-        assert m["consistencyText"] == "3 updates in 90 days"
+        assert m["consistencyText"] == "Active in 2 of the last 13 weeks"
         assert len(m["weeks"]) == 13
         assert m["weeks"][12] == {"ago": 0, "active": True}
         assert [w["ago"] for w in m["weeks"] if w["active"]] == [3, 0]
         assert m["activeWeeks"] == 2
 
-    def test_says_so_when_there_is_no_update(self):
-        assert momentum([], NOW)["consistencyText"] == "No updates in 90 days"
-        assert momentum(["2026-10-01T00:00:00Z"], NOW)["consistencyText"] == "1 update in 90 days"
+    def test_says_so_when_there_is_no_activity(self):
+        assert momentum([], NOW)["consistencyText"] == "No activity in the last 13 weeks"
+        assert momentum(["2026-10-01T00:00:00Z"], NOW)["consistencyText"] == "Active in 1 of the last 13 weeks"
 
     def test_counts_the_evidence_added_in_90_days_and_its_areas(self):
         def e(category, created_at):

@@ -19,10 +19,10 @@ from ..discovery import PAGE_SIZE, filter_count, match_text, parse_filters, quer
 from ..forms import parse_introduction_note
 from ..investor import parse_investor_edit, parse_investor_signup
 from ..log import log_error, log_info
-from ..product import is_shown_status
+from ..product import is_shown_status, weeks_text
 from ..session import RedirectTo, home_for, require_investor, require_viewer
 from ..venture_profile import load_venture_profile
-from ..web import Meta, failed, form_data, one, redirect, render, sent
+from ..web import Meta, failed, form_data, lower_first, one, redirect, render, sent
 
 router = APIRouter()
 
@@ -113,8 +113,9 @@ async def investor_pending(request: Request):
 
 
 # ---------------------------------------------------------------- discovery
-def consistency(n: int) -> str:
-    return "no updates in 90 days" if n == 0 else f"{n} {'update' if n == 1 else 'updates'} in 90 days"
+def consistency(active_weeks: int | None) -> str:
+    """A card's line on momentum, for example "active in 4 of the last 13 weeks"."""
+    return lower_first(weeks_text(active_weeks or 0))
 
 
 @router.get("/investor")

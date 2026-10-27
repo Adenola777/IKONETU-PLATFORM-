@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
 
+from ..activity import feed_entry, load_feed
 from ..forms import REVIEW_LANES, parse_decision
 from ..jsfmt import month_long, month_short, number_text, parse_int, search_params, to_fixed
 from ..log import log_error, log_info
@@ -330,21 +331,21 @@ async def _venture_page(request: Request, v, venture_id: str, states: dict | Non
         r = await v.db.table("profiles").eq("user_id", venture["hidden_by"]).maybe_single("full_name")
         return (r.data or {}).get("full_name")
 
-    founder, held_by, pitch, evidence, updates, intros, score = await asyncio.gather(
+    founder, held_by, pitch, evidence, activity, intros, score = await asyncio.gather(
         v.db.table("profiles").eq("user_id", venture["founder_id"]).maybe_single("full_name, role, status, city, created_at"),
         holder(),
         v.db.table("pitches").eq("venture_id", venture_id).maybe_single("duration_seconds, updated_at"),
         v.db.table("evidence").eq("venture_id", venture_id).order("created_at", ascending=False)
         .select("id, signal_code, summary, status, lane, created_at, decided_at"),
-        v.db.table("venture_updates").eq("venture_id", venture_id).order("created_at", ascending=False).limit(3)
-        .select("body, created_at"),
+        load_feed(v.db, venture=venture_id, limit=5),
         v.db.table("introductions").eq("venture_id", venture_id).select("status"),
         v.db.table("scores").eq("venture_id", venture_id).maybe_single("total, league, computed_at"),
     )
     statuses = [i["status"] for i in (intros.data or [])]
     context = {
         "role": _role(v), "admin": v.profile.role == "admin", "venture": venture, "done": done, "holder": held_by,
-        "founder": founder.data, "pitch": pitch.data, "score": score.data, "updates": updates.data or [],
+        "founder": founder.data, "pitch": pitch.data, "score": score.data,
+        "activity": [feed_entry(r, False) for r in (activity or [])],
         "evidence": [{**e, "waiting": e["status"] in WAITING, "state": evidence_state(e)} for e in (evidence.data or [])],
         "intro_count": statuses.count,
     }

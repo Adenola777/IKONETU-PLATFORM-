@@ -13,12 +13,13 @@
     ("overview", "/dashboard", "Overview"),
     ("pitch", "/dashboard/pitch", "Pitch"),
     ("evidence", "/dashboard/evidence", "Evidence"),
-    ("updates", "/dashboard/updates", "Updates"),
+    ("activity", "/activity", "Activity"),
     ("introductions", "/dashboard/introductions", "Introductions"),
     ("preview", "/dashboard/preview", "What investors see"),
   ],
   "investor": [
     ("discover", "/investor", "Discover founders"),
+    ("activity", "/activity", "Activity"),
     ("requests", "/investor/introductions", "Introductions"),
     ("profile", "/investor/profile", "Your profile"),
   ],
@@ -43,12 +44,13 @@
     ("overview", "/dashboard", "Home", "Home", "house"),
     ("pitch", "/dashboard/pitch", "Pitch", "Pitch", "video"),
     ("evidence", "/dashboard/evidence", "Evidence", "Evidence", "file-check"),
-    ("updates", "/dashboard/updates", "Progress updates", none, "activity"),
+    ("activity", "/activity", "Activity", "Activity", "activity"),
     ("introductions", "/dashboard/introductions", "Introductions", "Intros", "message-square"),
     ("preview", "/dashboard/preview", "What investors see", none, "eye"),
   ],
   "investor": [
     ("discover", "/investor", "Discover founders", "Discover", "compass"),
+    ("activity", "/activity", "Activity", "Activity", "activity"),
     ("requests", "/investor/introductions", "Introductions", "Intros", "message-square"),
     ("profile", "/investor/profile", "Your profile", "Profile", "user-round"),
   ],
@@ -60,7 +62,7 @@
 {% set person = frame_viewer.profile.full_name if frame_viewer and frame_viewer.profile else "" %}
 {% set items = FRAME[role] %}
 {# A page that has no place in the bottom bar lights the section it is reached from. #}
-{% set tab = current if current in ["overview", "pitch", "evidence", "introductions", "discover", "requests", "profile"] else "overview" %}
+{% set tab = current if current in ["overview", "pitch", "evidence", "activity", "introductions", "discover", "requests", "profile"] else "overview" %}
 {% set account = ("/dashboard#venture-h", "Your venture details") if role == "founder" else ("/investor/profile", "Your investor profile") %}
 <div class="site pg-app frame {{ 'app-i' if role == 'investor' else 'app-f' }}{{ ' frame-chat' if chat }}">
 <a class="skip" href="#main">Skip to content</a>

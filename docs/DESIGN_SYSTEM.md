@@ -121,6 +121,7 @@ alignment. On a phone a justified line can open wide gaps between words.
 | Timeline | `timeline`, `timeline-3`, `num` | Numbered steps across the page, joined by a line, and down the page below 760px |
 | App screen | `screen` | An app capture at 960px with its caption, and a 624 by 780 phone capture that a browser below 600px loads in its place |
 | Plan card | `plan-pair`, `plan` | Each side's Free and Premium side by side, one above the other below 760px. A plan's list is plain rows without ticks |
+| Activity feed | `act`, `act-ico`, `act-meta`, `act-plain` | One bordered list, newest first. Each entry has a round icon in `--fill`, or in the tint of its status for evidence (`act-3p` third-party, `act-ok` platform reviewed) and in the side's tint for an accepted introduction, the sentence, and a line with the sector and country, the time and, for an investor, View profile. `act-plain` drops the border on a profile's Activity card. An entry the live check adds looks the same and is announced once in a polite live region |
 | Status table | `tbl legend-tbl` | Each status chip beside what it means. On a phone each row stacks, with the table's roles written into the markup |
 | Showcase heading | `show-head` | A short centred title over a showcase that needs one, as on For investors |
 

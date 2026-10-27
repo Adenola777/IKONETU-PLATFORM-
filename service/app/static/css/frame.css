@@ -323,13 +323,21 @@
 .frame .ev-sum{margin:0;font-size:var(--t-ui-s);line-height:20px;color:var(--text-3)}
 @media (min-width:1024px){.frame .ev-add-jump{display:none}}
 
-/* Progress updates */
-.frame .upd{margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);overflow:hidden}
-.frame .upd li{display:flex;flex-direction:column;gap:4px;padding:14px 16px 6px}
-.frame .upd li + li{border-top:1px solid var(--line)}
-.frame .upd time{font-size:var(--t-label);color:var(--text-2)}
-.frame .upd p{margin:0;font-size:15px;line-height:22px;white-space:pre-line;overflow-wrap:anywhere}
-.frame .upd .linkbtn{align-self:flex-start;min-height:40px;font-size:var(--t-ui-s)}
+/* The activity feed, and a venture's own entries on its profile */
+.frame .act{margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);overflow:hidden}
+.frame .act[hidden]{display:none}
+.frame .act li{display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:12px;row-gap:2px;padding:14px 16px}
+.frame .act li + li{border-top:1px solid var(--line)}
+.frame .act .act-ico{grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--r-pill);background:var(--fill);color:var(--ink)}
+.frame .act .act-3p .act-ico{background:var(--third-party-tint);color:var(--third-party)}
+.frame .act .act-ok .act-ico{background:var(--verified-tint);color:var(--verified)}
+.frame.app-f .act .act-introduction_accepted .act-ico{background:var(--founder-tint);color:var(--founder-text)}
+.frame.app-i .act .act-introduction_accepted .act-ico{background:var(--investor-tint);color:var(--investor)}
+.frame .act p{margin:0;font-size:15px;line-height:22px;overflow-wrap:anywhere}
+.frame .act .act-meta{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:var(--t-label);line-height:18px;color:var(--text-2)}
+.frame .act .act-meta a{font-weight:600}
+.frame .act-plain{border:0}
+.frame .act-plain li{padding:10px 0}
 .frame .weeks i{height:22px}
 
 /* What investors see */

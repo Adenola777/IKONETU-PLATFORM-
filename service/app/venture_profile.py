@@ -7,8 +7,7 @@ that is not visible to them reads as None, which looks the same as one that does
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
-
+from .activity import feed_entry, load_feed
 from .product import AREAS, RANK, area_of, is_shown_status
 from .supabase import Database, Storage
 
@@ -20,13 +19,13 @@ async def load_venture_profile(db: Database, storage: Storage, venture_id: str) 
     if not venture.data:
         return None
     v = venture.data
-    since = (datetime.now(timezone.utc) - timedelta(days=91)).strftime("%Y-%m-%dT%H:%M:%S.") + "000Z"
-    founder, pitch, evidence, updates, recent = await asyncio.gather(
+    founder, pitch, evidence, activity = await asyncio.gather(
         db.table("public_profiles").eq("user_id", v["founder_id"]).maybe_single("full_name, city, country, institution, bio"),
         db.table("pitches").eq("venture_id", venture_id).maybe_single("storage_path, transcript, duration_seconds, updated_at"),
         db.rpc("venture_evidence", {"p_venture": venture_id}),
-        db.table("venture_updates").eq("venture_id", venture_id).order("created_at", ascending=False).limit(20).select("id, body, created_at"),
-        db.table("venture_updates").eq("venture_id", venture_id).gte("created_at", since).limit(500).select("created_at"),
+        # The venture's own entries in the activity feed, newest first. A hundred cover the 13 weeks of
+        # the momentum strip, since an entry of the same kind is made at most once a day.
+        load_feed(db, venture=venture_id, limit=100),
     )
     signed = await storage.signed_url("pitches", pitch.data["storage_path"], 3600) if pitch.data else None
     ev = [
@@ -38,8 +37,8 @@ async def load_venture_profile(db: Database, storage: Storage, venture_id: str) 
         for e in (evidence.data or [])
         if is_shown_status(e.get("shown_status"))
     ]
-    upd = updates.data or []
-    dates = [d for d in [v.get("published_at"), (pitch.data or {}).get("updated_at"), upd[0]["created_at"] if upd else None,
+    rows = activity or []
+    dates = [d for d in [v.get("published_at"), (pitch.data or {}).get("updated_at"), rows[0]["created_at"] if rows else None,
                          *(e["createdAt"] for e in ev)] if d]
     venture_out = {k: val for k, val in v.items() if k != "founder_id"}
     return {
@@ -48,8 +47,8 @@ async def load_venture_profile(db: Database, storage: Storage, venture_id: str) 
         "pitch": {"url": signed, "transcript": pitch.data["transcript"], "duration": float(pitch.data["duration_seconds"])}
         if pitch.data and signed else None,
         "evidence": ev,
-        "updates": upd,
-        "recentUpdates": [r["created_at"] for r in (recent.data or [])],
+        "activity": [feed_entry(r, False) for r in rows[:20]],
+        "activityDates": [r["created_at"] for r in rows],
         "lastActivity": sorted(dates)[-1] if dates else None,
     }
 

@@ -278,9 +278,9 @@ select pg_temp.ok('S7 making the founder active again does not publish the profi
   and (select published_at is null from public.ventures where id = '9b000000-0000-0000-0000-00000000000f')
   and exists (select 1 from public.audit_log where action = 'account.reactivate' and entity_id = '9a000000-0000-0000-0000-00000000000f'));
 set request.jwt.claim.sub = '9a000000-0000-0000-0000-00000000000f';
-insert into public.venture_updates (venture_id, body) values ('9b000000-0000-0000-0000-00000000000f', 'We are back and supplying four schools.');
+update public.ventures set description = 'We are back and supplying four schools.' where id = '9b000000-0000-0000-0000-00000000000f';
 select pg_temp.ok('S8 an active founder writes to their venture again',
-  exists (select 1 from public.venture_updates where body = 'We are back and supplying four schools.'));
+  exists (select 1 from public.ventures where description = 'We are back and supplying four schools.'));
 
 set request.jwt.claim.sub = '9a000000-0000-0000-0000-00000000000a';
 select public.admin_set_status('9a000000-0000-0000-0000-00000000000b', 'suspended', 'Left the company.');

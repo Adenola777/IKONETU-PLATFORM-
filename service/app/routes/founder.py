@@ -1,4 +1,4 @@
-"""The founder's pages: onboarding, the dashboard, the pitch, evidence, updates and the preview.
+"""The founder's pages: onboarding, the dashboard, the pitch, evidence and the preview.
 
 Ported from apps/web/app/onboarding and apps/web/app/dashboard. Every read and write is made as
 the signed-in founder, so row level security applies. A form that is refused shows the page
@@ -19,13 +19,13 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.datastructures import UploadFile
 
+from ..activity import load_feed
 from ..config import settings
 from ..forms import (
     parse_evidence,
     parse_onboarding,
     parse_pitch,
     parse_transcript,
-    parse_update,
     parse_venture,
     signal_area,
     signal_label,
@@ -44,7 +44,6 @@ from ..web import Meta, failed, form_data, one, redirect, render, sent, set_flas
 router = APIRouter()
 
 SIGNAL_CODES = {s.code for s in RUBRIC_V3.signals if s.offered}
-UPDATE_ID = re.compile(r"[0-9a-f-]{36}")
 
 
 def _meta(title: str) -> Meta:
@@ -172,11 +171,10 @@ async def suspended(request: Request):
 # ---------------------------------------------------------------- dashboard
 async def _dashboard(request: Request, v, venture: dict, states: dict | None = None):
     db = v.db
-    pitch, evidence, updates, requests, shown, snapshots = await asyncio.gather(
+    pitch, evidence, latest, requests, shown, snapshots = await asyncio.gather(
         db.table("pitches").eq("venture_id", venture["id"]).maybe_single("duration_seconds, updated_at"),
         db.table("evidence").eq("venture_id", venture["id"]).select(EVIDENCE_COLUMNS),
-        db.table("venture_updates").eq("venture_id", venture["id"]).order("created_at", ascending=False).limit(1)
-        .select("created_at"),
+        load_feed(db, venture=venture["id"], limit=1),
         db.table("introductions").eq("founder_id", v.id).eq("status", "pending").select("id"),
         # The readiness check reads the evidence the way investors see it, so the two always agree.
         db.rpc("venture_evidence", {"p_venture": venture["id"]}),
@@ -210,7 +208,7 @@ async def _dashboard(request: Request, v, venture: dict, states: dict | None = N
         "steps": steps,
         "evidence_count": len(own),
         "reviewed": sum(1 for e in own if e["status"] == "approved"),
-        "last_update": (updates.data or [{}])[0].get("created_at") if updates.data else None,
+        "last_activity": latest[0]["created_at"] if latest else None,
         "country": country_name(venture.get("country")),
         "stage": stage_label(venture["stage"]),
         "now": datetime.now(timezone.utc),
@@ -502,53 +500,6 @@ async def _declare(request: Request, v, venture: dict, data: dict, key: str | No
     else:
         await record_venture_score(server, venture["id"], made.data if isinstance(made.data, str) else None)
     return sent(here, "evidence", STATEMENT_ADDED)
-
-
-# ---------------------------------------------------------------- updates
-async def _updates_page(request: Request, v, venture: dict, states: dict | None = None):
-    result = await v.db.table("venture_updates").eq("venture_id", venture["id"]).order("created_at", ascending=False) \
-        .limit(100).select("id, body, created_at")
-    context = {"rows": result.data or [], "new_key": str(uuid.uuid4()), "now": datetime.now(timezone.utc)}
-    if states:
-        context["states"] = states
-    return render(request, "founder/updates.html", context, _meta("Progress updates"))
-
-
-@router.get("/dashboard/updates")
-async def updates_page(request: Request):
-    v, venture = await require_founder(request)
-    return await _updates_page(request, v, venture)
-
-
-@router.post("/dashboard/updates")
-async def post_update(request: Request):
-    raw = await form_data(request)
-    values = {k: one(raw, k) for k in raw if k != "requestKey"}
-    v, venture = await require_founder(request)
-    parsed = parse_update(values.get("body", ""))
-    if not parsed.ok:
-        return await _updates_page(request, v, venture, failed("update", "Please check the update.", parsed.errors, values))
-    result = await v.db.table("venture_updates").insert({
-        "venture_id": venture["id"], "body": parsed.data["body"], "request_key": request_key(one(raw, "requestKey")),
-    })
-    if is_repeat(result.error):
-        return sent("/dashboard/updates", "update", "Your update is posted.")
-    if not result.ok:
-        log_error("update.post_failed", {"venture": venture["id"], "code": result.error.code})
-        return await _updates_page(request, v, venture,
-                                   failed("update", "We could not post the update. Please try again.", values=values))
-    return sent("/dashboard/updates", "update", "Your update is posted.")
-
-
-@router.post("/dashboard/updates/remove")
-async def remove_update(request: Request):
-    v, venture = await require_founder(request)
-    update_id = one(await form_data(request), "id")
-    if UPDATE_ID.fullmatch(update_id):
-        result = await v.db.table("venture_updates").eq("id", update_id).eq("venture_id", venture["id"]).delete()
-        if not result.ok:
-            log_error("update.remove_failed", {"venture": venture["id"], "code": result.error.code})
-    return redirect("/dashboard/updates")
 
 
 # ---------------------------------------------------------------- preview

@@ -72,7 +72,7 @@ def test_founder_pages_carry_the_app_frame_with_the_sidebar_and_the_bottom_bar(c
     side = body.split('class="fr-nav"')[1].split("</nav>")[0]
     assert re.search(r'href="/dashboard/introductions" aria-current="page">.*?<span>Introductions</span>', side)
     tabs = body.split('class="fr-tabs"')[1].split("</nav>")[0]
-    assert re.findall(r"</span>(\w+)</a>", tabs) == ["Home", "Pitch", "Evidence", "Intros"]
+    assert re.findall(r"</span>(\w+)</a>", tabs) == ["Home", "Pitch", "Evidence", "Activity", "Intros"]
     assert re.search(r'aria-current="page"><span class="fr-pill">.*?</span>Intros</a>', tabs)
     assert '<span class="fr-av" aria-hidden="true">KB</span>' in body
 
