@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+from .. import platform
 from ..config import settings
 from ..guards import Limiter, client_address
 from ..log import log_error, log_info, log_warn
@@ -52,7 +53,7 @@ def _logged(event: str, error: ApiError) -> None:
 
 
 def _signin_page(request: Request, values: dict | None = None, errors: dict | None = None, message: str | None = None,
-                 method: str | None = None):
+                 method: str | None = None, maintenance: str | None = None):
     phone_enabled = settings.phone_sign_in
     return render(request, "signin/signin.html", {
         "phone_enabled": phone_enabled,
@@ -60,6 +61,7 @@ def _signin_page(request: Request, values: dict | None = None, errors: dict | No
         "values": values or {},
         "errors": errors or {},
         "message": message,
+        "maintenance": maintenance,
         "link_error": request.query_params.get("error") == "link",
         "google_enabled": settings.google_sign_in,
         "google_error": request.query_params.get("error") == "google",
@@ -72,7 +74,32 @@ async def signin_page(request: Request):
     if await current_user(request, request.app.state.supabase):
         return RedirectResponse("/dashboard", status_code=307)
     method = request.query_params.get("method")
-    return _signin_page(request, method=method if settings.phone_sign_in and method in ("phone", "email") else None)
+    rules = await platform.rules(request.app.state.supabase)
+    return _signin_page(request, method=method if settings.phone_sign_in and method in ("phone", "email") else None,
+                        maintenance=rules.maintenance_message if rules.maintenance else None)
+
+
+async def _closed_to(request: Request, session) -> bool:
+    """While the platform is in maintenance only staff can sign in. Anyone else's new session is signed out
+    again at once, and they see the maintenance page."""
+    supabase = request.app.state.supabase
+    rules = await platform.rules(supabase)
+    if not rules.maintenance:
+        return False
+    row = await supabase.as_user(session.access_token).table("profiles").eq("user_id", session.user.get("id", "")) \
+        .maybe_single("role, status")
+    p = row.data if row.ok else None
+    if p and p.get("role") in platform.STAFF and p.get("status") == "active":
+        return False
+    await supabase.sign_out(session.access_token)
+    log_info("auth.signin_in_maintenance", {})
+    request.state.maintenance_message = rules.maintenance_message
+    return True
+
+
+def _maintenance_page(request: Request):
+    return render(request, "maintenance.html", {"message": request.state.maintenance_message},
+                  Meta(title="IkonetU is closed for a short while", noindex=True), status_code=503)
 
 
 @router.get("/signin/google")
@@ -194,6 +221,10 @@ async def verify_code(request: Request):
             return _code_page(request, pending, message="Too many attempts. Please wait a few minutes and try again.")
         return _code_page(request, pending, error="Check the code and try again, or ask for a new one.",
                           message="That code is wrong or has expired.")
+    if await _closed_to(request, session):
+        response = _maintenance_page(request)
+        response.delete_cookie(PENDING_COOKIE, path="/signin")
+        return response
     remember(request, session)
     response = redirect("/dashboard")
     response.delete_cookie(PENDING_COOKIE, path="/signin")
@@ -245,6 +276,11 @@ async def callback(request: Request):
     via_google = request.cookies.get(VIA_COOKIE) == "google"
     if code and supabase is not None and verifier:
         session, error = await supabase.exchange_code(code, verifier)
+        if session is not None and await _closed_to(request, session):
+            response = _maintenance_page(request)
+            response.delete_cookie(VERIFIER_COOKIE, path="/")
+            response.delete_cookie(VIA_COOKIE, path="/auth")
+            return response
         if session is not None:
             remember(request, session)
             response = RedirectResponse("/dashboard", status_code=307)

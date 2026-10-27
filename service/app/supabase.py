@@ -499,6 +499,10 @@ class Supabase:
             return None, r.error
         return r.data, None
 
+    async def update_password(self, access_token: str, password: str) -> Result:
+        """Sets a new password on the signed-in account, as supabase-js updateUser({ password }) does."""
+        return await self._auth("PUT", "user", {"password": password}, bearer=access_token)
+
     async def sign_out(self, access_token: str) -> None:
         await self._auth("POST", "logout", bearer=access_token, params={"scope": "global"})
 

@@ -17,6 +17,9 @@
 {% else %}Enter your email to create your account or to sign back in. A new account then chooses founder or investor.{% endif %}
 </p>
 </div>
+{% if maintenance %}
+<p class="status status-ok" role="status">{{ maintenance }} Only IkonetU staff can sign in until then.</p>
+{% endif %}
 {% if google_error %}
 <p class="status status-err" role="alert">Signing in with Google did not finish. Please try again.</p>
 {% endif %}

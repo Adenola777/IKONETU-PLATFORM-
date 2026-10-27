@@ -8,7 +8,7 @@
   "declined": ("chip-none", "x", "Declined"),
   "withdrawn": ("chip-none", "rotate-ccw", "Withdrawn"),
 } %}
-{% macro how() %}You can send up to ten requests a day. A founder who declines is not asked again by you. An accepted request opens a conversation that only the two of you can read.{% endmacro %}
+{% macro how() %}{% if intros_on %}You can send up to {{ per_day }} a day.{% else %}IkonetU has paused introduction requests for now.{% endif %} A founder who declines is not asked again by you. An accepted request opens a conversation that only the two of you can read.{% endmacro %}
 {% block main %}
 {% set TABS = [("all", "All"), ("waiting", "Waiting"), ("accepted", "Accepted")] %}
 <div class="fr-page">

@@ -38,6 +38,13 @@ Each colour has one job. The contrast figures were measured with the WCAG formul
 | Investor tint | `--investor-tint` | #EEF4FF | investor text 9.74:1 | Investor labels and panels |
 | Investor chosen | `--investor-wash` | #F7FAFF | ink text 16.96:1, grey text 7.35:1 | The investor card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
 | Google button | `--google-line`, `--google-text` | #747775, #1F1F1F | border 4.53:1, text 16.48:1 on white | Continue with Google, in the light theme of Google's sign-in asset bundle, which their branding rules require. Added on 26 October 2026 |
+| Admin sidebar | `--side`, `--side-text` | #000000, #FFFFFF | 21.00:1 | The admin sidebar and its links, names and counts. Black with white text since 27 October 2026, when the owner asked for the sidebar to be black and every colour on it very bright; it was the footer navy with #B9C4D6 text |
+| Admin sidebar, quiet | `--side-muted` | #E4E7EC | 16.94:1 on black | The sidebar's section names and icons. It was #8FA0BA on the navy |
+| Admin sidebar, hover and counts | `--side-line` | #404040 | white text 10.37:1 | A link under the pointer, the counts beside People and the dividers |
+| Admin sidebar, open page | `--side-current` | #2563EB | white text 5.17:1 | The link of the page that is open, with a white icon. It was the investor navy with an orange icon |
+| Admin sidebar, accent | `--side-accent` | #FF8533 | 8.65:1 on black | The edge of the ADMIN badge and of Sign out. It was the founder orange |
+| Admin sample badge | `--sample-on-dark` | #FEC84B | 13.58:1 on black | The Sample data badge in the admin sidebar, shown only while sample rows are held. Added on 27 October 2026 |
+| Waiting bar | `--waiting-bar` | #F79009 | 2.35:1 on white | The bar under a count of what waits for review, as the admin boards drew it. It measures under 3:1, so it is decoration only: the card's label and number say the same thing. Added on 27 October 2026 |
 | Verified | `--verified` on `--verified-tint` | #067647 on #ECFDF3 | 5.40:1 | "Platform reviewed", and a Strong area |
 | Third party | `--third-party` on `--third-party-tint` | #5925DC on #F4F3FF | 7.02:1 | "Third-party evidence available" |
 | Error | `--error` on `--error-tint` | #B42318 on #FEF3F2 | 6.05:1 | Form errors, failed actions, staff danger buttons |
@@ -121,6 +128,7 @@ alignment. On a phone a justified line can open wide gaps between words.
 | Timeline | `timeline`, `timeline-3`, `num` | Numbered steps across the page, joined by a line, and down the page below 760px |
 | App screen | `screen` | An app capture at 960px with its caption, and a 624 by 780 phone capture that a browser below 600px loads in its place |
 | Plan card | `plan-pair`, `plan` | Each side's Free and Premium side by side, one above the other below 760px. A plan's list is plain rows without ticks |
+| Activity feed | `act`, `act-ico`, `act-meta`, `act-plain` | One bordered list, newest first. Each entry has a round icon in `--fill`, or in the tint of its status for evidence (`act-3p` third-party, `act-ok` platform reviewed) and in the side's tint for an accepted introduction, the sentence, and a line with the sector and country, the time and, for an investor, View profile. `act-plain` drops the border on a profile's Activity card. An entry the live check adds looks the same and is announced once in a polite live region |
 | Status table | `tbl legend-tbl` | Each status chip beside what it means. On a phone each row stacks, with the table's roles written into the markup |
 | Showcase heading | `show-head` | A short centred title over a showcase that needs one, as on For investors |
 

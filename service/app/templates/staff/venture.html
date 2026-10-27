@@ -1,7 +1,7 @@
-{% extends "app/shell.html" %}
+{% extends "admin/shell.html" %}
 {#
   Everything one venture holds, for staff: the founder's account, whether investors see the profile, the
-  pitch, every piece of evidence in every status, recent updates and introductions by status. An admin can
+  pitch, every piece of evidence in every status, recent activity and introductions by status. An admin can
   hide the profile from investors here, or lift the hold.
 #}
 {% from "app/ui.html" import field_error, invalid, form_status %}
@@ -80,12 +80,12 @@
 </section>
 
 <section class="card" aria-labelledby="up-h">
-<h2 id="up-h" class="app-h2">Latest progress updates</h2>
-{% if not updates %}
-<p class="body2" style="margin:0">No updates yet.</p>
+<h2 id="up-h" class="app-h2">Latest activity</h2>
+{% if not activity %}
+<p class="body2" style="margin:0">Nothing is recorded yet.</p>
 {% else %}
 <ul class="updates">
-{% for u in updates %}<li><time datetime="{{ u.created_at }}">{{ date_text(u.created_at) }}</time><p>{{ u.body }}</p></li>{% endfor %}
+{% for e in activity %}<li><time datetime="{{ e.at }}">{{ date_text(e.at) }}</time><p>{{ e.text }}</p></li>{% endfor %}
 </ul>
 {% endif %}
 </section>

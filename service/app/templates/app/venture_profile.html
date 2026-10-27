@@ -1,17 +1,18 @@
 {#
   A founder profile as approved investors see it (screen 13). The founder's preview (07.2) shows the
   same. The pitch, the venture and the readiness check by area come first; from 1024px the page's
-  own column (the request, on the investor's page), the momentum and the progress updates sit beside
+  own column (the request, on the investor's page), the momentum and the venture's activity sit beside
   them.
 #}
 {% from "app/ui.html" import area_meter, meter_legend, status_chip %}
 {% from "app/pitch_video.html" import pitch_video %}
+{% from "activity/macros.html" import entry %}
 {% macro venture_profile(p, now, aside="", jump="") -%}
 {% set areas = profile_areas(p.evidence) %}
 {% set country = country_name(p.venture.country) %}
 {% set place = [p.founder.city if p.founder else none, country] | select | join(", ") %}
 {% set empty = AREAS | rejectattr("code", "in", areas | map(attribute="category") | list) | list %}
-{% set m = momentum(p.recentUpdates, now) %}
+{% set m = momentum(p.activityDates, now) %}
 {% set recent = is_recent(p.lastActivity, now) %}
 <div class="fr-page">
 <header class="vp-head">
@@ -83,21 +84,18 @@
 <dt>Consistency</dt><dd>{{ m.consistencyText }}</dd>
 <dt>Evidence added</dt><dd>{{ evidence_added_text(p.evidence, now) }}</dd>
 </dl>
-<div class="weeks" role="img" aria-label="Updates in {{ m.activeWeeks }} of the last 13 weeks">{% for w in m.weeks %}<i class="{{ 'on' if w.active else '' }}"></i>{% endfor %}</div>
+<div class="weeks" role="img" aria-label="Activity in {{ m.activeWeeks }} of the last 13 weeks">{% for w in m.weeks %}<i class="{{ 'on' if w.active else '' }}"></i>{% endfor %}</div>
 <p class="c-row c-p" aria-hidden="true"><span>13 weeks ago</span><span>This week</span></p>
-<p class="c-p">A filled week has a progress update.</p>
+<p class="c-p">A filled week has an entry in the activity feed.</p>
 </section>
 <section aria-labelledby="up-h" class="card2">
-<h2 id="up-h" class="c-lbl">Progress updates</h2>
-{% if not p.updates %}
-<p class="c-p">No updates have been posted.</p>
+<h2 id="up-h" class="c-lbl">Activity</h2>
+{% if not p.activity %}
+<p class="c-p">Nothing is recorded yet. IkonetU adds an entry as the venture makes progress.</p>
 {% else %}
-<ul class="upd" style="border:0">
-{% for u in p.updates %}
-<li style="padding:10px 0">
-<time datetime="{{ u.created_at }}">{{ date_text(u.created_at) }}</time>
-<p>{{ u.body }}</p>
-</li>
+<ul class="act act-plain">
+{% for e in p.activity %}
+{{ entry(e, now) }}
 {% endfor %}
 </ul>
 {% endif %}

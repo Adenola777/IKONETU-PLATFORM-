@@ -1,0 +1,4 @@
+{% from "activity/macros.html" import entry %}
+{% for e in entries %}
+{{ entry(e, now) }}
+{% endfor %}

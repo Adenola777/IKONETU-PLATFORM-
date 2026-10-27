@@ -6,49 +6,21 @@
   A founder's and an investor's pages use the app frame of the design (the app flow board, 26
   October 2026): on a phone a header with the mark and the account menu, and a bar of sections
   at the bottom; from 1024px a sidebar with every section and the account at its foot. Staff
-  pages keep the header with sections along the top.
+  pages have their own frame, admin/shell.html, so any other page keeps a plain header.
 #}
-{% set NAV = {
-  "founder": [
-    ("overview", "/dashboard", "Overview"),
-    ("pitch", "/dashboard/pitch", "Pitch"),
-    ("evidence", "/dashboard/evidence", "Evidence"),
-    ("updates", "/dashboard/updates", "Updates"),
-    ("introductions", "/dashboard/introductions", "Introductions"),
-    ("preview", "/dashboard/preview", "What investors see"),
-  ],
-  "investor": [
-    ("discover", "/investor", "Discover founders"),
-    ("requests", "/investor/introductions", "Introductions"),
-    ("profile", "/investor/profile", "Your profile"),
-  ],
-  "reviewer": [
-    ("overview", "/admin", "Overview"),
-    ("founders", "/admin/founders", "Founders"),
-    ("queue", "/admin/evidence", "Evidence to review"),
-  ],
-  "admin": [
-    ("overview", "/admin", "Overview"),
-    ("founders", "/admin/founders", "Founders"),
-    ("queue", "/admin/evidence", "Evidence to review"),
-    ("investors", "/admin/investors", "Investors"),
-    ("register", "/admin/register", "Investor register"),
-    ("people", "/admin/people", "People and roles"),
-    ("audit", "/admin/audit", "Audit log"),
-  ],
-} %}
 {# The app frame's sections: key, address, name in the sidebar, name in the bottom bar, icon. #}
 {% set FRAME = {
   "founder": [
     ("overview", "/dashboard", "Home", "Home", "house"),
     ("pitch", "/dashboard/pitch", "Pitch", "Pitch", "video"),
     ("evidence", "/dashboard/evidence", "Evidence", "Evidence", "file-check"),
-    ("updates", "/dashboard/updates", "Progress updates", none, "activity"),
+    ("activity", "/activity", "Activity", "Activity", "activity"),
     ("introductions", "/dashboard/introductions", "Introductions", "Intros", "message-square"),
     ("preview", "/dashboard/preview", "What investors see", none, "eye"),
   ],
   "investor": [
     ("discover", "/investor", "Discover founders", "Discover", "compass"),
+    ("activity", "/activity", "Activity", "Activity", "activity"),
     ("requests", "/investor/introductions", "Introductions", "Intros", "message-square"),
     ("profile", "/investor/profile", "Your profile", "Profile", "user-round"),
   ],
@@ -60,7 +32,7 @@
 {% set person = frame_viewer.profile.full_name if frame_viewer and frame_viewer.profile else "" %}
 {% set items = FRAME[role] %}
 {# A page that has no place in the bottom bar lights the section it is reached from. #}
-{% set tab = current if current in ["overview", "pitch", "evidence", "introductions", "discover", "requests", "profile"] else "overview" %}
+{% set tab = current if current in ["overview", "pitch", "evidence", "activity", "introductions", "discover", "requests", "profile"] else "overview" %}
 {% set account = ("/dashboard#venture-h", "Your venture details") if role == "founder" else ("/investor/profile", "Your investor profile") %}
 <div class="site pg-app frame {{ 'app-i' if role == 'investor' else 'app-f' }}{{ ' frame-chat' if chat }}">
 <a class="skip" href="#main">Skip to content</a>
@@ -110,7 +82,6 @@
 <main id="main" class="fr-main">{{ self.main() }}</main>
 </div>
 {% else %}
-{% set links = NAV.get(role, []) if role else [] %}
 <div class="site pg-app {{ 'app-i' if role == 'investor' else 'app-f' }}">
 <div class="page">
 <a class="skip" href="#main">Skip to content</a>
@@ -118,19 +89,9 @@
 <div class="app-hdr-in">
 <a href="/" aria-label="IkonetU home" class="app-logo">{{ logo("default", 30) }}</a>
 <form method="post" action="/signout">
-{% if role == "admin" %}<input type="hidden" name="next" value="/admin/signin">{% endif %}
 <button type="submit" class="btn btn-n btn-sm">Sign out</button>
 </form>
 </div>
-{% if links %}
-<nav aria-label="Sections" class="app-nav">
-<ul>
-{% for key, href, label in links %}
-<li><a href="{{ href }}"{% if key == current %} aria-current="page"{% endif %}>{{ label }}</a></li>
-{% endfor %}
-</ul>
-</nav>
-{% endif %}
 </header>
 <main id="main" class="app-main">{{ self.main() }}</main>
 </div>

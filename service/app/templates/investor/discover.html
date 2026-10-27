@@ -68,7 +68,7 @@
 <h3 class="dc-name"><a href="/investor/ventures/{{ r.venture_id }}">{{ r.name }}</a></h3>
 <span class="chip chip-n"><span class="dot" aria-hidden="true"{% if not recent %} style="background:var(--mark-mid)"{% endif %}></span>{{ activity_text(r.last_activity, now) }}</span>
 </div>
-<p class="dc-line">{{ r.founder_name }}{% if r.city %}, {{ r.city }}{% endif %}, {{ country_name(r.country) }} · {{ consistency(r.updates_90d) }}</p>
+<p class="dc-line">{{ r.founder_name }}{% if r.city %}, {{ r.city }}{% endif %}, {{ country_name(r.country) }} · {{ consistency(r.active_weeks) }}</p>
 {% if r.description %}<p class="dc-desc">{{ r.description }}</p>{% endif %}
 <div class="dc-tags"><span>{{ r.sector }}</span><span>{{ stage_label(r.stage) }}</span>{% if length %}<span>{{ length }} pitch</span>{% endif %}</div>
 {% if r.ask %}<p class="dc-ask"><b>Ask:</b> {{ r.ask }}</p>{% endif %}

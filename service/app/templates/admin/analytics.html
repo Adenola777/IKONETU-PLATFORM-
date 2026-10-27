@@ -1,0 +1,92 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import chip %}
+{# The Analytics board: totals for a range, founders and investors by month or by week, the way from the register
+   to an introduction, founders by country, the support they asked for, their universities, and the founders with
+   introductions. The register's sample rows are not counted. #}
+{% macro blist(rows, track, cols) -%}
+{% for c in rows %}
+<div class="a-blist" style="grid-template-columns:{{ cols }}"><span title="{{ c.label }}">{{ c.label }}</span><span aria-hidden="true" class="a-track a-track-{{ track }}"><i style="{{ c.style }}"></i></span><b>{{ c.n }}</b></div>
+{% endfor %}
+{% if a.no_founders %}<p class="a-none">No founders joined in this range.</p>{% endif %}
+{%- endmacro %}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Analytics</h1>
+<p class="a-sub">{{ a.text if a else "" }}</p>
+</div>
+{% if a %}
+<div class="a-btns" style="align-items:center">
+<div role="group" aria-label="Date range" class="a-range">
+{% for key, label in a.buttons %}<a href="{{ link(key) }}"{% if key == a.key %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+</div>
+<a href="{{ csv }}" class="a-btn a-btn-n" download>Export CSV</a>
+</div>
+{% endif %}
+</header>
+{% if failed %}
+<p class="a-alert" role="alert">The analytics could not be read. Please reload the page.</p>
+{% else %}
+<section aria-label="Totals for the range" class="a-kpis" style="grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:16px">
+{% for label, value in a.kpis %}
+<div class="a-stat"><span class="a-kpi-label">{{ label }}</span><span class="a-kpi-value">{{ value }}</span></div>
+{% endfor %}
+</section>
+
+<section aria-labelledby="growth-h" class="a-card" style="gap:12px">
+<div class="a-split">
+<h2 id="growth-h" class="a-h2">{{ a.chart_title }}</h2>
+<div class="a-legend" style="gap:12px">
+<span><span aria-hidden="true" class="a-key a-key-f"></span>Founders</span>
+<span><span aria-hidden="true" class="a-key a-key-i"></span>Investors</span>
+</div>
+</div>
+<div role="img" aria-label="{{ a.chart_label }}" class="a-schart">
+{% for b in a.bars %}
+<div>{% if b.total %}<b>{{ b.total }}</b>{% endif %}<i class="a-seg-f{{ ' a-top' if b.f_top }}" style="{{ b.f_style }}"></i><i class="a-seg-i{{ ' a-top' if b.i_top }}" style="{{ b.i_style }}"></i></div>
+{% endfor %}
+</div>
+<div aria-hidden="true" class="a-saxis">
+{% for b in a.bars %}<span>{{ b.label }}</span>{% endfor %}
+</div>
+</section>
+
+<div class="a-grid-2w">
+<section aria-labelledby="funnel-h" class="a-card" style="gap:12px">
+<h2 id="funnel-h" class="a-h2">From register to introduction</h2>
+{% for f in a.funnel %}
+<div class="a-blist" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 40px"><span>{{ f.label }}</span><span aria-hidden="true" class="a-track a-track-f"><i style="{{ f.style }}"></i></span><b>{{ f.n }}</b></div>
+{% endfor %}
+</section>
+<section aria-labelledby="country-h" class="a-card">
+<h2 id="country-h" class="a-h2">Founders by country</h2>
+{{ blist(a.countries, "f", "minmax(0,1.2fr) minmax(0,2fr) 40px") }}
+</section>
+<section aria-labelledby="support-h" class="a-card">
+<h2 id="support-h" class="a-h2">Support founders asked for</h2>
+{{ blist(a.support, "i", "minmax(0,1.6fr) minmax(0,2fr) 40px") }}
+</section>
+<section aria-labelledby="uni-h" class="a-card">
+<h2 id="uni-h" class="a-h2">Universities with the most founders</h2>
+{{ blist(a.universities, "i", "minmax(0,2fr) minmax(0,1.4fr) 40px") }}
+</section>
+</div>
+
+<section aria-labelledby="top-h" class="a-card a-card-flush">
+<h2 id="top-h" class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">Founders with introductions</h2>
+{% if table_failed %}<p class="a-alert" role="alert" style="margin:16px 20px">The introductions could not be read. Please reload the page.</p>{% endif %}
+<div class="a-tablebox">
+<table class="a-table" style="min-width:560px">
+<thead><tr><th scope="col">Founder</th><th scope="col">Startup</th><th scope="col">Investor</th><th scope="col">Made</th><th scope="col">Status</th></tr></thead>
+<tbody>
+{% for n in a.table %}
+<tr><td>{{ n.founder }}</td><td>{{ n.startup }}</td><td>{{ n.investor }}</td><td style="white-space:nowrap">{{ n.made }}</td><td>{{ chip(n.status, n.chip) }}</td></tr>
+{% else %}
+<tr><td colspan="5" class="a-empty">No introduction was made in this range.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% endif %}
+{% endblock %}

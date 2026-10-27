@@ -17,6 +17,14 @@
   --footer: #0B1A33;
   --footer-text: #B9C4D6;
   --footer-line: #1E3150;
+  /* The admin sidebar, black since 27 October 2026, with white text and brighter colours on it. */
+  --side: #000000;
+  --side-text: #FFFFFF;
+  --side-muted: #E4E7EC; /* section names and icons */
+  --side-line: #404040; /* hover, counts and dividers */
+  --side-current: #2563EB; /* the page that is open */
+  --side-accent: #FF8533; /* the ADMIN badge and the Sign out button's edge */
+  --sample-on-dark: #FEC84B; /* the admin sidebar's Sample data badge, on the black sidebar */
 
   /* Founder context. The orange is a fill only: as text it measures 3.05:1 on white. */
   --founder: #F26B1D;
@@ -48,6 +56,7 @@
   --error-line: #FECDCA;
   --warning: #93370D;
   --warning-tint: #FFFAEB;
+  --waiting-bar: #F79009; /* the bar on a card that counts what waits for review, beside its text */
 
   /* Measures: the readiness meter and the dated progress strip */
   --mark-on: #344054;

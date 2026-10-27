@@ -18,15 +18,16 @@ const AREAS = [
 ];
 const LEVEL_NAME = { 3: "Strong", 2: "Building", 1: "Gap" };
 
-// Sample updates, by week number counted from the week of 20 July 2026.
+// Sample entries of the activity feed, by week number counted from the week of 20 July 2026. They read
+// as the app writes them (app/activity.py), because founders no longer post updates.
 const WEEK_NOTES = {
-  1: ["Started a pilot with a market traders association."],
-  2: ["Switched on USSD payments for every trader."],
-  4: ["Added three months of business bank statements."],
-  7: ["Reached 1,000 active traders."],
-  8: ["Hired a field agent for a second market."],
-  11: ["Added two merchant references."],
-  12: ["Revenue evidence verified by IkonetU.", "Shipped receipt sharing on WhatsApp."],
+  1: ["Market Day Pay added a pitch."],
+  2: ["Market Day Pay published its profile."],
+  4: ["Market Day Pay has platform-reviewed evidence in Financial."],
+  7: ["Market Day Pay set out what it is raising."],
+  8: ["Market Day Pay has third-party evidence in Registration."],
+  11: ["Market Day Pay accepted an introduction from an angel investor."],
+  12: ["Market Day Pay has platform-reviewed evidence in Traction.", "Market Day Pay recorded a new pitch."],
 };
 const MONDAY = Date.UTC(2026, 6, 20);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -57,7 +58,7 @@ export default {
     const weeks = Array.from({ length: 13 }, (_, i) => {
       const notes = WEEK_NOTES[i] || [];
       return {
-        name: `Week of ${weekLabel(i)}${notes.length ? `, ${notes.length} ${notes.length === 1 ? "update" : "updates"}` : ", no update"}`,
+        name: `Week of ${weekLabel(i)}${notes.length ? `, ${notes.length} ${notes.length === 1 ? "entry" : "entries"}` : ", no activity"}`,
         bg: notes.length ? "var(--mark-on)" : "var(--mark-off)",
         on: s.week === i,
         pick: () => set((now) => ({ ...now, week: i })),

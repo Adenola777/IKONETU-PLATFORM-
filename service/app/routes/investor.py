@@ -15,14 +15,15 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
 
+from .. import platform
 from ..discovery import PAGE_SIZE, filter_count, match_text, parse_filters, query_string, rpc_args
 from ..forms import parse_introduction_note
 from ..investor import parse_investor_edit, parse_investor_signup
 from ..log import log_error, log_info
-from ..product import is_shown_status
+from ..product import is_shown_status, weeks_text
 from ..session import RedirectTo, home_for, require_investor, require_viewer
 from ..venture_profile import load_venture_profile
-from ..web import Meta, failed, form_data, one, redirect, render, sent
+from ..web import Meta, failed, form_data, lower_first, one, redirect, render, sent
 
 router = APIRouter()
 
@@ -113,8 +114,9 @@ async def investor_pending(request: Request):
 
 
 # ---------------------------------------------------------------- discovery
-def consistency(n: int) -> str:
-    return "no updates in 90 days" if n == 0 else f"{n} {'update' if n == 1 else 'updates'} in 90 days"
+def consistency(active_weeks: int | None) -> str:
+    """A card's line on momentum, for example "active in 4 of the last 13 weeks"."""
+    return lower_first(weeks_text(active_weeks or 0))
 
 
 @router.get("/investor")
@@ -144,6 +146,14 @@ async def discover(request: Request):
 
 
 # ---------------------------------------------------------------- a founder profile
+PAUSED = "IkonetU has paused introduction requests for now. Please try again later."
+
+
+def limit_text(n: int) -> str:
+    """Ten requests, or one request, as the investor pages write the daily limit."""
+    return f"{platform.number_text(n)} {'request' if n == 1 else 'requests'}"
+
+
 async def _venture_page(request: Request, v, venture_id: str, states: dict | None = None):
     if not ID.fullmatch(venture_id):
         raise HTTPException(404)
@@ -152,7 +162,9 @@ async def _venture_page(request: Request, v, venture_id: str, states: dict | Non
         raise HTTPException(404)
     mine = await v.db.table("introductions").eq("venture_id", venture_id).eq("investor_id", v.id) \
         .order("created_at", ascending=False).limit(1).maybe_single("id, status, created_at, decided_at")
-    context = {"p": p, "venture_id": venture_id, "intro": mine.data, "now": datetime.now(timezone.utc)}
+    rules = await platform.rules(request.app.state.supabase)
+    context = {"p": p, "venture_id": venture_id, "intro": mine.data, "now": datetime.now(timezone.utc),
+               "intros_on": rules.introductions_on}
     if states:
         context["states"] = states
     return render(request, "investor/venture.html", context, _meta("Founder profile"))
@@ -179,14 +191,17 @@ async def request_introduction(request: Request, venture_id: str):
     if not result.ok:
         error = result.error
         text = error.message or ""
-        expected = error.code == "23505" or re.search(r"ten requests a day|not published", text)
+        limit = re.search(r"limit of (\d+) requests a day", text)
+        expected = error.code == "23505" or limit or re.search(r"switched off|not published", text)
         (log_info if expected else log_error)(
             "introduction.request_refused" if expected else "introduction.request_failed", {"venture": venture, "code": error.code}
         )
         if error.code == "23505":
             message = "You have already asked this founder for an introduction."
-        elif "ten requests a day" in text:
-            message = "You have reached the limit of ten requests a day. Please try again tomorrow."
+        elif limit:
+            message = f"You have reached the limit of {limit_text(int(limit.group(1)))} a day. Please try again tomorrow."
+        elif "switched off" in text:
+            message = PAUSED
         elif "not published" in text:
             message = "This founder has hidden their profile."
         else:
@@ -230,8 +245,10 @@ async def investor_introductions(request: Request):
         tab = "all"
     shown = {"all": rows, "waiting": [r for r in rows if r["status"] == "pending"],
              "accepted": [r for r in rows if r["status"] == "accepted"]}
+    rules = await platform.rules(request.app.state.supabase)
     return render(request, "investor/introductions.html", {
         "rows": rows, "shown": shown[tab], "tab": tab, "counts": {k: len(x) for k, x in shown.items()},
+        "per_day": limit_text(rules.introductions_per_day), "intros_on": rules.introductions_on,
     }, _meta("Your introductions"))
 
 

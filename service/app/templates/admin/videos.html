@@ -1,0 +1,87 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import chip %}
+{# The Pitch videos board: the videos sent to IkonetU's Google Drive, listed by review status beside the one chosen.
+   Approving needs all four checks ticked, and rejecting needs one of six reasons. The video plays in Google Drive. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Pitch videos</h1>
+<p class="a-sub">{{ subtitle }}</p>
+</div>
+</header>
+{% if failed %}<p class="a-alert" role="alert">The pitch videos could not be read. Please reload the page.</p>{% endif %}
+<nav aria-label="Video lists" class="a-tabs">
+{% for key, label, count in tabs %}
+<a href="{{ av.query('/admin/videos', {'tab': none if key == 'pending' else key}) }}" class="a-tab"{% if key == tab %} aria-current="page"{% endif %}>{{ label }} <span>{{ count }}</span></a>
+{% endfor %}
+</nav>
+<div class="a-vids">
+<section aria-label="Videos in this list" class="a-vlist">
+{% for v in items %}
+<a href="{{ av.query('/admin/videos', {'tab': none if tab == 'pending' else tab, 'video': v.video_id}) }}" class="a-vitem"{% if sel and v.video_id == sel.video_id %} aria-current="true"{% endif %}>
+<span aria-hidden="true" class="a-thumb">{{ icon("admin-play", 18, fill=true) }}<b>{{ v.file_type }}</b></span>
+<span class="a-vtext">
+<span class="a-vname">{{ v.title }}</span>
+<span>{{ v.line }}</span>
+<span>Uploaded {{ v.uploaded }}</span>
+{{ chip(v.status, v.chip) }}
+</span>
+</a>
+{% else %}
+<p class="a-dashed" style="padding:32px 16px">No pitch videos in this list.</p>
+{% endfor %}
+</section>
+{% if sel %}
+<section aria-labelledby="rv-h" class="a-card a-vpane" style="gap:14px">
+<div class="a-split" style="align-items:center">
+<h2 id="rv-h" class="a-h2" style="font-size:18px;overflow-wrap:anywhere">{{ sel.title }}</h2>
+{{ chip(sel.status, sel.chip) }}
+</div>
+<p class="a-note" style="font-size:14px">{{ sel.meta }}</p>
+<div class="a-player">
+<a href="{{ sel.drive_url }}" target="_blank" rel="noopener" class="a-play" aria-label="Play the pitch video in Google Drive">{{ icon("admin-play", 22, fill=true) }}</a>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<h3 class="a-h3" style="margin:0">Transcript</h3>
+<p style="margin:0;font-size:14px;color:var(--text-3)">{{ sel.transcript_text }}</p>
+</div>
+{% if sel.status == "pending" %}
+<form method="post" action="/admin/videos/{{ sel.video_id }}/approve" data-all-checks class="a-checks">
+<input type="hidden" name="tab" value="{{ tab }}">
+<fieldset>
+<legend>Does the pitch name each of these?</legend>
+{% for key, label in av.VIDEO_CHECKS %}
+<label class="a-check"><input type="checkbox" name="{{ key }}"> {{ label }}</label>
+{% endfor %}
+</fieldset>
+<div class="a-btns" style="align-items:center">
+<button type="submit" class="a-btn a-btn-ok" data-needs-checks>Approve video</button>
+<span class="a-note" data-checks-hint>Tick all four to approve.</span>
+</div>
+</form>
+<form method="post" action="/admin/videos/{{ sel.video_id }}/reject" class="a-reject">
+<input type="hidden" name="tab" value="{{ tab }}">
+<div class="a-field">
+<label for="v-reason">Or reject it, with a reason the founder sees</label>
+<select id="v-reason" name="reason" class="a-select" style="min-height:40px;font-size:14px"{% if reason_missing %} aria-invalid="true"{% endif %}>
+<option value="">Choose a reason</option>
+{% for r in av.REJECT_REASONS %}<option value="{{ r }}">{{ r[:-1] }}</option>{% endfor %}
+</select>
+</div>
+{% if reason_missing %}<p class="a-alert" role="alert">Choose a reason first.</p>{% endif %}
+<button type="submit" class="a-btn a-btn-bad" style="align-self:flex-start">Reject video</button>
+</form>
+{% else %}
+<div class="a-checks">
+<p class="a-decided a-decided-{{ sel.status }}">{{ sel.decided }}</p>
+<form method="post" action="/admin/videos/{{ sel.video_id }}/reopen"><input type="hidden" name="tab" value="{{ tab }}"><button type="submit" class="a-btn a-btn-n">Return to pending review</button></form>
+</div>
+{% endif %}
+<div class="a-btns" style="gap:16px">
+<a href="{{ sel.drive_url }}" target="_blank" rel="noopener" class="a-go">Open the file in Google Drive</a>
+{% if sel.record_href %}<a href="{{ sel.record_href }}" class="a-go">Open the founder record</a>{% endif %}
+</div>
+</section>
+{% endif %}
+</div>
+{% endblock %}

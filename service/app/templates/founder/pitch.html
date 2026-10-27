@@ -11,7 +11,7 @@
 {% block scripts %}<script src="/static/js/app/pitch-video.js" defer></script>
 <script src="/static/js/app/pitch-upload.js" defer></script>{% endblock %}
 {% macro say() %}Say who you are, what your venture does, who it is for and what you have done so far. Investors see the video with captions made from your transcript.{% endmacro %}
-{% macro needs() %}A pitch is an MP4, WebM or MOV file of up to 90 seconds and 50 MB. A one-minute video recorded at 720p is usually well under 50 MB.{% endmacro %}
+{% macro needs() %}A pitch is {{ pitch_rules.article }} {{ pitch_rules.names }} file of up to {{ pitch_rules.seconds }} seconds and {{ pitch_rules.mb }} MB.{% if pitch_rules.mb == 50 and pitch_rules.seconds >= 60 %} A one-minute video recorded at 720p is usually well under 50 MB.{% endif %}{% endmacro %}
 {#
   The founder chooses a video and types what they say. pitch-upload.js sends the video from the
   browser straight to the founder's own folder in storage, and the server then records it with
@@ -19,12 +19,12 @@
 #}
 {% macro upload_form() %}
 {% set up = states.get("upload", {}) %}
-<form class="form" novalidate data-pitch-upload data-user="{{ user_id }}" data-storage="{{ storage_url }}" data-key="{{ storage_key }}" data-has-pitch="{{ 'yes' if pitch else 'no' }}">
+<form class="form" novalidate data-pitch-upload data-user="{{ user_id }}" data-storage="{{ storage_url }}" data-key="{{ storage_key }}" data-has-pitch="{{ 'yes' if pitch else 'no' }}" data-types="{{ pitch_rules.types | join(',') }}" data-names="{{ pitch_rules.names }}" data-article="{{ pitch_rules.article }}" data-max-mb="{{ pitch_rules.mb }}" data-max-seconds="{{ pitch_rules.seconds }}">
 {% if up.get("status") == "sent" %}<p class="status status-ok" role="status">{{ up.message }}</p>{% endif %}
 <div class="field">
 <label for="p-video">{{ "Choose a new video to replace your pitch" if pitch else "Your pitch video" }}</label>
-<input id="p-video" type="file" accept="{{ PITCH_TYPES | join(',') }}" class="input" aria-describedby="p-video-hint">
-<p id="p-video-hint" class="hint">MP4, WebM or MOV, up to 90 seconds and 50 MB.</p>
+<input id="p-video" type="file" accept="{{ pitch_rules.types | join(',') }}" class="input" aria-describedby="p-video-hint">
+<p id="p-video-hint" class="hint">{{ pitch_rules.names }}, up to {{ pitch_rules.seconds }} seconds and {{ pitch_rules.mb }} MB.</p>
 </div>
 <div class="field">
 <label for="p-transcript">What you say in the pitch</label>

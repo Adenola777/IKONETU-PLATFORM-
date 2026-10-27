@@ -27,6 +27,8 @@
 <a class="btn btn-i btn-wide" href="/introductions/{{ intro.id }}">{{ icon("message-square", 18) }}Open the conversation</a>
 {% elif intro and intro.status == "declined" and not st %}
 <p class="c-p">{{ founder }} declined your request on {{ date_text(intro.decided_at) }}. A declined request cannot be sent again.</p>
+{% elif not intros_on and not st %}
+<p class="c-p">IkonetU has paused introduction requests for now. You can ask {{ founder }} for an introduction when they open again.</p>
 {% else %}
 <p class="c-p">Every introduction starts here, so both sides know who is asking and why. The founder accepts or declines, and an accepted request opens a conversation on IkonetU.</p>
 {% set errors = st.get("errors", {}) %}

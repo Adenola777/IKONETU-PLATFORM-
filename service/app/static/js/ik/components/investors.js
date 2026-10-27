@@ -5,12 +5,12 @@ import { captionAt, reducedMotion } from "../pitches.js";
 import { navVals } from "../side.js";
 
 const FOUNDERS = [
-  { id: "chama", name: "Chama Books", city: "Nairobi", country: "Kenya", sector: "Fintech", stage: "Earning revenue", length: "0:58", days: 9, n90: 6, lv: [4, 4, 3], ev: [["Revenue", "reviewed"], ["Team", "submitted"]] },
-  { id: "clinic", name: "Clinic Queue", city: "Nairobi", country: "Kenya", sector: "Health", stage: "Scaling", length: "0:55", days: 12, n90: 4, lv: [5, 4, 2], ev: [["Registration", "third"], ["Revenue", "reviewed"]] },
-  { id: "farmgate", name: "Farmgate Ledger", city: "Accra", country: "Ghana", sector: "Agritech", stage: "Earning revenue", length: "0:59", days: 41, n90: 2, lv: [5, 3, 3], ev: [["Revenue", "reviewed"], ["Registration", "submitted"]] },
-  { id: "harvest", name: "Harvest Cold Rooms", city: "Kumasi", country: "Ghana", sector: "Agritech", stage: "First version", length: "0:57", days: 64, n90: 1, lv: [2, 4, 5], ev: [["Registration", "submitted"]] },
-  { id: "learnloop", name: "LearnLoop", city: "Lagos", country: "Nigeria", sector: "Edtech", stage: "First version", length: "1:00", days: 5, n90: 5, lv: [3, 5, 3], ev: [["Registration", "third"], ["Revenue", "submitted"]] },
-  { id: "mdp", name: "Market Day Pay", city: "Lagos", country: "Nigeria", sector: "Fintech", stage: "Earning revenue", length: "1:00", days: 2, n90: 8, lv: [5, 4, 2], ev: [["Revenue", "reviewed"], ["Registration", "third"]] },
+  { id: "chama", name: "Chama Books", city: "Nairobi", country: "Kenya", sector: "Fintech", stage: "Earning revenue", length: "0:58", days: 9, weeks: 6, lv: [4, 4, 3], ev: [["Revenue", "reviewed"], ["Team", "submitted"]] },
+  { id: "clinic", name: "Clinic Queue", city: "Nairobi", country: "Kenya", sector: "Health", stage: "Scaling", length: "0:55", days: 12, weeks: 4, lv: [5, 4, 2], ev: [["Registration", "third"], ["Revenue", "reviewed"]] },
+  { id: "farmgate", name: "Farmgate Ledger", city: "Accra", country: "Ghana", sector: "Agritech", stage: "Earning revenue", length: "0:59", days: 41, weeks: 2, lv: [5, 3, 3], ev: [["Revenue", "reviewed"], ["Registration", "submitted"]] },
+  { id: "harvest", name: "Harvest Cold Rooms", city: "Kumasi", country: "Ghana", sector: "Agritech", stage: "First version", length: "0:57", days: 64, weeks: 1, lv: [2, 4, 5], ev: [["Registration", "submitted"]] },
+  { id: "learnloop", name: "LearnLoop", city: "Lagos", country: "Nigeria", sector: "Edtech", stage: "First version", length: "1:00", days: 5, weeks: 5, lv: [3, 5, 3], ev: [["Registration", "third"], ["Revenue", "submitted"]] },
+  { id: "mdp", name: "Market Day Pay", city: "Lagos", country: "Nigeria", sector: "Fintech", stage: "Earning revenue", length: "1:00", days: 2, weeks: 8, lv: [5, 4, 2], ev: [["Revenue", "reviewed"], ["Registration", "third"]] },
 ];
 
 const GROUPS = [
@@ -76,7 +76,7 @@ export default {
         building: f.lv[1],
         gap: f.lv[2],
         cells: Array.from({ length: 11 }, (_, i) => ({ c: i < f.lv[0] ? "s" : i < f.lv[0] + f.lv[1] ? "b" : "" })),
-        meta: `${f.city}, ${f.country} · ${f.sector} · ${f.stage} · ${f.length} pitch · ${f.n90} ${f.n90 === 1 ? "update" : "updates"} in 90 days`,
+        meta: `${f.city}, ${f.country} · ${f.sector} · ${f.stage} · ${f.length} pitch · active in ${f.weeks} of the last 13 weeks`,
         momText: `Updated ${f.days} days ago`,
         momCls: "chip-n",
         // As in the app's founder search: a recent clock takes the chip's text colour, and an older one is muted.

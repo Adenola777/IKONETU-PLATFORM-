@@ -72,7 +72,7 @@ def test_founder_pages_carry_the_app_frame_with_the_sidebar_and_the_bottom_bar(c
     side = body.split('class="fr-nav"')[1].split("</nav>")[0]
     assert re.search(r'href="/dashboard/introductions" aria-current="page">.*?<span>Introductions</span>', side)
     tabs = body.split('class="fr-tabs"')[1].split("</nav>")[0]
-    assert re.findall(r"</span>(\w+)</a>", tabs) == ["Home", "Pitch", "Evidence", "Intros"]
+    assert re.findall(r"</span>(\w+)</a>", tabs) == ["Home", "Pitch", "Evidence", "Activity", "Intros"]
     assert re.search(r'aria-current="page"><span class="fr-pill">.*?</span>Intros</a>', tabs)
     assert '<span class="fr-av" aria-hidden="true">KB</span>' in body
 
@@ -130,7 +130,7 @@ def test_the_conversation_lays_out_the_thread_lists_the_others_and_offers_the_re
     assert '<li class="ch-event">You accepted this introduction.</li>' in body
     assert '<li class="bub mine"><span class="sr-only">You: </span>Thank you for reaching out.</li>' in body
     assert f'<a href="/introductions/{INTRO}" aria-current="page">' in body and f'<a href="/introductions/{OTHER}">' in body
-    assert 'href="mailto:info@ikonetu.com?subject=Report%20about%20conversation%20' in body
+    assert re.search(r'<a class="bad" href="/introductions/[0-9a-f-]{36}/report">Report this conversation</a>', body)
     assert f'action="/introductions/{INTRO}/message"' in body and 'aria-label="Send"' in body
     # Only the conversations the person is part of and that are open are listed beside it.
     listed = [r for r in fake.sent("GET", "/rest/v1/introductions") if "status=eq.accepted" in str(r.url)]

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{#
+  The frame of every admin page, from the sidebar board of the admin design the owner approved on
+  26 October 2026. A page sets `current` before it starts; the route passes `shell`, which
+  admin_view.shell() builds. A reviewer sees only the sections a reviewer may use. A page from
+  before the redesign sets `legacy`, so its own styles in app.css still apply inside the frame.
+#}
+{% set ADMIN_NAV = [
+  ("Overview", [("dashboard", "/admin", "Dashboard", "admin-dashboard", none)]),
+  ("People", [
+    ("founders", "/admin/founders", "Founders", "admin-founders", "founders"),
+    ("investors", "/admin/investors", "Investors", "admin-investors", "investors"),
+    ("introductions", "/admin/introductions", "Introductions", "admin-introductions", "introductions"),
+  ]),
+  ("Content", [
+    ("videos", "/admin/videos", "Pitch videos", "admin-videos", none),
+    ("moderation", "/admin/content", "Reports and Evidence", "admin-moderation", none),
+  ]),
+  ("Insight", [("analytics", "/admin/analytics", "Analytics", "admin-analytics", none)]),
+  ("System", [
+    ("database", "/admin/database", "Database", "admin-database", none),
+    ("settings", "/admin/settings", "Settings", "admin-settings", none),
+    ("audit", "/admin/audit", "Audit log", "admin-audit", none),
+  ]),
+] %}
+{% set REVIEWER_NAV = [
+  ("People", [("founders", "/admin/founders", "Founders", "admin-founders", none)]),
+  ("Content", [("moderation", "/admin/content", "Reports and Evidence", "admin-moderation", none)]),
+] %}
+{% block styles %}{% if legacy %}<link rel="stylesheet" href="/static/css/app.css">{% endif %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+{% block scripts %}<script src="/static/js/admin.js" defer></script>{% block page_scripts %}{% endblock %}{% endblock %}
+{% block body %}
+<div class="adm">
+<a class="skip" href="#main">Skip to content</a>
+<nav aria-label="Admin" class="adm-side">
+<div class="adm-brand">
+<a href="{{ '/admin' if shell.admin else '/admin/content' }}" aria-label="IkonetU admin dashboard" class="adm-logo">{{ logo("navy", 32) }}</a>
+<span class="adm-badges"><span class="adm-badge">ADMIN</span>{% if shell.sample %}<span class="adm-badge adm-badge-sample">Sample data</span>{% endif %}</span>
+</div>
+<details class="adm-menu" open data-menu>
+<summary>{{ icon("menu", 18) }}Menu</summary>
+<div class="adm-sections">
+{% for group, links in (ADMIN_NAV if shell.admin else REVIEWER_NAV) %}
+<div class="adm-group">
+<p class="adm-group-name">{{ group }}</p>
+{% for key, href, label, ic, count in links %}
+<a href="{{ href }}" class="adm-link"{% if key == current %} aria-current="page"{% endif %}>
+<span class="adm-ic">{{ icon(ic, 18) }}</span>
+<span class="adm-name">{{ label }}</span>
+{% if count and shell.counts and shell.counts[count] is not none %}<span class="adm-count">{{ shell.counts[count] }}</span>{% endif %}
+</a>
+{% endfor %}
+</div>
+{% endfor %}
+</div>
+</details>
+<div class="adm-foot">
+<div class="adm-who">
+<b>{{ shell.name or "Your account" }}</b>
+{% if shell.email %}<span>{{ shell.email }}</span>{% endif %}
+</div>
+<div class="adm-acts">
+{% if shell.admin %}<a href="/admin/settings#account" class="adm-acct">My account</a>{% endif %}
+<form method="post" action="/signout">
+<input type="hidden" name="next" value="/admin/signin">
+<button type="submit" class="adm-out">Sign out</button>
+</form>
+</div>
+</div>
+</nav>
+<main id="main" class="adm-main{{ ' adm-main-dash' if current == 'dashboard' }}{{ ' site pg-app app-i adm-legacy' if legacy }}">
+{% if flash and flash.get("form") == "notice" %}
+<div class="a-notice" role="status"><span>{{ flash.message }}</span></div>
+{% endif %}
+{% block main %}{% endblock %}
+</main>
+</div>
+{% endblock %}

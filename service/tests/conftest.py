@@ -16,6 +16,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app import platform
 from app.main import app
 from app.supabase import Supabase
 
@@ -52,6 +53,14 @@ class FakeSupabase:
 @pytest.fixture
 def fake():
     return FakeSupabase()
+
+
+@pytest.fixture(autouse=True)
+def fresh_platform_rules():
+    """The platform settings are kept for a few seconds in the process, so each test reads its own."""
+    platform.forget()
+    yield
+    platform.forget()
 
 
 @pytest.fixture

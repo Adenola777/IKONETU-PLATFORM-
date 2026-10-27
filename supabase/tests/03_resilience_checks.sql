@@ -76,14 +76,13 @@ select pg_temp.ok('R3b a founder cannot remove a file their evidence records',
 set role authenticated;
 set request.jwt.claim.sub = 'a1a1a1a1-0000-0000-0000-000000000001';
 
--- R4: a progress update sent twice with one key is kept once.
-insert into public.venture_updates (venture_id, body, request_key)
-values ('d4d4d4d4-0000-0000-0000-000000000001', 'We opened a second office this week.', 'e5e5e5e5-0000-0000-0000-000000000004');
+-- R4: founders no longer post progress updates (20261027000001), so the
+-- request key on the update form has nothing left to guard.
 do $$ begin
   insert into public.venture_updates (venture_id, body, request_key)
   values ('d4d4d4d4-0000-0000-0000-000000000001', 'We opened a second office this week.', 'e5e5e5e5-0000-0000-0000-000000000004');
-  perform pg_temp.ok('R4 an update sent twice with one key is kept once', false, 'second insert succeeded');
-exception when unique_violation then perform pg_temp.ok('R4 an update sent twice with one key is kept once', true);
+  perform pg_temp.ok('R4 a founder can no longer post a progress update', false, 'insert succeeded');
+exception when others then perform pg_temp.ok('R4 a founder can no longer post a progress update', sqlstate = '42501', sqlerrm);
 end $$;
 
 -- Publish the venture, so the investor can ask for an introduction.
@@ -163,6 +162,6 @@ do $$ begin
   insert into public.introductions (venture_id, note)
   select id, 'A note of at least twenty characters.' from public.ventures where name = 'Limit Venture 10';
   perform pg_temp.ok('R11 an eleventh request on the same day is refused', false, 'insert succeeded');
-exception when others then perform pg_temp.ok('R11 an eleventh request on the same day is refused', sqlerrm like '%ten requests a day%', sqlerrm);
+exception when others then perform pg_temp.ok('R11 an eleventh request on the same day is refused', sqlerrm like '%limit of 10 requests a day%', sqlerrm);
 end $$;
 reset role;

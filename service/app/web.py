@@ -13,7 +13,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from . import discovery, forms, investor, jsfmt, product, staff
+from . import activity, discovery, forms, investor, jsfmt, product, staff
 from .captions import cues_from_transcript
 from .config import settings
 from .icons import icon, logo, mark
@@ -49,12 +49,13 @@ templates.env.globals.update(
     activity_text=product.activity_text, clock_text=product.clock_text, is_recent=product.is_recent,
     stage_label=product.stage_label, country_name=product.country_name, level_of=product.level_of,
     momentum=product.momentum, evidence_added_text=product.evidence_added_text, bare_url=bare_url,
-    cues=cues_from_transcript, PITCH_TYPES=forms.PITCH_TYPES, EVIDENCE_FILE_TYPES=forms.EVIDENCE_FILE_TYPES,
+    ago_text=activity.ago_text,
+    cues=cues_from_transcript, EVIDENCE_FILE_TYPES=forms.EVIDENCE_FILE_TYPES,
     OPTIONAL_CONSENTS=forms.OPTIONAL_CONSENTS, profile_areas=profile_areas, list_text=list_text,
     INVESTOR_TYPE_NAME=product.INVESTOR_TYPE_NAME, CHEQUE_SIZES=product.CHEQUE_SIZES, BASED_IN=investor.BASED_IN,
     INVESTOR_TYPE_OPTIONS=investor.INVESTOR_TYPE_OPTIONS, FILTER_GROUPS=discovery.FILTER_GROUPS,
     ACTIVITY_OPTIONS=discovery.ACTIVITY_OPTIONS, ROLE_NAME=staff.ROLE_NAME, ACCOUNT_STATUS_NAME=staff.ACCOUNT_STATUS_NAME,
-    ACTION_GROUPS=staff.ACTION_GROUPS, action_text=staff.action_text, REVIEW_LANES=forms.REVIEW_LANES,
+    action_text=staff.action_text, REVIEW_LANES=forms.REVIEW_LANES,
     signal_label=forms.signal_label, when_text=jsfmt.when_text, month_long=jsfmt.month_long,
     based_in_name=lambda code: next((c["name"] for c in investor.BASED_IN if c["code"] == code), code),
 )

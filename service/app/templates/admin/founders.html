@@ -1,0 +1,138 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import tabs, scards, pager, chip %}
+{# The Founders board: the founders from the register form, filtered and paged, and the sign-ups that never
+   chose a role. The Accounts tab, added with the build, lists the founders who have an IkonetU account. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Founders</h1>
+<p class="a-sub">{{ subtitle }}</p>
+</div>
+<a href="{{ csv }}" class="a-btn a-btn-n" download>Export CSV</a>
+</header>
+{{ tabs("Founder views", [
+  ("founders", "Founders", total, "/admin/founders"),
+  ("accounts", "Accounts", none, "/admin/founders?tab=accounts"),
+  ("unfinished", "Sign-ups not finished", signups | length, "/admin/founders?tab=unfinished"),
+], tab) }}
+{% if failed %}<p class="a-alert" role="alert">The founder register could not be read. Please reload the page.</p>{% endif %}
+
+{% if tab == "founders" %}
+{{ scards("Pitch videos by status", [
+  ("Pending review", counts.pending, "a-bar-pending", link(video=none if f.video == "pending" else "pending"), f.video == "pending", none),
+  ("Approved", counts.approved, "a-bar-approved", link(video=none if f.video == "approved" else "approved"), f.video == "approved", none),
+  ("Rejected", counts.rejected, "a-bar-rejected", link(video=none if f.video == "rejected" else "rejected"), f.video == "rejected", none),
+  ("Not uploaded", counts.none, "a-bar-none", link(video=none if f.video == "none" else "none"), f.video == "none", none),
+]) }}
+<form role="search" method="get" action="/admin/founders" class="a-filters" data-auto>
+<div class="a-field a-field-grow">
+<label for="f-q">Name, startup, email or phone</label>
+<input id="f-q" name="q" type="search" class="a-input" value="{{ f.q }}">
+</div>
+<div class="a-field">
+<label for="f-country">Country</label>
+<select id="f-country" name="country" class="a-select">
+<option value="any">All countries</option>
+{% for name, n in options.countries %}<option value="{{ name }}"{% if f.country == name %} selected{% endif %}>{{ name }} ({{ n }})</option>{% endfor %}
+</select>
+</div>
+<div class="a-field">
+<label for="f-month">Joined</label>
+<select id="f-month" name="month" class="a-select">
+<option value="any">Any month</option>
+{% for m in options.months %}<option value="{{ m }}"{% if f.month == m %} selected{% endif %}>{{ av.month_name(m) }}</option>{% endfor %}
+</select>
+</div>
+<div class="a-field a-field-wide">
+<label for="f-support">Support asked for</label>
+<select id="f-support" name="support" class="a-select">
+<option value="any">Any support</option>
+{% for s in options.support %}<option value="{{ s }}"{% if f.support == s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+</select>
+</div>
+<div class="a-field">
+<label for="f-video">Pitch video</label>
+<select id="f-video" name="video" class="a-select">
+<option value="any">Any</option>
+{% for k in ["pending", "approved", "rejected", "none"] %}<option value="{{ k }}"{% if f.video == k %} selected{% endif %}>{{ av.VIDEO_CHIPS[k] }}</option>{% endfor %}
+</select>
+</div>
+<div class="a-field">
+<label for="f-sort">Sort</label>
+<select id="f-sort" name="sort" class="a-select">
+{% for k, label in FOUNDER_SORTS.items() %}<option value="{{ k }}"{% if f.sort == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>
+</div>
+<button type="submit" class="a-btn a-btn-n" data-apply>Show</button>
+<a href="/admin/founders" class="a-btn a-btn-n">Clear</a>
+</form>
+
+<section aria-labelledby="list-h" class="a-card a-card-flush">
+<div class="a-card-head">
+<h2 id="list-h" class="a-h2">Founder records</h2>
+<span class="a-note">{{ av.shown_text(shown, total, "records") }}</span>
+</div>
+<div class="a-tablebox">
+<table class="a-table a-table-fixed" style="min-width:1094px">
+<thead>
+<tr><th scope="col" style="width:230px">Founder</th><th scope="col" style="width:170px">Startup</th><th scope="col" style="width:96px">Country</th><th scope="col" style="width:150px">University</th><th scope="col" style="width:130px">Stage</th><th scope="col" style="width:104px">Joined</th><th scope="col" style="width:124px">Pitch video</th><th scope="col" class="a-right" style="width:90px">Actions</th></tr>
+</thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td><div class="a-cell">
+<a href="/admin/founders/{{ r.record_id }}" class="a-name" title="{{ r.name_text }}">{{ r.name_text }}</a>
+<span title="{{ r.email }}">{{ r.reg_no }} · {{ r.email }}</span>
+{% if r.repeat %}<span class="a-repeat">{{ r.responses }} register responses</span>{% endif %}
+</div></td>
+<td><div class="a-cell"><b title="{{ r.startup_text }}">{{ r.startup_text }}</b><span title="{{ r.sector }}">{{ r.sector }}</span></div></td>
+<td><span class="a-trunc">{{ r.country_key }}</span></td>
+<td><span class="a-trunc" title="{{ r.university }}">{{ r.university }}</span></td>
+<td><span class="a-trunc" title="{{ r.stage }}">{{ r.stage }}</span></td>
+<td style="white-space:nowrap">{{ r.joined }}</td>
+<td>{{ chip(r.video_status, r.chip) }}</td>
+<td class="a-right"><a href="/admin/founders/{{ r.record_id }}" class="a-btn a-btn-n a-btn-sm">Open</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if not rows %}<div class="a-empty">No founder matches these filters.</div>{% endif %}
+{{ pager(page, link) }}
+</section>
+
+{% else %}
+<section aria-labelledby="unf-h" class="a-card a-card-flush">
+<div class="a-card-head">
+<h2 id="unf-h" class="a-h2">Sign-ups not finished</h2>
+<p class="a-note">Signed in with an email code, no role chosen.</p>
+</div>
+<div class="a-tablebox">
+<table class="a-table" style="min-width:640px">
+<thead><tr><th scope="col">Email</th><th scope="col">Started</th><th scope="col">Email confirmed</th><th scope="col" class="a-right">Actions</th></tr></thead>
+<tbody>
+{% for s in signups %}
+<tr>
+<td>{{ s.email }}</td>
+<td>{{ s.started }}</td>
+<td>{{ "Yes" if s.email_confirmed else "No" }}</td>
+<td class="a-right">
+{% if s.asking %}
+<form method="post" action="/admin/founders/signups/{{ s.user_id }}/remove" class="a-confirm">
+<span>Remove this sign-up?</span>
+<button type="submit" class="a-btn a-btn-bad a-btn-sm">Remove</button>
+<a href="/admin/founders?tab=unfinished" class="a-btn a-btn-n a-btn-sm">Keep</a>
+</form>
+{% else %}
+<a href="/admin/founders?tab=unfinished&amp;remove={{ s.user_id }}" class="a-btn a-btn-quiet a-btn-sm">Remove</a>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if not signups %}<div class="a-empty">No unfinished sign-ups.</div>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -10,17 +10,16 @@ from __future__ import annotations
 import asyncio
 import re
 import uuid
-from urllib.parse import quote
 
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
 
-from ..forms import parse_message
+from ..forms import parse_message, parse_report
 from ..guards import is_repeat, request_key
-from ..log import log_error
+from ..log import log_error, log_info
 from ..product import INVESTOR_TYPE_NAME, date_text
 from ..session import require_founder, require_viewer
-from ..web import Meta, failed, form_data, one, redirect, render
+from ..web import Meta, failed, form_data, one, redirect, render, sent
 
 router = APIRouter()
 
@@ -81,18 +80,6 @@ async def answer_introduction(request: Request):
     return redirect(f"/introductions/{intro}" if answer == "accepted" else "/dashboard/introductions")
 
 
-def report_link(intro_id: str) -> str:
-    """A report goes by email to the address the trust and safety page gives, until IkonetU has its own sender.
-
-    The query is written as URLSearchParams writes it, with spaces as %20 rather than +.
-    """
-    def enc(text: str) -> str:
-        return quote(text, safe="*-._")
-    subject = f"Report about conversation {intro_id}"
-    body = f"Conversation reference: {intro_id}\n\nWhat happened:\n"
-    return f"mailto:info@ikonetu.com?subject={enc(subject)}&body={enc(body)}"
-
-
 def thread_items(intro: dict, messages: list[dict], me: str) -> list[dict]:
     """The conversation in the order it happened: the request's note, the acceptance, then the messages.
 
@@ -144,7 +131,7 @@ async def _conversation(request: Request, intro_id: str, states: dict | None = N
 
     context = {
         "i": i, "i_am_founder": i_am_founder, "messages": messages.data or [], "me": v.id, "who": who,
-        "investor_line": investor_line, "report": report_link(i["id"]), "new_key": str(uuid.uuid4()),
+        "investor_line": investor_line, "report": f"/introductions/{i['id']}/report", "new_key": str(uuid.uuid4()),
         "thread": thread_items(i, messages.data or [], v.id), "threads": threads.data or [],
     }
     if states:
@@ -177,3 +164,50 @@ async def send_message(request: Request, intro_id: str):
         return await _conversation(request, intro_id,
                                    failed("message", "We could not send your message. Please try again.", values=values))
     return redirect(f"/introductions/{intro}")
+
+
+# ---------------------------------------------------------------- reporting a conversation
+async def _report_page(request: Request, intro_id: str, states: dict | None = None, status_code: int = 200):
+    """The form for reporting a conversation. Only the founder and the investor in it can open it."""
+    if not ID.fullmatch(intro_id):
+        raise HTTPException(404)
+    v = await require_viewer(request)
+    found = await v.db.table("introductions").eq("id", intro_id).maybe_single(
+        "id, founder_id, investor_id, investor_name, founder_name, venture_name")
+    i = found.data
+    if not i or v.id not in (i["founder_id"], i["investor_id"]):
+        raise HTTPException(404)
+    i_am_founder = i["founder_id"] == v.id
+    return render(request, "introductions/report.html", {
+        "i": i, "i_am_founder": i_am_founder, "other": i["investor_name"] if i_am_founder else i["founder_name"],
+        **({"states": states} if states else {}),
+    }, _meta("Report a conversation"), status_code=status_code)
+
+
+@router.get("/introductions/{intro_id}/report")
+async def report_form(request: Request, intro_id: str):
+    return await _report_page(request, intro_id)
+
+
+@router.post("/introductions/{intro_id}/report")
+async def report(request: Request, intro_id: str):
+    """Sends a report about the conversation to the IkonetU team through report_conversation(), which checks that the
+    person is in the conversation and keeps one open report from each person."""
+    raw = await form_data(request)
+    values = {k: one(raw, k) for k in raw}
+    v = await require_viewer(request)
+    parsed = parse_report(values.get("reason", ""))
+    if not parsed.ok:
+        return await _report_page(request, intro_id, failed("report", "Please check your report.", parsed.errors, values), 422)
+    result = await v.db.rpc("report_conversation", {"p_introduction": intro_id, "p_reason": parsed.data["reason"]})
+    if not result.ok:
+        code = result.error.code
+        if code == "P0002":
+            raise HTTPException(404)
+        (log_info if code == "P0001" else log_error)("report.send_failed", {"introduction": intro_id, "code": code})
+        message = ("You have reported this conversation already. The IkonetU team is looking at it." if code == "P0001"
+                   else "We could not send your report. Please try again, or email info@ikonetu.com.")
+        return await _report_page(request, intro_id, failed("report", message, values=values), 422)
+    log_info("report.sent", {"introduction": intro_id})
+    return sent(f"/introductions/{intro_id}", "report",
+                "Your report is with the IkonetU team. We aim to decide within ten working days, and we tell you the outcome.")
