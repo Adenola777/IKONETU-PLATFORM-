@@ -40,6 +40,7 @@ ACTION_TEXT = {
     "register.import": "loaded the founder register, the introductions and the pitch videos from the admin design",
     "register.import_list": "added founders to the register from a list",
     "register.intros_add": "added introductions for one register investor",
+    "register.messages": "spread the messages over the accepted introductions",
     "register.founder_delete": "deleted a founder record",
     "register.link": "linked a register entry to an investor account",
     "register.unlink": "unlinked a register entry from an investor account",
@@ -76,6 +77,7 @@ FIELD_NAME = {
     "pitch_max_seconds": "Longest pitch, seconds", "introductions_on": "Introduction requests",
     "introductions_per_day": "Requests per investor per day", "mode": "Mode", "maintenance_message": "Maintenance message",
     "record_id": "Founder record", "decided_at": "Approval date",
+    "introductions": "Introductions with messages", "messages": "Messages",
 }
 # The status of a record other than an account, in the words of the page that shows it.
 STATUS_BY_ENTITY = {
