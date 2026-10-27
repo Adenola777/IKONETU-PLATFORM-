@@ -39,6 +39,7 @@ ACTION_TEXT = {
     "register.add": "added entries to the investor register",
     "register.import": "loaded the founder register, the introductions and the pitch videos from the admin design",
     "register.import_list": "added founders to the register from a list",
+    "register.intros_add": "added introductions for one register investor",
     "register.founder_delete": "deleted a founder record",
     "register.link": "linked a register entry to an investor account",
     "register.unlink": "unlinked a register entry from an investor account",

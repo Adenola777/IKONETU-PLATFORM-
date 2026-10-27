@@ -77,3 +77,27 @@ def test_a_video_link_shows_the_record_and_the_approval_date_it_was_given():
     assert details == [("Changed", "Founder record: none to p008"),
                        ("Changed", "Approval date: 27 Oct 2026, 07:57 to 15 Jan 2026, 12:37"),
                        ("Record", "pitch_video_files t01")]
+
+
+def intro(intro_id: str, record_id: str, email: str) -> dict:
+    return {"intro_id": intro_id, "sample": False, "investor_no": "054", "investor_name": "Ada Okafor, Pilot Seed",
+            "investor_registered_on": "2026-07-01", "record_id": record_id, "founder_name": "Kofi Adjei", "founder_email": email,
+            "founder_phone": "", "startup": "Pilot One", "sector": "Fintech", "country_key": "Ghana",
+            "founder_joined_at": "2026-06-01T00:00:00+00:00", "founder_sample": False, "made_on": "2026-10-23",
+            "status": "pending", "note": "", "messages": 0, "accepted_on": None, "changed_at": None}
+
+
+def test_a_founder_with_no_email_shows_the_register_number_alone_in_the_introductions(client, fake):
+    founders_signed_in(client, fake, [])
+    fake.on("POST", "/rest/v1/rpc/admin_register_introductions", httpx.Response(200, json=[
+        intro("n901", "p917", ""), intro("n902", "p918", "kofi@example.test")]))
+    body = client.get("/admin/introductions").text
+    assert ">FND-917</span>" in body and "FND-917 ·" not in body
+    assert "FND-918 · kofi@example.test" in body
+
+
+def test_introductions_added_for_one_investor_name_the_investor_and_the_messages():
+    text, details, _ = describe_staff({"action": "register.intros_add", "entity": "register_introductions", "entity_id": None,
+                                       "before": None, "after": {"introductions": 41, "investor": "054", "messages_added": 240}})
+    assert text == "Added introductions for one register investor"
+    assert details == [("Introductions", "41"), ("Investor register number", "054"), ("Messages added", "240")]

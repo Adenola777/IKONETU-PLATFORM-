@@ -133,7 +133,7 @@ def register_lines(after: dict | None) -> list[str]:
 IMPORT_FIELDS = (
     ("founders", "Founders"), ("responses_received", "Form responses received"), ("responses_kept", "Form responses kept"),
     ("introductions", "Introductions"), ("investors_added", "Investor register entries added"), ("pitch_videos", "Pitch videos"),
-    ("list", "List"),
+    ("list", "List"), ("investor", "Investor register number"), ("messages_added", "Messages added"),
 )
 
 

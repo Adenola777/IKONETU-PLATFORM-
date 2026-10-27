@@ -167,7 +167,7 @@ def describe_staff(e: dict) -> tuple[str, list[tuple[str, str]], str | None]:
     if e["action"] == "register.add":
         # An addition says how many entries it added and which numbers, as the register page counts them.
         details = [tuple(line.split(": ", 1)) for line in register_lines(e.get("after"))]
-    elif e["action"] in ("register.import", "register.import_list"):
+    elif e["action"] in ("register.import", "register.import_list", "register.intros_add"):
         details = [tuple(line.split(": ", 1)) for line in import_lines(e.get("after"))]
     else:
         details = [("Changed", line) for line in change_lines(e.get("before"), e.get("after"), e["entity"])]

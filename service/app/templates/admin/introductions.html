@@ -50,7 +50,7 @@
 {% for r in rows %}
 <tr>
 <td><div class="a-cell"><b title="{{ r.investor_name }}">{{ r.investor_name }}</b><span>{{ r.inv_no_text }}</span></div></td>
-<td><div class="a-cell"><b title="{{ r.f_name }}">{{ r.f_name }}</b><span title="{{ r.founder_email }}">{{ r.f_no_text }} · {{ r.founder_email }}</span></div></td>
+<td><div class="a-cell"><b title="{{ r.f_name }}">{{ r.f_name }}</b><span title="{{ r.founder_email }}">{{ r.f_no_text }}{% if r.founder_email %} · {{ r.founder_email }}{% endif %}</span></div></td>
 <td><div class="a-cell"><span class="a-trunc" style="color:var(--ink);font-size:14px" title="{{ r.startup_text }}">{{ r.startup_text }}</span><span title="{{ r.sector_text }}">{{ r.sector_text }}</span></div></td>
 <td style="white-space:nowrap">{{ r.made }}</td>
 <td>{{ chip(r.status, r.chip) }}</td>
