@@ -101,3 +101,11 @@ def test_introductions_added_for_one_investor_name_the_investor_and_the_messages
                                        "before": None, "after": {"introductions": 41, "investor": "054", "messages_added": 240}})
     assert text == "Added introductions for one register investor"
     assert details == [("Introductions", "41"), ("Investor register number", "054"), ("Messages added", "240")]
+
+
+def test_spreading_the_messages_names_the_introductions_that_hold_them():
+    text, details, _ = describe_staff({"action": "register.messages", "entity": "register_introductions", "entity_id": None,
+                                       "before": {"introductions": 4, "messages": 360},
+                                       "after": {"introductions": 51, "messages": 360}})
+    assert text == "Spread the messages over the accepted introductions"
+    assert details == [("Changed", "Introductions with messages: 4 to 51")]
