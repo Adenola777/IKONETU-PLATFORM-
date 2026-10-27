@@ -159,7 +159,7 @@ async def dashboard(request: Request):
 # ---------------------------------------------------------------- staff actions, in words
 def describe_staff(e: dict) -> tuple[str, list[tuple[str, str]], str | None]:
     """What a staff action did, for the audit log and the dashboard: a sentence, its details and the record's page."""
-    from ..register import register_lines
+    from ..register import import_lines, register_lines
     from ..staff import action_text, change_lines, entity_href, entry_reason
 
     text = action_text(e["action"])
@@ -167,6 +167,8 @@ def describe_staff(e: dict) -> tuple[str, list[tuple[str, str]], str | None]:
     if e["action"] == "register.add":
         # An addition says how many entries it added and which numbers, as the register page counts them.
         details = [tuple(line.split(": ", 1)) for line in register_lines(e.get("after"))]
+    elif e["action"] in ("register.import", "register.import_list"):
+        details = [tuple(line.split(": ", 1)) for line in import_lines(e.get("after"))]
     else:
         details = [("Changed", line) for line in change_lines(e.get("before"), e.get("after"), e["entity"])]
     reason = entry_reason(e.get("after"))
@@ -253,11 +255,15 @@ async def founders(request: Request):
     asking = _get(request, "remove")
     shell = await av.shell(v)
     waitlist = (shell.get("counts") or {}).get("waitlist") or 0
+    # Founders from a list, such as the June list, sent no form response, so the subtitle says how many did.
+    answered = sum(1 for r in rows if r["responses"])
+    source = (f"from {waitlist} waitlist responses" if answered == len(rows)
+              else f"{answered} of them from {waitlist} waitlist responses")
     context = {
         "tab": "unfinished" if tab == "unfinished" else "founders", "f": f, "options": founder_options(rows), "counts": counts,
         "rows": [founder_row(r) for r in page["rows"]], "page": page, "total": len(rows), "shown": len(shown),
         "failed": not records.ok,
-        "subtitle": (f"{av.plural(len(rows), 'founder')} on the register, from {waitlist} waitlist responses · "
+        "subtitle": (f"{av.plural(len(rows), 'founder')} on the register, {source} · "
                      f"{counts['pending']} pitch {'video' if counts['pending'] == 1 else 'videos'} waiting for review"),
         "signups": [{**s, "started": av.day_text(s["started_at"]), "asking": s["user_id"] == asking} for s in signups],
         "csv": av.query("/admin/founders.csv", base),

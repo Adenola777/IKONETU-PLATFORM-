@@ -29,10 +29,11 @@
 --    platform mode in one row. The database enforces the pitch rules on every
 --    pitch and the introduction rules on every request. The app enforces the
 --    mode, because a sign-in is not a database write.
--- 7. Rows marked sample are the design's sample data: four founders, one
---    investor and four accepted introductions. They are not on either
---    register, so the register counts leave them out, and the admin pages
---    label them.
+-- 7. A row marked sample is sample data. It is not on either register, so
+--    the register counts leave it out, and the admin pages label it. On 27
+--    October 2026 the owner ruled that the design's four other founders, its
+--    other investor and their four introductions are loaded as ordinary rows,
+--    so the load marks none.
 --
 -- Every new table has row level security on and no policy, so nobody reads or
 -- writes one directly. The admin functions check the caller's role and write

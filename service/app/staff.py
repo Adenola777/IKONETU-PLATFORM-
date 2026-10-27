@@ -38,6 +38,7 @@ ACTION_TEXT = {
     "account.reactivate": "made an account active again",
     "register.add": "added entries to the investor register",
     "register.import": "loaded the founder register, the introductions and the pitch videos from the admin design",
+    "register.import_list": "added founders to the register from a list",
     "register.founder_delete": "deleted a founder record",
     "register.link": "linked a register entry to an investor account",
     "register.unlink": "unlinked a register entry from an investor account",
@@ -73,7 +74,7 @@ FIELD_NAME = {
     "public_note": "Note for investors", "pitch_types": "File types", "pitch_max_mb": "Largest file, MB",
     "pitch_max_seconds": "Longest pitch, seconds", "introductions_on": "Introduction requests",
     "introductions_per_day": "Requests per investor per day", "mode": "Mode", "maintenance_message": "Maintenance message",
-    "record_id": "Founder record",
+    "record_id": "Founder record", "decided_at": "Approval date",
 }
 # The status of a record other than an account, in the words of the page that shows it.
 STATUS_BY_ENTITY = {
@@ -112,6 +113,9 @@ def _value_text(key: str, v, entity: str | None = None) -> str:
         return "on" if v else "off"
     if empty:
         return "none"
+    if key == "decided_at" and isinstance(v, str):
+        from .admin_view import long_text
+        return long_text(v)
     if key == "pitch_types" and isinstance(v, list):
         return ", ".join(VIDEO_TYPE_NAME.get(x, str(x)) for x in v)
     if key == "status" and entity in STATUS_BY_ENTITY and v in STATUS_BY_ENTITY[entity]:

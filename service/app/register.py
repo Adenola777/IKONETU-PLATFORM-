@@ -130,6 +130,20 @@ def register_lines(after: dict | None) -> list[str]:
     return lines
 
 
+IMPORT_FIELDS = (
+    ("founders", "Founders"), ("responses_received", "Form responses received"), ("responses_kept", "Form responses kept"),
+    ("introductions", "Introductions"), ("investors_added", "Investor register entries added"), ("pitch_videos", "Pitch videos"),
+    ("list", "List"),
+)
+
+
+def import_lines(after: dict | None) -> list[str]:
+    """What a load of the founder register brought in, for its audit log entry."""
+    a = after or {}
+    return [f"{name}: {a[key]}" for key, name in IMPORT_FIELDS
+            if isinstance(a.get(key), (int, str)) and not isinstance(a.get(key), bool)]
+
+
 def added_text(added: int, unchanged: int, skipped: int) -> str:
     """The confirmation shown after a list is added."""
     def count(n: int, one: str, many: str) -> str:
