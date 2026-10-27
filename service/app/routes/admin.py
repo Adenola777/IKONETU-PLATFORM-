@@ -81,7 +81,7 @@ def bars(rows: list, top_key=lambda r: r[1]) -> list[dict]:
     return [{"label": label, "n": n, "style": width_style(n, top)} for label, n in rows]
 
 
-def dashboard_context(d: dict, recent: list[dict]) -> dict:
+def dashboard_context(d: dict) -> dict:
     staff = d["admins"] + d["reviewers"]
     staff_sub = " · ".join(x for x in (av.plural(d["admins"], "admin") if d["admins"] else "",
                                        av.plural(d["reviewers"], "reviewer") if d["reviewers"] else "") if x) or "None"
@@ -130,7 +130,6 @@ def dashboard_context(d: dict, recent: list[dict]) -> dict:
         "country_note": f"{av.plural(d['founders'], 'founder')} in {av.plural(len(countries), 'country', 'countries')}.",
         "support_note": (f"{d['founders_with_support']} of {d['founders']} founders asked for at least one kind of support; "
                          f"{gave_none} gave none."),
-        "recent": [{"when": av.when_text(e["at"], e["date_only"]), "who": e["who"], "text": e["text"]} for e in recent],
     }
 
 
@@ -147,12 +146,8 @@ async def dashboard(request: Request):
     v = await require_staff(request)
     if v.profile.role != "admin":
         return redirect("/admin/content")
-    d, history, (log, names) = await asyncio.gather(
-        v.db.rpc("admin_dashboard"), v.db.rpc("admin_register_history", {"p_limit": 6}), staff_log(v, 6))
-    data = _one(d, "admin.dashboard_failed")
-    hist = _one(history, "admin.history_failed") or {}
-    recent = av.newest_first(av.register_entries(hist) + av.staff_entries(log, names, describe_staff))[:6]
-    context = {"d": dashboard_context(data, recent)} if data else {"failed": True}
+    data = _one(await v.db.rpc("admin_dashboard"), "admin.dashboard_failed")
+    context = {"d": dashboard_context(data)} if data else {"failed": True}
     return await _page(request, v, "admin/dashboard.html", "dashboard", "Dashboard", context)
 
 
@@ -1054,6 +1049,20 @@ async def audit(request: Request):
         "page": page, "cards": cards, "f": f, "failed": failed, "subtitle": subtitle, "KINDS": av.KINDS,
         "count_text": av.shown_text(len(shown), len(entries), "entries"),
         "link": lambda **changes: av.query("/admin/audit", {**base, **changes}), "csv": av.query("/admin/audit.csv", base),
+    })
+
+
+@router.get("/admin/activity")
+async def activity(request: Request):
+    """The activity the dashboard listed, newest first, on a page of its own reached from the sidebar."""
+    v = await require_staff(request, admin=True)
+    entries, failed = await _audit_entries(v)
+    page = av.page_of(entries, av.page_number(_get(request, "page")), PAGE)
+    return await _page(request, v, "admin/activity.html", "activity", "Activity", {
+        "rows": [{"when": av.when_text(e["at"], e["date_only"]), "who": e["who"], "text": e["text"]} for e in page["rows"]],
+        "page": page, "failed": failed, "total": len(entries),
+        "subtitle": f"{av.plural(len(entries), 'entry', 'entries')}, newest first" if entries else "Nothing has happened yet",
+        "link": lambda **changes: av.query("/admin/activity", changes),
     })
 
 

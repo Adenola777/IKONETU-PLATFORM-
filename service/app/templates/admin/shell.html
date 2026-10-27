@@ -6,7 +6,10 @@
   before the redesign sets `legacy`, so its own styles in app.css still apply inside the frame.
 #}
 {% set ADMIN_NAV = [
-  ("Overview", [("dashboard", "/admin", "Dashboard", "admin-dashboard", none)]),
+  ("Overview", [
+    ("dashboard", "/admin", "Dashboard", "admin-dashboard", none),
+    ("activity", "/admin/activity", "Activity", "admin-activity", none),
+  ]),
   ("People", [
     ("founders", "/admin/founders", "Founders", "admin-founders", "founders"),
     ("investors", "/admin/investors", "Investors", "admin-investors", "investors"),
