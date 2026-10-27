@@ -46,6 +46,7 @@ ACTION_TEXT = {
     "video.approve": "approved a pitch video",
     "video.reject": "rejected a pitch video",
     "video.reopen": "returned a pitch video to review",
+    "video.link": "linked a pitch video to a founder record",
     "report.resolve": "resolved a report",
     "settings.pitch": "changed the pitch rules",
     "settings.introductions": "changed the introduction rules",
@@ -72,6 +73,7 @@ FIELD_NAME = {
     "public_note": "Note for investors", "pitch_types": "File types", "pitch_max_mb": "Largest file, MB",
     "pitch_max_seconds": "Longest pitch, seconds", "introductions_on": "Introduction requests",
     "introductions_per_day": "Requests per investor per day", "mode": "Mode", "maintenance_message": "Maintenance message",
+    "record_id": "Founder record",
 }
 # The status of a record other than an account, in the words of the page that shows it.
 STATUS_BY_ENTITY = {

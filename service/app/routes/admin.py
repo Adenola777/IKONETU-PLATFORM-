@@ -664,9 +664,16 @@ def video_row(r: dict) -> dict:
         who = r.get("decided_by_name") or "an admin"
         verb = "Approved" if r["status"] == "approved" else "Rejected"
         decided = f"{verb} by {who}, {av.long_text(r['decided_at'])}." + (f" Reason: {r['reason']}" if r.get("reason") else "")
-    return {**r, "kind": f"{r['file_type']} · {r['size_text']}", "source": r["folder"].split(" / ")[0] + " folder",
-            "uploaded": f"to Google Drive {added}", "chip": av.VIDEO_CHIPS[r["status"]], "decided": decided,
-            "meta": f"{r['file_type']} · {r['size_text']} · {r['folder']} · added to Google Drive {added}",
+    kind = f"{r['file_type']} · {r['size_text']}"
+    meta = f"{kind} · {r['folder']} · added to Google Drive {added}"
+    linked = bool(r.get("record_id"))
+    # A video linked to a founder record is titled with its startup, as the Videos board titled each card.
+    return {**r, "kind": kind, "uploaded": f"to Google Drive {added}", "chip": av.VIDEO_CHIPS[r["status"]], "decided": decided,
+            "title": (r.get("startup") or r.get("founder_name") or r["file_name"]) if linked else r["file_name"],
+            "line": " · ".join(x for x in (r.get("founder_name"), r.get("sector")) if x) if linked
+            else f"{r['folder'].split(' / ')[0]} folder · {kind}",
+            "meta": f"{r['file_name']} · {meta}" if linked else meta,
+            "record_href": f"/admin/founders/{r['record_id']}" if linked else None,
             "transcript_text": r.get("transcript") or "No transcript came with this file."}
 
 
@@ -720,7 +727,7 @@ async def approve_video(request: Request, video_id: str):
     tab = one(values, "tab")
     checks = {k: one(values, k) == "on" for k, _ in av.VIDEO_CHECKS}
     result = await v.db.rpc("admin_pitch_video_decide", {"p_id": video_id, "p_decision": "approved", "p_checks": checks})
-    name = next((r["file_name"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
+    name = next((r["title"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
     if not result.ok:
         log_info("admin.video_decide_refused", {"video": video_id, "code": result.error.code})
         text = "Tick all four to approve." if result.error.code == "22023" else "This video has been reviewed already."
@@ -738,7 +745,7 @@ async def reject_video(request: Request, video_id: str):
     if reason not in av.REJECT_REASONS:
         return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id, "reason": "missing"}), "Choose a reason first.")
     result = await v.db.rpc("admin_pitch_video_decide", {"p_id": video_id, "p_decision": "rejected", "p_reason": reason})
-    name = next((r["file_name"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
+    name = next((r["title"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
     if not result.ok:
         log_info("admin.video_decide_refused", {"video": video_id, "code": result.error.code})
         return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id}), "This video has been reviewed already.")
@@ -754,7 +761,7 @@ async def reopen_video(request: Request, video_id: str):
         raise HTTPException(404)
     tab = one(values, "tab")
     result = await v.db.rpc("admin_pitch_video_reopen", {"p_id": video_id})
-    name = next((r["file_name"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
+    name = next((r["title"] for r in await _videos(v) if r["video_id"] == video_id), video_id)
     if not result.ok:
         log_info("admin.video_reopen_refused", {"video": video_id, "code": result.error.code})
         return _notice(av.query("/admin/videos", {"tab": tab or None, "video": video_id}), "This video is waiting for review already.")

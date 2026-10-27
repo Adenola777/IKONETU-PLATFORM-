@@ -280,6 +280,10 @@ select pg_temp.refused('M50 approving with three of the four checks is refused',
 select public.admin_pitch_video_decide('t901', 'approved', '{"problem": true, "solution": true, "market": true, "ask": true}');
 select pg_temp.ok('M51 approving with all four checks records who approved it',
   (select status = 'approved' and decided_at is not null and decided_by_name = 'Ada Admin' from public.admin_pitch_videos() where video_id = 't901'));
+select pg_temp.ok('M51a a linked video carries its record''s startup, founder and sector, and an unlinked one none',
+  (select startup = 'Pilot One' and founder_name = 'Name One' and sector = 'Fintech'
+   from public.admin_pitch_videos() where video_id = 't901')
+  and (select startup is null and founder_name is null from public.admin_pitch_videos() where video_id = 't902'));
 select pg_temp.refused('M52 a reviewed video cannot be approved again',
   $q$select public.admin_pitch_video_decide('t901', 'approved', '{"problem": true, "solution": true, "market": true, "ask": true}')$q$, 'P0001');
 select pg_temp.refused('M53 rejecting with a reason not on the list is refused',

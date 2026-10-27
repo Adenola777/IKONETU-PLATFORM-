@@ -601,11 +601,13 @@ end;
 $$;
 
 -- ---------------------------------------------------------------- 10. pitch videos in Google Drive
+-- A video linked to a founder record carries that record's startup, founder and sector, as the Videos board
+-- titled each card.
 create or replace function public.admin_pitch_videos()
 returns table (
   video_id text, file_name text, file_type text, size_text text, folder text, added_on date, drive_url text,
   transcript text, record_id text, status public.video_review_status, reason text, decided_at timestamptz,
-  decided_by_name text
+  decided_by_name text, startup text, founder_name text, sector text
 )
 language plpgsql stable security definer set search_path = public as $$
 begin
@@ -614,9 +616,10 @@ begin
   end if;
   return query
   select v.video_id, v.file_name, v.file_type, v.size_text, v.folder, v.added_on, v.drive_url, v.transcript,
-    v.record_id, v.status, v.reason, v.decided_at, p.full_name
+    v.record_id, v.status, v.reason, v.decided_at, p.full_name, f.startup, f.full_name, f.sector
   from public.pitch_video_files v
   left join public.profiles p on p.user_id = v.decided_by
+  left join public.founder_register f on f.record_id = v.record_id
   order by v.video_id;
 end;
 $$;
