@@ -20,6 +20,10 @@
   --band-text: #D0D5DD; /* the pricing page's trust band: body text on --investor, the brand navy */
   --band-accent: #FDB022; /* the trust band's Coming in December 2026 chip */
   --band-live: #6CE9A6; /* the trust band's Live now chip */
+  --band-tile: rgba(255, 255, 255, 0.08); /* the trust band's icon tiles */
+  --band-chip: rgba(255, 255, 255, 0.10); /* behind the trust band's December 2026 chips */
+  --band-accent-fill: rgba(242, 107, 29, 0.16); /* behind --band-accent */
+  --band-live-fill: rgba(108, 233, 166, 0.16); /* behind --band-live */
   /* The admin sidebar, black since 27 October 2026, with white text and brighter colours on it. */
   --side: #000000;
   --side-text: #FFFFFF;
