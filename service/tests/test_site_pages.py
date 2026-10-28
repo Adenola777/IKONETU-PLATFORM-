@@ -388,6 +388,16 @@ def test_each_plan_states_its_price_value_action_and_ticked_features(client):
         else:
             assert re.search(r'<a class="btn btn-[fi] plan-cta" href="/signin">', card), key
 
+
+# The owner announced on 28 October 2026 that identity and anti-money-laundering checks launch in December 2026. The
+# pricing page carries it as a pre-launch announcement, and the documents change when the checks go live.
+def test_the_pricing_page_announces_the_checks_for_december_2026(client):
+    body = client.get("/pricing").text
+    assert '<aside class="launch" aria-labelledby="p-aml">' in body
+    text = _text(client, "/pricing")
+    assert "Launches in December 2026 Identity and anti-money-laundering checks" in text
+    assert "IkonetU launches identity and anti-money-laundering checks in December 2026, when Premium opens." in text
+
 def test_trust_and_safety_links_its_sections_and_sets_the_statuses_as_a_table(client):
     body = client.get("/trust-and-safety").text
     hero = body[body.index('<section aria-labelledby="t-title"'):]

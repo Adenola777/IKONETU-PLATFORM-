@@ -452,6 +452,10 @@ html{scroll-behavior:smooth}
    actions and the lists line up; below 760px the cards sit one above the other. */
 .pg-pricing .plan-jump{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 0}
 .pg-pricing .intro-c .chip{margin-bottom:16px}
+.pg-pricing .launch{display:flex;gap:16px;align-items:flex-start;max-width:var(--w-wide);margin:40px auto 0;padding:24px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--investor-wash);text-align:left}
+.pg-pricing .launch-icon{display:flex;flex:none;align-items:center;justify-content:center;width:48px;height:48px;border-radius:var(--r-control);background:var(--investor-tint);color:var(--investor)}
+.pg-pricing .launch-body .h3{margin:8px 0 4px}
+.site.pg-pricing .hero-c .launch-body p{margin:0;color:var(--text-3);text-align:left;text-align-last:auto;-webkit-hyphens:manual;hyphens:manual}
 .pg-pricing .plan-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;max-width:var(--w-wide);margin:40px auto 0}
 .pg-pricing .plan{display:grid;grid-template-rows:subgrid;grid-row:span 7;row-gap:0;align-content:start}
 .pg-pricing .plan > *{margin:0}
@@ -480,6 +484,7 @@ html{scroll-behavior:smooth}
 .pg-pricing .plan-hi.plan-i .tick circle{fill:var(--investor)}
 .pg-pricing .plan-hi.plan-i .tick path{stroke:#FFFFFF}
 @media (max-width: 760px){
+.pg-pricing .launch{flex-direction:column;padding:20px}
 .pg-pricing .plan-pair{grid-template-columns:minmax(0,1fr);gap:24px}
 .pg-pricing .plan{display:flex;flex-direction:column;grid-row:auto}
 }
