@@ -453,8 +453,8 @@ html{scroll-behavior:smooth}
 .pg-pricing .plan-jump{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 0}
 .pg-pricing .intro-c .chip{margin-bottom:16px}
 /* The trust band under the pricing hero: what arrives in December 2026 and what is live now, beside a drawing of face
-   verification with a padlock. It is dark, so the announcement stands apart from the plans. */
-.pg-pricing .trust{background:var(--ink);color:#FFFFFF}
+   verification with a padlock. It is the brand navy, the logo's blue, so the announcement stands apart from the plans. */
+.pg-pricing .trust{background:var(--investor);color:#FFFFFF}
 .pg-pricing .trust-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:48px;align-items:center;max-width:calc(var(--w-wide) + 48px);margin:0 auto;padding-top:clamp(56px,7vw,96px);padding-bottom:clamp(56px,7vw,96px)}
 .pg-pricing .trust-chip{display:inline-flex;padding:4px 12px;border-radius:var(--r-pill);background:rgba(242,107,29,0.16);color:var(--band-accent);font-size:var(--t-label);font-weight:600}
 .pg-pricing .trust-title{margin:16px 0 0;max-width:18ch;color:#FFFFFF}
@@ -467,7 +467,7 @@ html{scroll-behavior:smooth}
 .pg-pricing .trust-when{padding:2px 8px;border-radius:var(--r-pill);background:rgba(255,255,255,0.10);font-size:var(--t-ui-xs);font-weight:600;color:var(--band-text)}
 .pg-pricing .trust-live{background:rgba(103,227,161,0.16);color:var(--band-live)}
 .pg-pricing .trust-list p{margin:4px 0 0;font-size:var(--t-ui);line-height:1.5;color:var(--band-text)}
-.pg-pricing .trust-note{margin:28px 0 0;font-size:var(--t-ui-s);color:var(--band-muted)}
+.pg-pricing .trust-note{margin:28px 0 0;font-size:var(--t-ui-s);color:var(--band-text)}
 .pg-pricing .trust-visual{display:flex;justify-content:center}
 .pg-pricing .trust-art{width:100%;max-width:360px;height:auto;font-family:inherit}
 @media (max-width: 900px){

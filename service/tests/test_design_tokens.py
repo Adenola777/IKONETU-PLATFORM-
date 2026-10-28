@@ -68,7 +68,7 @@ PAIRS = [
     ("--side-accent", "--side", 3.0), ("--sample-on-dark", "--side", 4.5), ("--text-disabled", "--fill", 4.5),
     ("--line-control", "--canvas", 3.0), ("--mark-on", "--canvas", 3.0), ("--mark-mid", "--canvas", 3.0),
     ("--mark-edge", "--canvas", 3.0), ("--founder", "--canvas", 3.0),
-    ("--band-text", "--ink", 4.5), ("--band-muted", "--ink", 4.5), ("--band-accent", "--ink", 4.5), ("--band-live", "--ink", 4.5),
+    ("--band-text", "--investor", 4.5), ("--band-accent", "--investor", 4.5), ("--band-live", "--investor", 4.5),
 ]
 
 

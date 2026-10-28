@@ -391,7 +391,7 @@ def test_each_plan_states_its_price_value_action_and_ticked_features(client):
 
 
 # The owner announced on 28 October 2026 that face verification and anti-money-laundering checks launch in December
-# 2026. The pricing page carries it as a pre-launch announcement in a dark band with a drawing of face verification and a
+# 2026. The pricing page carries it as a pre-launch announcement in a brand navy band with a drawing of face verification and a
 # padlock, and marks what is live now apart from what is coming.
 def test_the_pricing_page_announces_the_checks_for_december_2026(client):
     body = client.get("/pricing").text
