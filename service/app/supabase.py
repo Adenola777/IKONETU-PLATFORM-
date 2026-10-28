@@ -22,7 +22,7 @@ import re
 import secrets
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import httpx
 
@@ -443,6 +443,13 @@ class Supabase:
         }
         return await self._auth("POST", "otp", body, params={"redirect_to": redirect_to} if redirect_to else None)
 
+    def authorize_url(self, provider: str, redirect_to: str, code_challenge: str) -> str:
+        """Where the browser goes to sign in with a provider such as Google. Supabase sends it back to
+        redirect_to with a one-time code, which exchange_code turns into a session (the PKCE flow)."""
+        query = urlencode({"provider": provider, "redirect_to": redirect_to, "code_challenge": code_challenge,
+                           "code_challenge_method": "s256"})
+        return f"{self.url}/auth/v1/authorize?{query}"
+
     async def send_phone_code(self, phone: str, channel: str, data: dict | None) -> Result:
         body = {
             "phone": phone,
@@ -461,6 +468,15 @@ class Supabase:
             return None, r.error
         session = _session_from(r.data)
         return (session, None) if session else (None, ApiError(None, "no_session", "verify returned no session"))
+
+    async def sign_in_with_password(self, email: str, password: str) -> tuple[Session | None, ApiError | None]:
+        """Only the admin sign-in uses a password. Accounts made by the email code have none, so it cannot open them."""
+        body = {"email": email, "password": password, "gotrue_meta_security": {"captcha_token": None}}
+        r = await self._auth("POST", "token", body, params={"grant_type": "password"})
+        if not r.ok:
+            return None, r.error
+        session = _session_from(r.data)
+        return (session, None) if session else (None, ApiError(None, "no_session", "token returned no session"))
 
     async def exchange_code(self, auth_code: str, code_verifier: str) -> tuple[Session | None, ApiError | None]:
         r = await self._auth("POST", "token", {"auth_code": auth_code, "code_verifier": code_verifier},
@@ -482,6 +498,10 @@ class Supabase:
         if not r.ok:
             return None, r.error
         return r.data, None
+
+    async def update_password(self, access_token: str, password: str) -> Result:
+        """Sets a new password on the signed-in account, as supabase-js updateUser({ password }) does."""
+        return await self._auth("PUT", "user", {"password": password}, bearer=access_token)
 
     async def sign_out(self, access_token: str) -> None:
         await self._auth("POST", "logout", bearer=access_token, params={"scope": "global"})

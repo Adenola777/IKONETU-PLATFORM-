@@ -17,6 +17,17 @@
   --footer: #0B1A33;
   --footer-text: #B9C4D6;
   --footer-line: #1E3150;
+  --band-text: #D0D5DD; /* the pricing page's trust band: body text on --investor, the brand navy */
+  --band-accent: #FDB022; /* the trust band's Coming in December 2026 chip */
+  --band-live: #6CE9A6; /* the trust band's Live now chip */
+  /* The admin sidebar, black since 27 October 2026, with white text and brighter colours on it. */
+  --side: #000000;
+  --side-text: #FFFFFF;
+  --side-muted: #E4E7EC; /* section names and icons */
+  --side-line: #404040; /* hover, counts and dividers */
+  --side-current: #2563EB; /* the page that is open */
+  --side-accent: #FF8533; /* the ADMIN badge and the Sign out button's edge */
+  --sample-on-dark: #FEC84B; /* the admin sidebar's Sample data badge, on the black sidebar */
 
   /* Founder context. The orange is a fill only: as text it measures 3.05:1 on white. */
   --founder: #F26B1D;
@@ -24,6 +35,8 @@
   --founder-text: #B54708;
   --founder-tint: #FFF1E6;
   --founder-rule: #F9C9AA;
+  --founder-bubble: #FFE3CC; /* the founder's own messages in a conversation, behind ink text */
+  --founder-wash: #FFFAF5; /* a chosen founder card, behind ink text */
 
   /* Investor context */
   --investor: #123C7A;
@@ -31,6 +44,9 @@
   --investor-press: #081F40;
   --investor-tint: #EEF4FF;
   --investor-tint-press: #D9E3F5;
+  --investor-wash: #F7FAFF; /* a chosen investor card, behind ink text */
+  --google-line: #747775; /* the border of Continue with Google, from Google's light theme */
+  --google-text: #1F1F1F; /* its text, from the same theme */
 
   /* Status, kept apart from the two contexts */
   --verified: #067647;
@@ -43,6 +59,7 @@
   --error-line: #FECDCA;
   --warning: #93370D;
   --warning-tint: #FFFAEB;
+  --waiting-bar: #F79009; /* the bar on a card that counts what waits for review, beside its text */
 
   /* Measures: the readiness meter and the dated progress strip */
   --mark-on: #344054;

@@ -9,22 +9,20 @@ from __future__ import annotations
 
 import asyncio
 import re
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request
 from starlette.exceptions import HTTPException
 
+from .. import admin_view
+from ..activity import feed_entry, load_feed
 from ..forms import REVIEW_LANES, parse_decision
-from ..jsfmt import month_long, month_short, number_text, parse_int, search_params, to_fixed
+from ..jsfmt import parse_int, search_params, to_fixed
 from ..log import log_error, log_info
-from ..product import days_between
 from ..score_engine import RUBRIC_V3
 from ..scoring import record_venture_score
 from ..session import require_staff
 from ..staff import (
-    ACTION_GROUPS,
     change_lines,
-    entity_href,
     entry_reason,
     parse_hold,
     parse_lift,
@@ -44,6 +42,11 @@ PAGE = 50
 
 def _meta(title: str) -> Meta:
     return Meta(title=title, noindex=True)
+
+
+async def _frame(v) -> dict:
+    """The admin frame for a page from before the redesign: the sidebar, and app.css for the page's own styles."""
+    return {"shell": await admin_view.shell(v), "legacy": True}
 
 
 def _role(v) -> str:
@@ -82,70 +85,7 @@ def _actor(names: dict[str, str], actor_id: str | None) -> str:
     return "The system" if name is None else name
 
 
-# ---------------------------------------------------------------- overview
-def age_text(iso: str) -> str:
-    d = days_between(iso, datetime.now(timezone.utc))
-    return "today" if d == 0 else "yesterday" if d == 1 else f"{d} days ago"
-
-
-def month_bars(months: list[dict]) -> dict:
-    """The last six months as bars drawn to scale from zero, with the geometry the Next.js page drew."""
-    width, height, top, base, bw = 360, 160, 22, 132, 36
-    peak = max([1, *(m["count"] for m in months)])
-    gap = (width - bw * len(months)) / len(months) if months else 0
-    bars = []
-    for i, m in enumerate(months):
-        h = ((base - top) * m["count"]) / peak
-        x = gap / 2 + i * (bw + gap)
-        date = f"{m['month']}-01T00:00:00Z"
-        bars.append({
-            "count": m["count"], "month": month_short(date), "month_long": month_long(date),
-            "title": f"{month_long(date)}: {m['count']}",
-            "path": _bar(x, base, bw, h) if m["count"] > 0 else None,
-            "x": number_text(x + bw / 2), "value_y": number_text(base - h - 6), "month_y": number_text(base + 18),
-        })
-    return {"width": width, "height": height, "base": base, "bars": bars}
-
-
-def _bar(x: float, base: float, w: float, h: float) -> str:
-    """A bar anchored to the baseline, with its top corners rounded by four pixels."""
-    r = min(4, h, w / 2)
-    t = base - h
-    n = number_text
-    return f"M{n(x)} {n(base)}V{n(t + r)}Q{n(x)} {n(t)} {n(x + r)} {n(t)}H{n(x + w - r)}Q{n(x + w)} {n(t)} {n(x + w)} {n(t + r)}V{n(base)}Z"
-
-
-@router.get("/admin")
-async def overview(request: Request):
-    v = await require_staff(request)
-    result = await v.db.rpc("admin_overview")
-    if not result.ok:
-        log_error("admin.overview_failed", {"code": result.error.code})
-    data = result.data
-    o = (data[0] if data else None) if isinstance(data, list) else data
-    return render(request, "staff/overview.html", {
-        "role": _role(v), "admin": v.profile.role == "admin", "o": o, "age_text": age_text,
-        "chart": month_bars((o or {}).get("north_star_months") or []),
-    }, _meta("Overview"))
-
-
 # ---------------------------------------------------------------- investors
-@router.get("/admin/investors")
-async def investors(request: Request):
-    """Admins approve or decline investor accounts. Pending accounts come first, oldest first."""
-    v = await require_staff(request, admin=True)
-    result = await v.db.table("profiles").eq("role", "investor").order("created_at").limit(200).select(
-        "user_id, full_name, status, created_at, investor_profiles(investor_type, firm, website, based_in, sectors, stages, "
-        "countries, cheque_size, thesis)"
-    )
-    rows = result.data or []
-    return render(request, "staff/investors.html", {
-        "role": _role(v), "failed": not result.ok,
-        "pending": [r for r in rows if r["status"] == "pending"],
-        "decided": [r for r in rows if r["status"] != "pending"][::-1],
-    }, _meta("Investors"))
-
-
 @router.post("/admin/investors/decide")
 async def decide_investor(request: Request):
     """An admin approves or declines an investor. The database checks the role again and writes the audit log."""
@@ -156,34 +96,22 @@ async def decide_investor(request: Request):
         result = await v.db.rpc("decide_investor", {"p_user": user, "p_approve": one(values, "approve") == "yes"})
         if not result.ok:
             log_error("investor.decide_failed", {"code": result.error.code})
-    return redirect("/admin/investors")
+        else:
+            done = "approved" if one(values, "approve") == "yes" else "declined or suspended"
+            return redirect("/admin/investors?tab=pending", {"form": "notice", "status": "sent", "message": f"The investor is {done}."})
+    return redirect("/admin/investors?tab=pending")
 
 
 # ---------------------------------------------------------------- evidence
-@router.get("/admin/evidence")
-async def queue(request: Request):
-    """Evidence waiting for a decision, oldest first, and any venture whose score missed an update."""
-    v = await require_staff(request)
-    stale, result = await asyncio.gather(
-        v.db.rpc("ventures_with_stale_scores"),
-        v.db.table("evidence").in_("status", list(WAITING)).order("created_at").limit(200)
-        .select("id, signal_code, summary, created_at, ventures(name)"),
-    )
-    return render(request, "staff/queue.html", {
-        "role": _role(v), "score_failed": _single(request, "score") == "failed", "stale": stale.data or [],
-        "rows": result.data or [], "failed": not result.ok,
-    }, _meta("Evidence to review"))
-
-
 @router.post("/admin/evidence/recompute")
 async def recompute(request: Request):
     """Recomputes the score of a venture whose score missed an update after a decision."""
     v = await require_staff(request)
     venture = one(await form_data(request), "venture")
     if not ID.fullmatch(venture):
-        return redirect("/admin/evidence")
+        return redirect("/admin/content?tab=evidence")
     scored = await record_venture_score(v.db, venture, None)
-    return redirect("/admin/evidence" if scored else "/admin/evidence?score=failed")
+    return redirect("/admin/content?tab=evidence" if scored else "/admin/content?tab=evidence&score=failed")
 
 
 async def _review_page(request: Request, v, evidence_id: str, states: dict | None = None):
@@ -215,7 +143,7 @@ async def _review_page(request: Request, v, evidence_id: str, states: dict | Non
     }
     if states:
         context["states"] = states
-    return render(request, "staff/review.html", context, _meta("Review evidence"))
+    return render(request, "staff/review.html", {**context, **await _frame(v)}, _meta("Review evidence"))
 
 
 @router.get("/admin/evidence/{evidence_id}")
@@ -259,41 +187,10 @@ async def decide(request: Request, evidence_id: str):
         return await _review_page(request, v, evidence_id, failed("decision", message, values=values))
     ev = await v.db.table("evidence").eq("id", ident).maybe_single("venture_id")
     scored = await record_venture_score(v.db, ev.data["venture_id"], ident) if ev.data else False
-    return redirect("/admin/evidence" if scored else "/admin/evidence?score=failed")
+    return redirect("/admin/content?tab=evidence" if scored else "/admin/content?tab=evidence&score=failed")
 
 
-# ---------------------------------------------------------------- founders
-STATES = (
-    {"code": "all", "label": "Every venture"},
-    {"code": "published", "label": "Published to investors"},
-    {"code": "unpublished", "label": "Not published"},
-    {"code": "hidden", "label": "Hidden by IkonetU"},
-)
-
-
-@router.get("/admin/founders")
-async def founders(request: Request):
-    """Every venture and its founder, sorted by name, for reviewers and admins."""
-    v = await require_staff(request)
-    q = _search(request)
-    asked = _single(request, "state")
-    state = asked if asked in {s["code"] for s in STATES} else "all"
-    page = _page(request)
-    result = await v.db.rpc("admin_ventures", {"p_search": q or None, "p_state": state, "p_limit": PAGE, "p_offset": (page - 1) * PAGE})
-    if not result.ok:
-        log_error("admin.ventures_failed", {"code": result.error.code})
-    rows = result.data or []
-
-    def link(p: int) -> str:
-        return "/admin/founders?" + search_params([*((("q", q),) if q else ()), ("state", state), ("page", str(p))])
-
-    return render(request, "staff/founders.html", {
-        "role": _role(v), "admin": v.profile.role == "admin", "q": q, "state": state, "page": page, "rows": rows,
-        "total": rows[0]["total_count"] if rows else 0, "failed": not result.ok, "STATES": STATES, "PAGE": PAGE, "link": link,
-        "now": datetime.now(timezone.utc),
-    }, _meta("Founders"))
-
-
+# ---------------------------------------------------------------- ventures
 VENTURE_DONE = {
     "hidden": "The profile is hidden from investors. The founder sees your reason on their dashboard.",
     "lifted": "The hold is lifted. The founder can publish the profile again when they choose.",
@@ -328,33 +225,27 @@ async def _venture_page(request: Request, v, venture_id: str, states: dict | Non
         r = await v.db.table("profiles").eq("user_id", venture["hidden_by"]).maybe_single("full_name")
         return (r.data or {}).get("full_name")
 
-    founder, held_by, pitch, evidence, updates, intros, score = await asyncio.gather(
+    founder, held_by, pitch, evidence, activity, intros, score = await asyncio.gather(
         v.db.table("profiles").eq("user_id", venture["founder_id"]).maybe_single("full_name, role, status, city, created_at"),
         holder(),
         v.db.table("pitches").eq("venture_id", venture_id).maybe_single("duration_seconds, updated_at"),
         v.db.table("evidence").eq("venture_id", venture_id).order("created_at", ascending=False)
         .select("id, signal_code, summary, status, lane, created_at, decided_at"),
-        v.db.table("venture_updates").eq("venture_id", venture_id).order("created_at", ascending=False).limit(3)
-        .select("body, created_at"),
+        load_feed(v.db, venture=venture_id, limit=5),
         v.db.table("introductions").eq("venture_id", venture_id).select("status"),
         v.db.table("scores").eq("venture_id", venture_id).maybe_single("total, league, computed_at"),
     )
     statuses = [i["status"] for i in (intros.data or [])]
     context = {
         "role": _role(v), "admin": v.profile.role == "admin", "venture": venture, "done": done, "holder": held_by,
-        "founder": founder.data, "pitch": pitch.data, "score": score.data, "updates": updates.data or [],
+        "founder": founder.data, "pitch": pitch.data, "score": score.data,
+        "activity": [feed_entry(r, False) for r in (activity or [])],
         "evidence": [{**e, "waiting": e["status"] in WAITING, "state": evidence_state(e)} for e in (evidence.data or [])],
         "intro_count": statuses.count,
     }
     if states:
         context["states"] = states
-    return render(request, "staff/venture.html", context, _meta("Venture"))
-
-
-@router.get("/admin/founders/{venture_id}")
-async def venture(request: Request, venture_id: str):
-    v = await require_staff(request)
-    return await _venture_page(request, v, venture_id)
+    return render(request, "staff/venture.html", {**context, **await _frame(v)}, _meta("Venture"))
 
 
 @router.post("/admin/founders/{venture_id}/hide")
@@ -417,6 +308,7 @@ async def people(request: Request):
         return "/admin/people?" + search_params(pairs)
 
     return render(request, "staff/people.html", {
+        **await _frame(v),
         "q": q, "role_filter": role, "status": status, "page": page, "rows": rows,
         "total": rows[0]["total_count"] if rows else 0, "failed": not result.ok, "ROLES": ROLES, "STATUSES": STATUSES,
         "PAGE": PAGE, "link": link,
@@ -455,7 +347,7 @@ async def _person_page(request: Request, v, user_id: str, states: dict | None = 
     }
     if states:
         context["states"] = states
-    return render(request, "staff/person.html", context, _meta("Person"))
+    return render(request, "staff/person.html", {**context, **await _frame(v)}, _meta("Person"))
 
 
 @router.get("/admin/people/{user_id}")
@@ -496,38 +388,5 @@ async def set_status(request: Request, user_id: str):
     return redirect(f"/admin/people/{parsed.data['id']}?done={parsed.data['status']}")
 
 
-# ---------------------------------------------------------------- audit log
-@router.get("/admin/audit")
-async def audit(request: Request):
-    """Every staff decision, newest first. Older entries are reached page by page."""
-    v = await require_staff(request, admin=True)
-    asked = _single(request, "group")
-    group = asked if asked in {g["code"] for g in ACTION_GROUPS} else None
-    before_text = _single(request, "before")
-    before = int(before_text) if before_text and re.fullmatch(r"[0-9]+", before_text) else None
-    query = v.db.table("audit_log").order("id", ascending=False).limit(PAGE + 1)
-    if group:
-        query = query.like("action", f"{group}.%")
-    if before:
-        query = query.lt("id", before)
-    result = await query.select("id, actor_id, action, entity, entity_id, before, after, created_at")
-    if not result.ok:
-        log_error("admin.audit_failed", {"code": result.error.code})
-    everything = result.data or []
-    raw = everything[:PAGE]
-    names = await _actor_names(v, raw)
-    entries = []
-    for e in raw:
-        hidden = (e.get("after") or {}).get("profiles_hidden")
-        counted = isinstance(hidden, (int, float)) and not isinstance(hidden, bool) and hidden > 0
-        entries.append({
-            **e, "actor": _actor(names, e.get("actor_id")), "href": entity_href(e["entity"], e.get("entity_id")),
-            "lines": change_lines(e.get("before"), e.get("after")), "reason": entry_reason(e.get("after")),
-            "hidden": number_text(hidden) if counted else None,
-        })
-    older = None
-    if len(everything) > PAGE and raw:
-        older = "/admin/audit?" + search_params([*((("group", group),) if group else ()), ("before", str(raw[-1]["id"]))])
-    return render(request, "staff/audit.html", {
-        "group": group, "before": before, "entries": entries, "older": older, "failed": not result.ok,
-    }, _meta("Audit log"))
+# ---------------------------------------------------------------- investor register
+MONTH = re.compile(r"([0-9]{4})-(0[1-9]|1[0-2])")

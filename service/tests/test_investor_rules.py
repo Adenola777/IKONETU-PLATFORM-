@@ -1,14 +1,12 @@
 """The investor's form and the discovery filters.
 
 Ported from the investor part of apps/web/lib/forms.test.ts and the discovery part of
-apps/web/lib/product.test.ts, with the report link of a conversation.
+apps/web/lib/product.test.ts, with the report a person sends about a conversation.
 """
 
-from urllib.parse import parse_qs, urlsplit
-
 from app.discovery import FILTER_GROUPS, PAGE_SIZE, filter_count, match_text, parse_filters, query_string, rpc_args
+from app.forms import parse_report
 from app.investor import parse_investor_edit, parse_investor_signup
-from app.routes.introductions import report_link
 
 
 class Params(dict):
@@ -94,12 +92,10 @@ class TestDiscoveryFilters:
         assert match_text(3, False) == "3 founders are on IkonetU. Sorted by company name."
 
 
-def test_the_report_link_names_the_conversation_with_spaces_written_as_percent_20():
-    link = report_link("6f1c1a3e-1111-4222-8333-944455556666")
-    assert link.startswith("mailto:info@ikonetu.com?") and "+" not in link
-    query = parse_qs(urlsplit(link).query)
-    assert query["subject"] == ["Report about conversation 6f1c1a3e-1111-4222-8333-944455556666"]
-    assert query["body"] == ["Conversation reference: 6f1c1a3e-1111-4222-8333-944455556666\n\nWhat happened:\n"]
+def test_a_report_says_what_happened_in_10_to_2000_characters():
+    assert parse_report("  Too short ").errors == {"reason": "Say what happened, in at least 10 characters."}
+    assert parse_report("x" * 2001).errors == {"reason": "Keep the report to 2,000 characters."}
+    assert parse_report("  He asked for my bank details.  ").data == {"reason": "He asked for my bank details."}
 
 
 class TestInvestorCountries:

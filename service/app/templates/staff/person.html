@@ -1,8 +1,8 @@
-{% extends "app/shell.html" %}
+{% extends "admin/shell.html" %}
 {# One account: its details, a role change, a suspension, and its entries in the audit log. Admins only. #}
 {% from "app/ui.html" import field_error, invalid, form_status %}
 {% set role = "admin" %}
-{% set current = "people" %}
+{% set current = "settings" %}
 {% macro log_entries(entries) -%}
 <ul class="log">
 {% for e in entries %}

@@ -1,4 +1,9 @@
 {% extends "app/shell.html" %}
+{#
+  The founder's home (screen 07): who can see the profile, the score, the next three steps and the
+  readiness check, then the venture's details. From 1024px the readiness check, the profile's
+  progress and the monthly record sit in a column beside the rest.
+#}
 {% from "app/ui.html" import area_meter, meter_legend, field_error, invalid, form_status %}
 {% set role = "founder" %}
 {% set current = "overview" %}
@@ -6,100 +11,158 @@
 {% macro todo(done, href, label) -%}
 <li><span class="ico {{ 'done' if done else 'open' }}" aria-hidden="true">{{ icon("check" if done else "plus", 14) }}</span><span><a href="{{ href }}">{{ label }}</a><span class="sr-only">{{ " Done." if done else " Not done yet." }}</span></span></li>
 {%- endmacro %}
-<h1 class="app-title">Welcome, {{ profile.full_name }}</h1>
-<p class="app-lede">{{ venture.name }} · {{ venture.sector }} · {{ stage }} · {{ country }}</p>
+{% set cells = area_cells(areas) %}
+{% set n_strong = cells | selectattr("level", "equalto", "strong") | list | length %}
+{% set n_building = cells | selectattr("level", "equalto", "building") | list | length %}
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Welcome, {{ profile.full_name.split()[0] if profile.full_name else "back" }}</h1>
+<p class="fr-sub">{{ venture.name }} · {{ venture.sector }} · {{ stage }} · {{ country }}</p>
+</div>
 
 {% if waiting > 0 %}
-<p class="status status-info" role="status" style="margin-bottom:24px">
-{{ "One investor has" if waiting == 1 else waiting ~ " investors have" }} asked for an introduction. <a href="/dashboard/introductions">Answer the {{ "request" if waiting == 1 else "requests" }}</a>
-</p>
+<p class="fr-notice" role="status">{{ icon("message-square", 20) }}<span>{{ "One investor has" if waiting == 1 else waiting ~ " investors have" }} asked for an introduction.</span><a href="/dashboard/introductions?tab=requests">Answer {{ "it" if waiting == 1 else "them" }}</a></p>
 {% endif %}
 
-<div class="side">
-<div class="stack">
-<section class="card" aria-labelledby="score-h">
-<h2 id="score-h" class="app-h2">Your IkonetU Score</h2>
-<div class="sc-top">
-<p style="margin:0"><span class="sc-num">{{ score.total }}</span><span class="sc-of">of 1,000</span></p>
-<p style="margin:0"><span class="chip chip-f">{{ league }} league</span> <span class="small">{{ next_league }}</span></p>
+<div class="fr-cols">
+<div class="fr-page">
+<section class="card2" aria-labelledby="vis-h">
+<div class="vis-head">
+{% if held %}
+<span class="vis-ico held" aria-hidden="true">{{ icon("circle-alert", 22) }}</span>
+<span><h2 id="vis-h" class="c-h">IkonetU hid your profile</h2><span class="c-p">Investors cannot find it since {{ date_text(venture.hidden_at) }}. You can publish it again once IkonetU lifts the hold.</span></span>
+{% elif published %}
+<span class="vis-ico on" aria-hidden="true">{{ icon("eye", 22) }}</span>
+<span><h2 id="vis-h" class="c-h">Your profile is published</h2><span class="c-p">Approved investors have been able to find it since {{ date_text(venture.published_at) }}. Hide it at any time, and it leaves their search at once.</span></span>
+{% else %}
+<span class="vis-ico" aria-hidden="true">{{ icon("eye-off", 22) }}</span>
+<span><h2 id="vis-h" class="c-h">Your profile is hidden</h2><span class="c-p">Only you and IkonetU staff can see it. Publish it when your pitch is ready, and approved investors can find it.</span></span>
+{% endif %}
 </div>
-{% set bands = [("EARLY", "Early, 0 to 300"), ("RISING", "Rising, 301 to 600"), ("INVESTABLE", "Investable, 601 to 850"), ("ELITE", "Elite, 851 to 1,000")] %}
-{% set order = ["EARLY", "RISING", "INVESTABLE", "ELITE"] %}
-<div class="bands" aria-hidden="true">{% for code, _ in bands %}<i class="{{ 'here' if code == score.league else ('reached' if order.index(code) < order.index(score.league) else '') }}"></i>{% endfor %}</div>
-<div class="band-lbl" aria-hidden="true">{% for _, name in bands %}<span>{{ name }}</span>{% endfor %}</div>
-<p class="body2" style="margin:12px 0 0">The score counts evidence an IkonetU reviewer or an outside source has checked, and a few things you state yourself, which count at 60%. Investors do not see your score.</p>
-{% if score.unregistered_cap_applied %}<p class="status status-info" role="note" style="margin-top:12px">Your score stops at 600 until a reviewer approves your company registration.</p>{% endif %}
-<div class="sc-grid">
+{% if held %}
+<p class="c-p">The reason IkonetU gave:</p>
+<blockquote class="quote">{{ venture.hidden_reason }}</blockquote>
+<p class="c-p">If you have questions, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.</p>
+{% endif %}
+<div class="vis-acts">
+<form method="post" action="/dashboard/publish">
+<input type="hidden" name="publish" value="{{ 'no' if published else 'yes' }}">
+{% if published %}
+<button type="submit" class="btn btn-n btn-wide">Hide my profile</button>
+{% else %}
+<button type="submit" class="btn btn-f btn-wide"{% if not has_pitch or held %} disabled{% endif %}{% if not has_pitch %} aria-describedby="pub-need"{% endif %}>Publish my profile</button>
+{% endif %}
+</form>
+<a href="/dashboard/preview" class="tlink">See what investors see</a>
+</div>
+{% if not has_pitch and not published and not held %}
+<p id="pub-need" class="hint">Add your one-minute pitch first. A profile cannot be published without one. <a href="/dashboard/pitch">Add your pitch</a></p>
+{% endif %}
+</section>
+
+<section class="card2" aria-labelledby="score-h">
+<div class="c-row"><h2 id="score-h" class="c-lbl">Your IkonetU Score</h2><span class="chip chip-f">{{ league }} league</span></div>
+<div class="sc-split">
+<div class="fr-page" style="gap:12px">
+<p class="sc-line"><span class="sc-num">{{ score.total }}</span><span class="sc-of">of 1,000</span></p>
+<span class="sc-bar" aria-hidden="true"><i style="width:{{ [score.total / 10, 2] | max }}%"></i></span>
+<p class="c-p">{{ next_league }}</p>
+{% if score.unregistered_cap_applied %}<p class="status status-info" role="note">Your score stops at 600 until a reviewer approves your company registration.</p>{% endif %}
+</div>
+<div class="fr-desk-only">
 <svg class="radar" viewBox="{{ chart.view }}" role="img" aria-labelledby="radar-t">
-<title id="radar-t">How much of each area's points you have earned. The list beside the chart gives the same figures.</title>
+<title id="radar-t">How much of each area's points you have earned. The list of areas gives the same figures.</title>
 {% for r in chart.rings %}<polygon class="ring" points="{{ r }}"></polygon>{% endfor %}
 {% for a in chart.axes %}<line class="axis" x1="{{ chart.centre }}" y1="{{ chart.centre }}" x2="{{ a.x }}" y2="{{ a.y }}"></line>{% endfor %}
 <polygon class="shape" points="{{ chart.shape }}"></polygon>
 {% for l in chart.labels %}<text x="{{ l.x }}" y="{{ l.y }}" text-anchor="{{ l.anchor }}">{{ l.text }}</text>{% endfor %}
 </svg>
+</div>
+</div>
+<details class="fold">
+<summary>Each area's points<span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<div class="fold-in">
 <ul class="shares" aria-label="Each area's share of its points">
 {% for s in shares %}
 <li><span title="{{ s.full_label }}, {{ s.weight }}% of the score">{{ s.label }}</span><span class="bar" aria-hidden="true"><i style="width:{{ s.percent }}%"></i></span><span class="pc">{{ s.percent }}%</span></li>
 {% endfor %}
 </ul>
+<p class="c-p">Each area counts for a fixed share of the 1,000. {{ "Business operations counts for your product area, because it is higher than technical output." if score.pathway == "operations" else "Technical output counts for your product area. If business operations becomes higher, it counts instead." }}</p>
 </div>
-<p class="small" style="margin:12px 0 0">Each area counts for a fixed share of the 1,000. {{ "Business operations counts for your product area, because it is higher than technical output." if score.pathway == "operations" else "Technical output counts for your product area. If business operations becomes higher, it counts instead." }}</p>
+</details>
 </section>
 
-<section class="card" aria-labelledby="steps-h">
-<h2 id="steps-h" class="app-h2">Your next three steps</h2>
+<section class="card2" aria-labelledby="steps-h" style="gap:4px">
+<h2 id="steps-h" class="c-lbl">Your next three steps</h2>
 {% if not steps %}
-<p class="body2">Every piece of evidence you can add today is added or waiting for a reviewer.</p>
+<p class="c-p">Every piece of evidence you can add today is added or waiting for a reviewer.</p>
 {% else %}
-<ol class="todo">
+<ol class="steps">
 {% for s in steps %}
-<li><span class="ico open" aria-hidden="true" style="font-weight:600;font-size:13px">{{ loop.index }}</span><span><a href="/dashboard/evidence?signal={{ s.code }}">{{ s.label }}</a><span class="gain">about +{{ s.gain }}</span> <span class="small">({{ area_label(s.category) }})</span><span class="small" style="display:block">What to send: {{ lower_first(s.hint) }}</span><span class="small" style="display:block">Why it matters: {{ lower_first(s.why) }}</span></span></li>
+<li><a href="/dashboard/evidence?signal={{ s.code }}"><span class="st-n" aria-hidden="true">{{ loop.index }}</span><span class="st-body"><span class="st-name">{{ s.label }}</span><span class="st-meta">{{ area_label(s.category) }} · <span class="gain">about +{{ s.gain }}</span></span><span class="st-hint fr-desk-only">What to send: {{ lower_first(s.hint) }}</span></span>{{ icon("chevron-right", 20) }}</a></li>
 {% endfor %}
 </ol>
 {% endif %}
-<p class="small" style="margin:12px 0 0">The steps add most to your score next, counted at the weight a reviewed document earns. Evidence already waiting for a reviewer is left out.</p>
+<p class="c-p" style="padding-top:8px">The steps add most to your score next, counted at the weight a reviewed document earns. Evidence already waiting for a reviewer is left out.</p>
 </section>
 
-<section class="card" aria-labelledby="vis-h">
-<h2 id="vis-h" class="app-h2">Who can see your profile</h2>
-{% if held %}
-<p class="status status-err" role="status">IkonetU hid your profile from investors on {{ date_text(venture.hidden_at) }}. You can publish it again once IkonetU lifts the hold.</p>
-<p class="body2" style="margin-top:12px">The reason IkonetU gave:</p>
-<blockquote class="quote" style="margin:8px 0 0">{{ venture.hidden_reason }}</blockquote>
-<p class="body2" style="margin-top:12px">If you have questions, write to <a href="mailto:info@ikonetu.com">info@ikonetu.com</a> from the address you signed in with.</p>
-{% elif published %}
-<p class="body2">Your profile is published. Approved investors have been able to find it since {{ date_text(venture.published_at) }}. Hide it at any time, and it leaves their search at once.</p>
-{% else %}
-<p class="body2">Your profile is hidden. Nobody but you and IkonetU staff can see it. Publish it when your pitch is ready, and approved investors can find it.</p>
-{% endif %}
-<form method="post" action="/dashboard/publish" class="row" style="margin-top:16px">
-<input type="hidden" name="publish" value="{{ 'no' if published else 'yes' }}">
-{% if published %}
-<button type="submit" class="btn btn-n">Hide my profile</button>
-{% else %}
-<button type="submit" class="btn btn-f"{% if not has_pitch or held %} disabled{% endif %}{% if not has_pitch %} aria-describedby="pub-need"{% endif %}>Publish my profile</button>
-{% endif %}
-<a href="/dashboard/preview" class="tlink">See what investors see</a>
-</form>
-{% if not has_pitch and not published and not held %}
-<p id="pub-need" class="hint" style="margin-top:8px">Add your one-minute pitch first. A profile cannot be published without one.</p>
-{% endif %}
-</section>
+<details class="help">
+<summary>{{ icon("info", 18) }}<span class="q">How the score works</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<p>The score counts evidence an IkonetU reviewer or an outside source has checked, and a few things you state yourself, which count at 60%. Investors do not see your score. They see the readiness check, which shows evidence by area.</p>
+</details>
+</div>
 
-<section class="card" aria-labelledby="ready-h">
-<h2 id="ready-h" class="app-h2">Readiness check</h2>
+<div class="fr-rail">
+<section class="card2" aria-labelledby="ready-h">
+<h2 id="ready-h" class="c-lbl">Readiness check</h2>
+<ul class="counts" aria-label="Areas by level">
+<li><b>{{ n_strong }}</b><span>Strong</span></li>
+<li><b>{{ n_building }}</b><span>Building</span></li>
+<li><b>{{ cells | length - n_strong - n_building }}</b><span>Gap</span></li>
+</ul>
+<details class="fold">
+<summary>Each of the eleven areas<span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<div class="fold-in">
 {{ area_meter(areas) }}
-<div style="margin:12px 0 16px">{{ meter_legend() }}</div>
+{{ meter_legend() }}
 <ul class="todo" aria-label="The eleven areas">
-{% for c in area_cells(areas) %}
+{% for c in cells %}
 <li><span class="chip {{ LEVEL[c.level].chip }}" style="min-width:84px;justify-content:center">{{ LEVEL[c.level].name }}</span><span>{{ c.label }}{% if c.count %} · {{ c.count }} {{ "piece" if c.count == 1 else "pieces" }} of evidence{% endif %}</span></li>
 {% endfor %}
 </ul>
-<p class="small" style="margin:12px 0 0">Investors see the same readiness check on your profile. It shows evidence by area and leaves your score out.</p>
+</div>
+</details>
+<p class="c-p">Investors see the same readiness check on your profile. It shows evidence by area and leaves your score out.</p>
 </section>
 
-<section class="card" aria-labelledby="venture-h">
-<h2 id="venture-h" class="app-h2">Your venture</h2>
+<section class="card2" aria-labelledby="todo-h">
+<h2 id="todo-h" class="c-lbl">Your profile</h2>
+<ul class="todo">
+{{ todo(has_pitch, "/dashboard/pitch", "Your one-minute pitch is added." if has_pitch else "Add your one-minute pitch.") }}
+{{ todo(evidence_count > 0, "/dashboard/evidence", (evidence_count ~ " " ~ ("piece" if evidence_count == 1 else "pieces") ~ " of evidence added, " ~ reviewed ~ " reviewed.") if evidence_count else "Add your first piece of evidence.") }}
+{{ todo(last_activity, "/activity", ("Your latest step in the activity feed: " ~ activity_text(last_activity, now).replace("Updated ", "") ~ ".") if last_activity else "Your progress appears in the activity feed as you make it.") }}
+</ul>
+</section>
+
+<section class="card2" aria-labelledby="rec-h">
+<h2 id="rec-h" class="c-lbl">Your monthly record</h2>
+{% if not record %}
+<p class="c-p">IkonetU keeps your score for each month once a reviewer decides your first evidence, or you add a statement. A month's figure stops changing when the month ends.</p>
+{% else %}
+<table class="rec">
+<thead><tr><th scope="col">Month</th><th scope="col">League</th><th scope="col" class="n" style="text-align:right">Score</th><th scope="col" class="n" style="text-align:right">Change</th></tr></thead>
+<tbody>
+{% for r in record %}<tr><td>{{ r.month }}</td><td>{{ r.league }}</td><td class="n">{{ r.total }}</td><td class="n">{{ "" if r.change is none else ("+" ~ r.change if r.change > 0 else r.change) }}</td></tr>{% endfor %}
+</tbody>
+</table>
+<p class="c-p">A month's figure stops changing when the month ends.</p>
+{% endif %}
+</section>
+</div>
+</div>
+
+<section class="card2" aria-labelledby="venture-h">
+<h2 id="venture-h" class="c-h">Your venture details</h2>
 {% set st = states.get("venture", {}) %}
 {% set errors = st.get("errors", {}) %}
 {% set v = st.get("values") if st.get("status") == "error" and st.get("values") else {"name": venture.name, "sector": venture.sector, "stage": venture.stage, "description": venture.description or "", "website": venture.website or "", "ask": venture.ask or ""} %}
@@ -135,6 +198,7 @@
 {{ v.get("description", "") }}</textarea>
 {{ field_error(errors, "description") }}
 </div>
+<div class="grid2">
 <div class="field">
 <label for="v-ask">Your ask</label>
 <input id="v-ask" name="ask" class="input" type="text" maxlength="160" value="{{ v.get('ask', '') }}"{{ invalid(errors, "ask", "v-ask-hint") }}>
@@ -146,34 +210,9 @@
 <input id="v-website" name="website" class="input" type="url" inputmode="url" maxlength="300" value="{{ v.get('website', '') }}"{{ invalid(errors, "website") }}>
 {{ field_error(errors, "website") }}
 </div>
+</div>
 <button type="submit" class="btn btn-n" style="align-self:flex-start" data-pending="Saving…">Save changes</button>
 </form>
 </section>
-</div>
-
-<aside class="stack" aria-label="Your profile">
-<section class="card" aria-labelledby="todo-h">
-<h2 id="todo-h" class="app-h2">Your profile</h2>
-<ul class="todo">
-{{ todo(has_pitch, "/dashboard/pitch", "Your one-minute pitch is added." if has_pitch else "Add your one-minute pitch.") }}
-{{ todo(evidence_count > 0, "/dashboard/evidence", (evidence_count ~ " " ~ ("piece" if evidence_count == 1 else "pieces") ~ " of evidence added, " ~ reviewed ~ " reviewed.") if evidence_count else "Add your first piece of evidence.") }}
-{{ todo(last_update, "/dashboard/updates", ("Last progress update: " ~ activity_text(last_update, now).replace("Updated ", "") ~ ".") if last_update else "Post your first progress update.") }}
-</ul>
-</section>
-<section class="card" aria-labelledby="rec-h">
-<h2 id="rec-h" class="app-h2">Your monthly record</h2>
-{% if not record %}
-<p class="body2">IkonetU keeps your score for each month once a reviewer decides your first evidence, or you add a statement. A month's figure stops changing when the month ends.</p>
-{% else %}
-<table class="rec">
-<thead><tr><th scope="col">Month</th><th scope="col">League</th><th scope="col" class="n" style="text-align:right">Score</th><th scope="col" class="n" style="text-align:right">Change</th></tr></thead>
-<tbody>
-{% for r in record %}<tr><td>{{ r.month }}</td><td>{{ r.league }}</td><td class="n">{{ r.total }}</td><td class="n">{{ "" if r.change is none else ("+" ~ r.change if r.change > 0 else r.change) }}</td></tr>{% endfor %}
-</tbody>
-</table>
-<p class="small" style="margin:12px 0 0">A month's figure stops changing when the month ends.</p>
-{% endif %}
-</section>
-</aside>
 </div>
 {% endblock %}

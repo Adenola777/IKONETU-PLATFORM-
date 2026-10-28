@@ -15,7 +15,7 @@ from app.product import LEVEL, STATUS
 
 APP = Path(__file__).resolve().parents[1] / "app"
 CSS = APP / "static" / "css"
-SHEETS = ["site.css", "app.css", "sign-in.css", "globals.css"]
+SHEETS = ["site.css", "app.css", "sign-in.css", "globals.css", "frame.css", "admin.css"]
 
 
 def tokens() -> dict[str, str]:
@@ -63,9 +63,12 @@ PAIRS = [
     ("--investor", "--investor-tint-press", 4.5), ("--founder-text", "--canvas", 4.5), ("--founder-text", "--founder-tint", 4.5),
     ("--text-2", "--canvas", 4.5), ("--text-3", "--fill", 4.5), ("--verified", "--verified-tint", 4.5),
     ("--third-party", "--third-party-tint", 4.5), ("--error", "--canvas", 4.5), ("--error", "--error-tint", 4.5),
-    ("--warning", "--warning-tint", 4.5), ("--footer-text", "--footer", 4.5), ("--text-disabled", "--fill", 4.5),
+    ("--warning", "--warning-tint", 4.5), ("--footer-text", "--footer", 4.5), ("--side-text", "--side", 4.5),
+    ("--side-muted", "--side", 4.5), ("--side-text", "--side-line", 4.5), ("--side-text", "--side-current", 4.5),
+    ("--side-accent", "--side", 3.0), ("--sample-on-dark", "--side", 4.5), ("--text-disabled", "--fill", 4.5),
     ("--line-control", "--canvas", 3.0), ("--mark-on", "--canvas", 3.0), ("--mark-mid", "--canvas", 3.0),
     ("--mark-edge", "--canvas", 3.0), ("--founder", "--canvas", 3.0),
+    ("--band-text", "--investor", 4.5), ("--band-accent", "--investor", 4.5), ("--band-live", "--investor", 4.5),
 ]
 
 

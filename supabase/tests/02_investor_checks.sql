@@ -33,7 +33,16 @@ insert into public.ventures (id, founder_id, name, sector, country, stage) value
   ('bbbbbbbb-0000-0000-0000-000000000001', auth.uid(), 'Kola Pay', 'Fintech', 'NG', 'revenue');
 insert into public.evidence (id, venture_id, signal_code, summary) values
   ('cccccccc-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001', 'revenue', 'Twelve months of bank statements');
+-- Founders no longer post progress updates (20261027000001). An update posted
+-- before that is written here directly, so the rules for reading one stay checked.
+do $$ begin
+  insert into public.venture_updates (venture_id, body) values ('bbbbbbbb-0000-0000-0000-000000000001', 'We signed our third market association this week.');
+  perform pg_temp.ok('I0 a founder can no longer post a progress update', false, 'insert succeeded');
+exception when others then perform pg_temp.ok('I0 a founder can no longer post a progress update', sqlstate = '42501', sqlerrm);
+end $$;
+reset role;
 insert into public.venture_updates (venture_id, body) values ('bbbbbbbb-0000-0000-0000-000000000001', 'We signed our third market association this week.');
+set role authenticated;
 
 do $$ begin
   insert into public.evidence (venture_id, signal_code, public_note) values ('bbbbbbbb-0000-0000-0000-000000000001', 'website_live', 'Checked by IkonetU');

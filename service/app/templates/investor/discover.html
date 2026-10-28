@@ -1,4 +1,11 @@
 {% extends "app/shell.html" %}
+{#
+  Discover founders (screen 12). On a phone the filters fold behind a button and each founder is a
+  card with the pitch preview on top. From 1024px the filters stand in a column and the cards sit two
+  or three to a row. discovery-filters.js and preview-thumb.js hook into the form, the toggle, the
+  results section and the thumbnails, so their names stay as they were. The toggle carries no icon,
+  because the script rewrites its text.
+#}
 {% from "app/ui.html" import area_meter, meter_legend %}
 {% set role = "investor" %}
 {% set current = "discover" %}
@@ -8,8 +15,11 @@
 <a href="{{ href }}" class="thumb" aria-label="{{ label }}" data-cues="{{ cues(preview.transcript, preview.duration) | tojson | forceescape }}">{% if preview.src %}<video src="{{ preview.src }}" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>{% endif %}<span class="playdot" aria-hidden="true">{{ icon("play", 16, true) }}</span>{% if length %}<span class="len" aria-hidden="true">{{ length }}</span>{% endif %}</a>
 {%- endmacro %}
 {% block main %}
-<h1 class="app-title">Discover founders</h1>
-<p class="app-lede">Founders who have published their profile. Choices inside one filter widen the list, and filters in different groups narrow it. Results are sorted by company name, never by a score.</p>
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Discover</h1>
+<p class="fr-sub">Founders who have published their profile, sorted by company name and never by a score.</p>
+</div>
 <div class="disc">
 {#
   The filters, as a form that sends a GET request, so the filtered list has its own address and works
@@ -38,33 +48,30 @@
 <noscript><button type="submit" class="btn btn-i btn-sm">Show founders</button></noscript>
 </form>
 </div>
-<section aria-labelledby="res-h" class="stack">
+<section aria-labelledby="res-h" class="fr-page" style="gap:14px">
 <h2 id="res-h" class="sr-only">Results</h2>
-<div class="row" style="justify-content:space-between">
-<p role="status" class="small" style="margin:0">{{ "The list could not be loaded. Please reload the page." if failed else match_text(total, filtered) }}</p>
+<div class="disc-top">
+<p role="status">{{ "The list could not be loaded. Please reload the page." if failed else match_text(total, filtered) }}</p>
 {% if filtered %}<a class="tlink" href="/investor">Clear filters</a>{% endif %}
 </div>
-{{ meter_legend() }}
 {% if not failed and not rows %}
-<div class="empty">
-<p>{{ "No founder matches these filters." if filtered else "No founder has published a profile yet." }}</p>
-{% if filtered %}<p><a href="/investor">Clear the filters</a> to see every published founder.</p>{% endif %}
-</div>
+<p class="fr-empty">{{ "No founder matches these filters." if filtered else "No founder has published a profile yet." }}{% if filtered %} <a href="/investor">Clear the filters</a> to see every published founder.{% endif %}</p>
 {% else %}
-<ul class="results">
+<ul class="dres">
 {% for r in rows %}
 {% set recent = is_recent(r.last_activity, now) %}
 {% set length = clock_text(r.pitch_seconds) if r.pitch_seconds else "" %}
-<li class="res">
+<li class="dc">
 {{ thumb("/investor/ventures/" ~ r.venture_id, previews.get(r.venture_id, {"src": none, "transcript": "", "duration": 0}), "Watch the " ~ r.name ~ " pitch" ~ (", " ~ length if length else ""), length) }}
-<div class="res-body">
-<div class="row" style="justify-content:space-between;align-items:flex-start">
-<h3 class="res-name"><a href="/investor/ventures/{{ r.venture_id }}">{{ r.name }}</a></h3>
+<div class="dc-body">
+<div class="dc-top">
+<h3 class="dc-name"><a href="/investor/ventures/{{ r.venture_id }}">{{ r.name }}</a></h3>
 <span class="chip chip-n"><span class="dot" aria-hidden="true"{% if not recent %} style="background:var(--mark-mid)"{% endif %}></span>{{ activity_text(r.last_activity, now) }}</span>
 </div>
-<p class="small" style="margin:0">{{ r.founder_name }}{% if r.city %}, {{ r.city }}{% endif %}, {{ country_name(r.country) }} · {{ r.sector }} · {{ stage_label(r.stage) }}{% if length %} · {{ length }} pitch{% endif %} · {{ consistency(r.updates_90d) }}</p>
-{% if r.description %}<p class="body2" style="margin:0">{{ r.description }}</p>{% endif %}
-{% if r.ask %}<p class="small" style="margin:0"><strong style="color:#101828">Ask:</strong> {{ r.ask }}</p>{% endif %}
+<p class="dc-line">{{ r.founder_name }}{% if r.city %}, {{ r.city }}{% endif %}, {{ country_name(r.country) }} · {{ consistency(r.active_weeks) }}</p>
+{% if r.description %}<p class="dc-desc">{{ r.description }}</p>{% endif %}
+<div class="dc-tags"><span>{{ r.sector }}</span><span>{{ stage_label(r.stage) }}</span>{% if length %}<span>{{ length }} pitch</span>{% endif %}</div>
+{% if r.ask %}<p class="dc-ask"><b>Ask:</b> {{ r.ask }}</p>{% endif %}
 {{ area_meter(r.areas) }}
 </div>
 </li>
@@ -78,7 +85,13 @@
 {% if filters.page < pages %}<a class="btn btn-n btn-sm" href="/investor{{ query_string(filters, filters.page + 1) }}">Next page</a>{% else %}<span></span>{% endif %}
 </nav>
 {% endif %}
+<details class="help">
+<summary>{{ icon("info", 18) }}<span class="q">How results are ordered</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary>
+<p>Results are sorted by company name, never by a score. Choices inside one filter widen the list, and filters in different groups narrow it. The squares show evidence by area: strong, building or a gap.</p>
+<div style="padding:0 14px 14px 42px">{{ meter_legend() }}</div>
+</details>
 </section>
+</div>
 </div>
 {# The label a pointed-at thumbnail shows while its muted preview plays. preview-thumb.js copies it. #}
 <template id="pv-label"><span class="pvlbl">{{ icon("volume-x", 12) }}Muted preview</span></template>

@@ -15,8 +15,9 @@ from .waitlist import COUNTRY_CODES, normalise_contact
 # Between the two sign-in steps the server remembers where the code went, in an
 # HTTP-only cookie, so the address never appears in a URL or a log.
 PENDING_COOKIE = "ik_pending_sign_in"
-# The PKCE verifier for the link in the sign-in email, which only this browser holds.
+# The PKCE verifier for the link in the sign-in email or for a Google sign-in, which only this browser holds.
 VERIFIER_COOKIE = "ik_pkce"
+VIA_COOKIE = "ik_signin_via"  # "google" while a Google sign-in is under way
 CODE_LIFETIME_SECONDS = 300  # SRD SEC-A1: a code lasts 5 minutes
 
 ADULT = "You must be 18 or older to join."
@@ -66,6 +67,19 @@ def read_pending(raw: str | None) -> Pending | None:
             and re.fullmatch(r"\+[0-9]{10,15}", data["phone"]) and data.get("channel") in ("sms", "whatsapp")):
         return Pending(kind="phone", phone=data["phone"], channel=data["channel"], sent_at=sent)
     return None
+
+
+def parse_admin_sign_in(email: str, password: str) -> tuple[str | None, Errors]:
+    """The admin sign-in: an email address and a password. The password is sent as typed, spaces included."""
+    errors = Errors()
+    value = js_trim(email).lower()
+    if not is_email(value) or js_len(value) > 160:
+        errors.add("email", "Enter a valid email address.")
+    if not password:
+        errors.add("password", "Enter your password.")
+    elif js_len(password) > 200:
+        errors.add("password", "That password is too long.")
+    return (value if not errors else None), errors
 
 
 def parse_email_sign_in(email: str, confirmed_adult: bool) -> tuple[str | None, Errors]:

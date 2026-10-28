@@ -1,6 +1,12 @@
 {# The investor's details, shared by sign-up and the profile page. Ported from components/app/investor-fields.tsx. #}
 {% from "app/ui.html" import field_error, invalid %}
+{#
+  The fields come in three cards: about you, what you invest in, and your choices. A page that has
+  more choices to add calls the macro with a call block, and they go at the end of the third card.
+#}
 {% macro investor_fields(values, errors) -%}
+<section class="card2 form" aria-labelledby="if-you">
+<h2 id="if-you">About you</h2>
 <div class="field">
 <label for="i-name">Full name</label>
 <input id="i-name" name="fullName" class="input" type="text" autocomplete="name" maxlength="120" value="{{ one(values, 'fullName') }}"{{ invalid(errors, "fullName") }}>
@@ -38,7 +44,10 @@
 </select>
 {{ field_error(errors, "basedIn") }}
 </div>
+</section>
 
+<section class="card2 form" aria-labelledby="if-what">
+<h2 id="if-what">What you invest in</h2>
 <fieldset class="field">
 <legend>Sectors you invest in</legend>
 <div class="opts opts-3">
@@ -83,9 +92,14 @@
 <p id="i-thesis-hint" class="hint">Founders see your name, investor type and firm when you ask for an introduction. They do not see this.</p>
 {{ field_error(errors, "thesis") }}
 </div>
+</section>
 
+<section class="card2 form" aria-labelledby="if-choices">
+<h2 id="if-choices">Your choices</h2>
 <div>
 <label class="check"><input type="checkbox" name="confirmedStatement"{{ invalid(errors, "confirmedStatement") }}><span>The investor type I chose describes me. I will not misrepresent my investor type, investment capacity, regulatory status or affiliation, as the <a href="/terms#terms-investor" target="_blank" rel="noopener">investor terms</a> require.</span></label>
 {{ field_error(errors, "confirmedStatement") }}
 </div>
+{% if caller is defined %}{{ caller() }}{% endif %}
+</section>
 {%- endmacro %}

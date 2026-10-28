@@ -16,9 +16,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .log import log_error, start_sentry
-from .routes import auth, founder, introductions, investor, site, staff, system
+from .routes import activity, admin, auth, founder, introductions, investor, site, staff, system
 from .security import SecurityMiddleware
-from .session import ACCESS_COOKIE, REFRESH_COOKIE, SESSION_MAX_AGE, RedirectTo
+from .session import ACCESS_COOKIE, REFRESH_COOKIE, SESSION_MAX_AGE, InMaintenance, RedirectTo
 from .supabase import make_client
 from .web import HERE, Meta, render
 
@@ -51,6 +51,12 @@ async def session_cookies(request: Request, call_next):
 
 
 app.add_middleware(SecurityMiddleware, settings=settings)
+
+
+@app.exception_handler(InMaintenance)
+async def on_maintenance(request: Request, exc: InMaintenance):
+    return render(request, "maintenance.html", {"message": exc.message},
+                  Meta(title="IkonetU is closed for a short while", noindex=True), status_code=503)
 
 
 @app.exception_handler(RedirectTo)
@@ -87,10 +93,24 @@ def name_file_types() -> None:
     mimetypes.add_type("font/woff2", ".woff2")
 
 
+class RevalidatedStaticFiles(StaticFiles):
+    """Static files that a browser checks with the server before it reuses them.
+
+    The files went out with no Cache-Control, so a browser chose for itself how long to keep them.
+    On 28 October 2026 the redesigned pricing page met a stylesheet kept from the day before, and
+    each ticked feature showed a list bullet beside an unstyled black circle. "no-cache" makes the
+    browser ask each time; the answer is 304 with no body while the file is unchanged."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers.setdefault("Cache-Control", "no-cache")
+        return response
+
+
 name_file_types()
-app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
+app.mount("/static", RevalidatedStaticFiles(directory=str(HERE / "static")), name="static")
 MEDIA = HERE / "public" / "media"
-app.mount("/media", StaticFiles(directory=str(MEDIA)), name="media")
+app.mount("/media", RevalidatedStaticFiles(directory=str(MEDIA)), name="media")
 
 
 @app.get("/icon.svg", include_in_schema=False)
@@ -104,4 +124,6 @@ app.include_router(site.router)
 app.include_router(founder.router)
 app.include_router(investor.router)
 app.include_router(introductions.router)
+app.include_router(activity.router)
+app.include_router(admin.router)
 app.include_router(staff.router)

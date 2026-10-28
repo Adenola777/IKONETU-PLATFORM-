@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass, field
 
 from .countries import COUNTRY_CODES
+from .platform import Rules, or_list, video_article
 from .product import SECTORS, STAGES
 from .score_engine import RUBRIC_V3
 from .validate import Errors, is_web_address, js_len, js_trim
@@ -188,9 +189,6 @@ def signal_area(code: str) -> str:
 
 
 # ---------------------------------------------------------------- pitch
-PITCH_TYPES = ("video/mp4", "video/webm", "video/quicktime")
-PITCH_MAX_BYTES = 50 * 1024 * 1024
-PITCH_MAX_SECONDS = 90
 PITCH_PATH = re.compile(r"[0-9a-f-]{36}/[0-9a-f-]{36}\.(mp4|webm|mov)")
 TRANSCRIPT_SHORT = "Type what you say in the pitch, in at least 20 characters."
 TRANSCRIPT_LONG = "Keep the transcript to 2,000 characters."
@@ -223,8 +221,10 @@ def _wrong_type(body: dict, key: str, kind: str) -> str | None:
     return None if got == kind else f"Expected {kind}, received {got}"
 
 
-def parse_pitch(body: object) -> Parsed:
-    """The pitch the browser records after its upload. It arrives as JSON, so each field's type is checked first."""
+def parse_pitch(body: object, rules: Rules | None = None) -> Parsed:
+    """The pitch the browser records after its upload. It arrives as JSON, so each field's type is checked first.
+    The file types, size and length are the ones an admin set on the Settings page."""
+    rules = rules or Rules()
     if not isinstance(body, dict):
         return Parsed(ok=False, errors={"form": f"Expected object, received {_received(body)}"})
     e = Errors()
@@ -232,8 +232,8 @@ def parse_pitch(body: object) -> Parsed:
     wrong = _wrong_type(body, "path", "string")
     if wrong or not PITCH_PATH.fullmatch(path):
         e.add("path", wrong or "The upload did not finish. Please try again.")
-    if body.get("mimeType") not in PITCH_TYPES:
-        e.add("mimeType", "Upload an MP4, WebM or MOV video.")
+    if body.get("mimeType") not in rules.pitch_types:
+        e.add("mimeType", f"Upload {video_article(rules.type_names)} {or_list(rules.type_names)} video.")
     size = body.get("size")
     wrong = _wrong_type(body, "size", "number")
     if wrong:
@@ -242,16 +242,16 @@ def parse_pitch(body: object) -> Parsed:
         e.add("size", "Expected integer, received float")
     elif size <= 0:
         e.add("size", "Number must be greater than 0")
-    elif size > PITCH_MAX_BYTES:
-        e.add("size", "The video must be 50 MB or smaller.")
+    elif size > rules.pitch_max_bytes:
+        e.add("size", f"The video must be {rules.pitch_max_mb} MB or smaller.")
     duration = body.get("duration")
     wrong = _wrong_type(body, "duration", "number")
     if wrong:
         e.add("duration", wrong)
     elif duration <= 0:
         e.add("duration", "We could not read the video's length.")
-    elif duration > PITCH_MAX_SECONDS:
-        e.add("duration", "Keep the pitch to 90 seconds or less.")
+    elif duration > rules.pitch_max_seconds:
+        e.add("duration", f"Keep the pitch to {rules.pitch_max_seconds} seconds or less.")
     wrong = _wrong_type(body, "transcript", "string")
     if wrong:
         e.add("transcript", wrong)
@@ -271,12 +271,6 @@ def parse_transcript(value: str) -> Parsed:
 
 
 # ---------------------------------------------------------------- updates, notes and messages
-def parse_update(value: str) -> Parsed:
-    e = Errors()
-    body = _text(e, "body", value, 10, "Write at least 10 characters.", 600, "Keep the update to 600 characters.")
-    return _done(e, {"body": body})
-
-
 def parse_introduction_note(value: str) -> Parsed:
     e = Errors()
     note = _text(e, "note", value, 20, "Say why you want to talk, in at least 20 characters.", 600, "Keep the note to 600 characters.")
@@ -287,6 +281,13 @@ def parse_message(value: str) -> Parsed:
     e = Errors()
     body = _text(e, "body", value, 1, "Write a message.", 2000, "Keep the message to 2,000 characters.")
     return _done(e, {"body": body})
+
+
+def parse_report(value: str) -> Parsed:
+    """A report about a conversation, which the IkonetU team reads."""
+    e = Errors()
+    reason = _text(e, "reason", value, 10, "Say what happened, in at least 10 characters.", 2000, "Keep the report to 2,000 characters.")
+    return _done(e, {"reason": reason})
 
 
 # ---------------------------------------------------------------- venture details

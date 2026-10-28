@@ -23,3 +23,77 @@
 .pg-signin .btn:disabled:not([aria-busy="true"]){background:var(--fill);border-color:var(--line);color:var(--text-disabled);cursor:progress}
 .pg-signin .link-button{align-self:flex-start;min-height:44px;padding:0;border:0;background:none;font:inherit;font-weight:600;color:var(--investor);text-decoration:underline;cursor:pointer}
 .pg-signin .link-button:disabled{color:var(--text-disabled);cursor:progress}
+/* The admin sign-in: the navy band of the footer marks it as the staff side, with the navy logo and an Admin tag. */
+/* The admin sign-in board of 26 October 2026: a navy header over an orange rule, and an orange ADMIN pill. */
+.pg-admin .si-hdr{background:var(--footer);border-bottom:3px solid var(--founder)}
+.pg-admin .ad-brand{display:inline-flex;align-items:center;gap:12px;min-height:44px}
+.pg-admin .ad-tag{padding:2px 10px;border:1px solid var(--founder);border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF}
+.pg-admin .si-lbl{color:var(--founder-text)}
+
+/* ---------------------------------------------------------------- screens 01 and 02, from the app flow design */
+/* On a phone the page fills the screen and its buttons sit at the foot. From 640px it is a card under the lockup. */
+.pg-auth{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;background:var(--canvas);color:var(--ink);font-family:var(--font-sans),system-ui,sans-serif;font-size:var(--t-ui);line-height:1.5;-webkit-font-smoothing:antialiased}
+.pg-auth .au-top{flex:none;display:flex;align-items:center;min-height:56px;padding:12px 20px 0;box-sizing:border-box}
+.pg-auth .au-top a{display:inline-flex;align-items:center;min-height:44px;color:var(--ink)}
+.pg-auth .au-has-back{padding:4px 8px 0}
+.pg-auth .au-has-back .au-logo{display:none}
+.pg-auth .au-back{justify-content:center;width:44px;border-radius:var(--r-control)}
+.pg-auth .au-back:hover{background:var(--fill)}
+.pg-auth .au-card{flex:1 1 auto;display:flex;flex-direction:column;padding:20px 20px 20px;box-sizing:border-box}
+.pg-auth .au-form{flex:1 1 auto;display:flex;flex-direction:column;gap:28px}
+.pg-auth .au-body{display:flex;flex-direction:column;gap:20px}
+.pg-auth .au-head{display:flex;flex-direction:column;gap:8px}
+.pg-auth h1{margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.pg-auth .au-lede{margin:0;font-size:var(--t-ui);line-height:24px;color:var(--text-2)}
+.pg-auth .au-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.pg-auth .au-go{width:100%;min-height:52px;border-radius:14px}
+.pg-auth .btn:disabled:not([aria-busy="true"]){background:var(--fill);border-color:var(--line);color:var(--text-disabled);cursor:progress}
+.pg-auth .au-terms{margin:0;font-size:var(--t-ui-xs);line-height:18px;color:var(--text-2);text-align:center}
+.pg-auth .au-more{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:8px}
+.pg-auth .au-more form{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.pg-auth .field{display:flex;flex-direction:column;gap:6px}
+.pg-auth .field label{font-size:var(--t-ui-s);line-height:20px;font-weight:600;color:var(--text-3)}
+.pg-auth .input{min-height:52px;padding:0 16px;font:inherit;font-size:var(--t-ui);border:1px solid var(--line-control);border-radius:var(--r-control);background:var(--canvas);color:var(--ink);width:100%;box-sizing:border-box}
+.pg-auth .input[aria-invalid="true"]{border:2px solid var(--error)}
+.pg-auth .au-phone{display:flex;gap:8px}
+.pg-auth .au-phone select{flex:none;width:96px;padding:0 10px}
+.pg-auth .au-phone input{flex:1 1 auto;min-width:0}
+.pg-auth .hint{margin:0;font-size:var(--t-ui-s);line-height:20px;color:var(--text-2)}
+.pg-auth .err{margin:0;font-size:var(--t-ui-s);line-height:20px;font-weight:600;color:var(--error)}
+.pg-auth .check{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+.pg-auth .check input{width:22px;height:22px;margin:0;accent-color:var(--investor)}
+.pg-auth .status{margin:0;padding:12px 14px;border-radius:var(--r-control);font-size:var(--t-ui-s);font-weight:600;line-height:20px}
+.pg-auth .status-err{background:var(--error-tint);color:var(--error)}
+.pg-auth .status-ok{background:var(--fill);color:var(--text-3)}
+.pg-auth .link-button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 8px;border:0;background:none;font:inherit;font-size:var(--t-ui);font-weight:600;color:var(--investor);text-decoration:none;cursor:pointer}
+.pg-auth .link-button:hover{text-decoration:underline}
+.pg-auth .link-button:disabled{color:var(--text-disabled);cursor:progress}
+.pg-auth .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Continue with Google, in Google's light theme: white, a grey border, their G at 20px with 10px after it. */
+.pg-auth .au-google{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 12px;box-sizing:border-box;border:1px solid var(--google-line);border-radius:14px;background:var(--canvas);color:var(--google-text);font-size:var(--t-ui);font-weight:600;text-decoration:none}
+.pg-auth .au-google:hover{background:var(--fill-panel);color:var(--google-text)}
+.pg-auth .au-google img{flex:none;width:20px;height:20px}
+.pg-auth .au-or{display:flex;align-items:center;gap:12px;margin:0;font-size:var(--t-ui-s);line-height:20px;color:var(--text-2)}
+.pg-auth .au-or::before,.pg-auth .au-or::after{content:"";flex:1 1 auto;height:1px;background:var(--line)}
+/* Phone or Email: two links that look like a segmented control. */
+.pg-auth .au-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;border-radius:var(--r-control);background:var(--fill)}
+.pg-auth .au-seg a{display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:9px;font-size:15px;font-weight:600;color:var(--text-2);text-decoration:none}
+.pg-auth .au-seg a[aria-current="true"]{background:var(--canvas);color:var(--ink);box-shadow:var(--shadow-raised)}
+/* The code: one wide input without script; with code-boxes.js, six boxes with the input laid over them. */
+.pg-auth .cb{position:relative}
+.pg-auth .code-input{min-height:60px;font-size:26px;font-weight:600;letter-spacing:0.4em;text-align:center;font-variant-numeric:tabular-nums}
+.pg-auth .cb-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.pg-auth .cb-row span{display:flex;align-items:center;justify-content:center;height:60px;box-sizing:border-box;border:1px solid var(--line-control);border-radius:var(--r-control);background:var(--fill-panel);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pg-auth .cb-row span.full{background:var(--canvas)}
+.pg-auth .cb-row span.next{border:2px solid var(--investor);background:var(--canvas)}
+.pg-auth .cb-on .code-input{position:absolute;inset:0;z-index:1;width:100%;height:100%;min-height:0;padding:0;border:0;opacity:0;color:transparent;caret-color:transparent;cursor:text}
+.pg-auth .cb-on .code-input[aria-invalid="true"] ~ .cb-row span{border:2px solid var(--error)}
+.pg-auth .cb-on .code-input:focus-visible{outline:0}
+@media (min-width:640px){
+  .pg-auth{align-items:center;padding:48px 16px 64px;box-sizing:border-box;background:var(--fill-panel)}
+  .pg-auth .au-top,.pg-auth .au-has-back{justify-content:center;min-height:0;padding:0 0 24px}
+  .pg-auth .au-has-back .au-logo{display:inline-flex}
+  .pg-auth .au-top .au-back{display:none}
+  .pg-auth .au-card{flex:none;width:100%;max-width:448px;padding:40px;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--canvas);box-shadow:var(--shadow-raised)}
+  .pg-auth .au-foot{margin-top:4px}
+}

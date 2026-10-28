@@ -447,20 +447,59 @@ html{scroll-behavior:smooth}
 }
 .pg-readiness .fill{transition:width var(--m-open) ease}
 
-/* Pricing: each side's two plans sit side by side, Free first, and each list is plain rows without ticks. */
+/* Pricing, redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a list of what it
+   includes, each feature with a Lucide icon in a tile of its side's colour. Premium carries a border in its side's colour. On wide screens a side's two cards share their rows, so the prices, the
+   actions and the lists line up; below 760px the cards sit one above the other. */
+.pg-pricing .plan-jump{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 0}
 .pg-pricing .intro-c .chip{margin-bottom:16px}
-.pg-pricing .plan-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:var(--w-wide);margin:40px auto 0}
-.pg-pricing .plan{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.pg-pricing .plan-cost{margin:8px 0 0;font-size:var(--t-title);font-weight:600;line-height:1.15;color:var(--ink)}
-.pg-pricing .plan-note{margin:0}
-.pg-pricing .plan-lead{margin:16px 0 0;font-weight:600;color:var(--ink)}
-.pg-pricing .plan-list{align-self:stretch;list-style:none;margin:16px 0 0;padding:0}
-.pg-pricing .plan-lead + .plan-list{margin-top:4px}
-.pg-pricing .plan-list li{padding:12px 0;border-top:1px solid var(--line);font-size:var(--t-ui);line-height:1.5;color:var(--text-3)}
-.pg-pricing .plan-act{margin-top:auto;padding-top:16px}
-.pg-pricing .plan-soon{margin:0;font-weight:600;color:var(--ink)}
+/* The trust band under the pricing hero: what arrives in December 2026 and what is live now, beside a drawing of face
+   verification with a padlock. It is the brand navy, the logo's blue, so the announcement stands apart from the plans. */
+.pg-pricing .trust{background:var(--investor);color:#FFFFFF}
+.pg-pricing .trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px;align-items:center;max-width:calc(var(--w-wide) + 48px);margin:0 auto;padding-top:clamp(56px,7vw,96px);padding-bottom:clamp(56px,7vw,96px)}
+.pg-pricing .trust-chip{display:inline-flex;padding:4px 12px;border-radius:var(--r-pill);background:rgba(242,107,29,0.16);color:var(--band-accent);font-size:var(--t-label);font-weight:600}
+.pg-pricing .trust-title{margin:16px 0 0;max-width:18ch;color:#FFFFFF}
+.site.pg-pricing .trust p{text-align:left;-webkit-hyphens:manual;hyphens:manual}
+.pg-pricing .trust-lede{margin:16px 0 0;max-width:46ch;font-size:var(--t-lead);line-height:1.5;color:var(--band-text)}
+.pg-pricing .trust-list{display:flex;flex-direction:column;gap:20px;list-style:none;margin:32px 0 0;padding:0}
+.pg-pricing .trust-list li{display:flex;gap:16px;align-items:flex-start}
+.pg-pricing .trust-icon{display:flex;flex:none;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--r-control);background:rgba(255,255,255,0.08);color:#FFFFFF}
+.pg-pricing .trust-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;font-size:var(--t-ui);font-weight:600;line-height:1.4;color:#FFFFFF}
+.pg-pricing .trust-when{padding:2px 8px;border-radius:var(--r-pill);background:rgba(255,255,255,0.10);font-size:var(--t-ui-xs);font-weight:600;color:var(--band-text)}
+.pg-pricing .trust-live{background:rgba(103,227,161,0.16);color:var(--band-live)}
+.pg-pricing .trust-list p{margin:4px 0 0;font-size:var(--t-ui);line-height:1.5;color:var(--band-text)}
+.pg-pricing .trust-note{margin:28px 0 0;font-size:var(--t-ui-s);color:var(--band-text)}
+.pg-pricing .trust-visual{display:flex;justify-content:center}
+.pg-pricing .trust-art{width:100%;max-width:460px;height:auto;font-family:inherit}
+@media (max-width: 900px){
+.pg-pricing .trust-grid{grid-template-columns:minmax(0,1fr);gap:40px}
+.pg-pricing .trust-art{max-width:360px}
+}
+.pg-pricing .plan-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;max-width:var(--w-wide);margin:40px auto 0}
+.pg-pricing .plan{display:grid;grid-template-rows:subgrid;grid-row:span 7;row-gap:0;align-content:start}
+.pg-pricing .plan > *{margin:0}
+.pg-pricing .plan-hi.plan-f{border-color:var(--founder);box-shadow:inset 0 0 0 1px var(--founder);background:var(--founder-wash)}
+.pg-pricing .plan-hi.plan-i{border-color:var(--investor);box-shadow:inset 0 0 0 1px var(--investor);background:var(--investor-wash)}
+.pg-pricing .plan-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.pg-pricing .plan-top .h3{margin:0}
+.pg-pricing .plan-price{display:flex;align-items:baseline;gap:6px;margin-top:20px;color:var(--ink)}
+.pg-pricing .plan-amt{font-size:var(--t-title);font-weight:600;line-height:1.1}
+.pg-pricing .plan-per{font-size:var(--t-ui);color:var(--text-2)}
+.site.pg-pricing .plan :is(p, li){text-align:left;-webkit-hyphens:manual;hyphens:manual}
+.site.pg-pricing .plan-value{margin-top:12px;font-size:var(--t-ui);line-height:1.5;color:var(--text-3)}
+.pg-pricing .plan-cta{margin-top:24px;width:100%}
+.site.pg-pricing .plan p.plan-wait{display:flex;align-items:center;justify-content:center;min-height:48px;box-sizing:border-box;padding:10px 16px;line-height:1.4;text-align:center;border:1px dashed var(--line-control);border-radius:var(--r-control);background:var(--canvas);font-size:var(--t-ui);font-weight:600;color:var(--text-2)}
+.site.pg-pricing .plan-note{margin-top:12px;color:var(--text-2)}
+.site.pg-pricing .plan-lead{margin-top:24px;padding-top:24px;border-top:1px solid var(--line);font-size:var(--t-ui);font-weight:600;color:var(--ink)}
+.pg-pricing .feat-list{display:flex;flex-direction:column;gap:12px;list-style:none;margin-top:16px;padding:0}
+.pg-pricing .feat-list li{display:flex;align-items:flex-start;gap:12px;font-size:var(--t-ui);line-height:1.5;color:var(--text-3)}
+.pg-pricing .feat-icon{display:flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;margin-top:-4px;border-radius:var(--r-control)}
+.pg-pricing .plan-f .feat-icon{background:var(--founder-tint);color:var(--founder-text)}
+.pg-pricing .plan-i .feat-icon{background:var(--investor-tint);color:var(--investor)}
+.pg-pricing .plan-hi.plan-f .feat-icon{background:var(--founder);color:var(--ink)}
+.pg-pricing .plan-hi.plan-i .feat-icon{background:var(--investor);color:#FFFFFF}
 @media (max-width: 760px){
-.pg-pricing .plan-pair{grid-template-columns:minmax(0,1fr)}
+.pg-pricing .plan-pair{grid-template-columns:minmax(0,1fr);gap:24px}
+.pg-pricing .plan{display:flex;flex-direction:column;grid-row:auto}
 }
 
 /* For founders: the dashboard on sample data under the hero, and the progress strip beside what an update is. */

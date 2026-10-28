@@ -1,0 +1,85 @@
+{% extends "admin/shell.html" %}
+{# The dashboard board: totals, founders and investors by month, what waits for an admin, the latest records,
+   founders by country, the support they asked for, and the newest entries of the audit log. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Dashboard</h1>
+<p class="a-sub">{{ d.today if d else "" }}</p>
+</div>
+</header>
+{% if failed %}
+<p class="a-alert" role="alert">The dashboard could not be read. Please reload the page.</p>
+{% else %}
+<section aria-label="Platform totals" class="a-kpis">
+{% for label, value, sub, href, dot in d.kpis %}
+<a href="{{ href }}" class="a-kpi">
+<span class="a-kpi-label">{{ label }}<span aria-hidden="true" class="a-dot a-dot-{{ dot }}"></span></span>
+<span class="a-kpi-value">{{ value }}</span>
+<span class="a-kpi-sub">{{ sub }}</span>
+</a>
+{% endfor %}
+</section>
+
+<section aria-labelledby="growth-h" class="a-card" style="gap:14px">
+<div class="a-split">
+<h2 id="growth-h" class="a-h2">Founders and investors by month</h2>
+<div class="a-legend">
+<span><span aria-hidden="true" class="a-key a-key-f"></span>Founders joined the register</span>
+<span><span aria-hidden="true" class="a-key a-key-i"></span>Investors added to the register</span>
+</div>
+</div>
+<div role="img" aria-label="{{ d.chart_label }}" class="a-chart">
+{% for m in d.chart %}
+<div class="a-col">
+<div class="a-bar a-bar-f">{% if m.f %}<b>{{ m.f }}</b>{% endif %}<i class="{{ 'a-top' if m.f }}" style="{{ m.f_style }}"></i></div>
+<div class="a-bar a-bar-i">{% if m.i %}<b>{{ m.i }}</b>{% endif %}<i class="{{ 'a-top' if m.i }}" style="{{ m.i_style }}"></i></div>
+</div>
+{% endfor %}
+</div>
+<div aria-hidden="true" class="a-axis">
+{% for m in d.chart %}<span>{{ m.label }}</span>{% endfor %}
+</div>
+</section>
+
+<div class="a-grid-2">
+<section aria-labelledby="queues-h" class="a-card" style="gap:4px">
+<h2 id="queues-h" class="a-h2" style="margin-bottom:8px">Waiting for an admin</h2>
+{% for label, count, href in d.queues %}
+<a href="{{ href }}" class="a-row"><span>{{ label }}</span><span class="a-badge{{ ' a-badge-due' if count > 0 }}">{{ count }}</span></a>
+{% endfor %}
+</section>
+<section aria-labelledby="latest-h" class="a-card" style="gap:4px">
+<h2 id="latest-h" class="a-h2" style="margin-bottom:8px">Latest records</h2>
+{% for label, title, sub, href in d.latest %}
+<a href="{{ href }}" class="a-latest"><small>{{ label }}</small><b>{{ title }}</b><span>{{ sub }}</span></a>
+{% endfor %}
+</section>
+</div>
+
+<div class="a-grid-2w">
+<section aria-labelledby="country-h" class="a-card">
+<div class="a-split">
+<div style="display:flex;flex-direction:column;gap:2px">
+<h2 id="country-h" class="a-h2">Founders by country</h2>
+<p class="a-note">{{ d.country_note }}</p>
+</div>
+<a href="/admin/founders" class="a-link">Open founders</a>
+</div>
+{% for c in d.countries %}
+<div class="a-blist"><span>{{ c.label }}</span><span aria-hidden="true" class="a-track a-track-f"><i style="{{ c.style }}"></i></span><b>{{ c.n }}</b></div>
+{% endfor %}
+</section>
+<section aria-labelledby="support-h" class="a-card">
+<div style="display:flex;flex-direction:column;gap:2px">
+<h2 id="support-h" class="a-h2">Support founders asked for</h2>
+<p class="a-note">{{ d.support_note }}</p>
+</div>
+{% for c in d.support %}
+<div class="a-blist a-blist-wide"><span>{{ c.label }}</span><span aria-hidden="true" class="a-track a-track-i"><i style="{{ c.style }}"></i></span><b>{{ c.n }}</b></div>
+{% endfor %}
+</section>
+</div>
+
+{% endif %}
+{% endblock %}

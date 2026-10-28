@@ -32,8 +32,19 @@ Each colour has one job. The contrast figures were measured with the WCAG formul
 | Divider | `--line` | #E7EAF0 | | Decoration only |
 | Founder action | `--founder` | #F26B1D | dark text 5.83:1 | A fill only. As text it measures 3.05:1 on white, so it is never text |
 | Founder text and tint | `--founder-text`, `--founder-tint` | #B54708, #FFF1E6 | 4.90:1 | Founder labels and panels |
+| Founder message | `--founder-bubble` | #FFE3CC | ink text 14.46:1 | The founder's own messages in a conversation. Added on 26 October 2026 with the app frame |
+| Founder chosen | `--founder-wash` | #FFFAF5 | ink text 17.11:1, grey text 7.41:1 | The founder card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
 | Investor action | `--investor` | #123C7A | white text 10.75:1 | Investor buttons, links, the focus ring |
 | Investor tint | `--investor-tint` | #EEF4FF | investor text 9.74:1 | Investor labels and panels |
+| Investor chosen | `--investor-wash` | #F7FAFF | ink text 16.96:1, grey text 7.35:1 | The investor card when it is chosen on Founder or investor. Added on 26 October 2026 with the sign-in screens |
+| Google button | `--google-line`, `--google-text` | #747775, #1F1F1F | border 4.53:1, text 16.48:1 on white | Continue with Google, in the light theme of Google's sign-in asset bundle, which their branding rules require. Added on 26 October 2026 |
+| Admin sidebar | `--side`, `--side-text` | #000000, #FFFFFF | 21.00:1 | The admin sidebar and its links, names and counts. Black with white text since 27 October 2026, when the owner asked for the sidebar to be black and every colour on it very bright; it was the footer navy with #B9C4D6 text |
+| Admin sidebar, quiet | `--side-muted` | #E4E7EC | 16.94:1 on black | The sidebar's section names and icons. It was #8FA0BA on the navy |
+| Admin sidebar, hover and counts | `--side-line` | #404040 | white text 10.37:1 | A link under the pointer, the counts beside People and the dividers |
+| Admin sidebar, open page | `--side-current` | #2563EB | white text 5.17:1 | The link of the page that is open, with a white icon. It was the investor navy with an orange icon |
+| Admin sidebar, accent | `--side-accent` | #FF8533 | 8.65:1 on black | The edge of the ADMIN badge and of Sign out. It was the founder orange |
+| Admin sample badge | `--sample-on-dark` | #FEC84B | 13.58:1 on black | The Sample data badge in the admin sidebar, shown only while sample rows are held. Added on 27 October 2026 |
+| Waiting bar | `--waiting-bar` | #F79009 | 2.35:1 on white | The bar under a count of what waits for review, as the admin boards drew it. It measures under 3:1, so it is decoration only: the card's label and number say the same thing. Added on 27 October 2026 |
 | Verified | `--verified` on `--verified-tint` | #067647 on #ECFDF3 | 5.40:1 | "Platform reviewed", and a Strong area |
 | Third party | `--third-party` on `--third-party-tint` | #5925DC on #F4F3FF | 7.02:1 | "Third-party evidence available" |
 | Error | `--error` on `--error-tint` | #B42318 on #FEF3F2 | 6.05:1 | Form errors, failed actions, staff danger buttons |
@@ -116,7 +127,9 @@ alignment. On a phone a justified line can open wide gaps between words.
 | Reading column | `read`, `doc`, `doc-lead`, `rows`, `risk-box`, `qa`, `faq-c` | Long text at 680px, start-aligned in the middle of the page: the legal pages, Trust and safety, the readiness check and every set of questions. A table in a legal page may run to 960px so its columns stay readable |
 | Timeline | `timeline`, `timeline-3`, `num` | Numbered steps across the page, joined by a line, and down the page below 760px |
 | App screen | `screen` | An app capture at 960px with its caption, and a 624 by 780 phone capture that a browser below 600px loads in its place |
-| Plan card | `plan-pair`, `plan` | Each side's Free and Premium side by side, one above the other below 760px. A plan's list is plain rows without ticks |
+| Plan card | `plan-pair`, `plan`, `plan-hi`, `feat-list`, `feat-icon`, `plan-wait` | Each side's Free and Premium side by side, one above the other below 760px. A plan shows its name and a chip, the price, one sentence of value, its action, a note and a list of what it includes, each feature with its own Lucide 0.544.0 icon in a 32px tile of its side's tint, filled in the side's colour on Premium. Premium carries a border and a wash in its side's colour, and while it is not on sale a dashed box saying when it opens stands where its button will go. On wide screens the two cards share their rows, so the prices, the actions and the lists line up. Redesigned on 28 October 2026 |
+| Trust band | `trust`, `trust-list`, `trust-art` | The pricing page's band under its hero, on `--investor`, the brand navy, which the owner chose on 28 October 2026 over a near-black that is not a brand colour: a chip, a heading, one sentence, three items each with an icon tile and a chip saying when it arrives or that it is live now, and a drawing of face verification on a phone with a padlock. The drawing takes half the band, up to 460px wide, beside the text, and sits below the text under 900px, up to 360px wide. The owner had it enlarged on 28 October 2026. Its text colours are the `--band` tokens, each tested at 4.5:1 on `--investor`. Added on 28 October 2026 |
+| Activity feed | `act`, `act-ico`, `act-meta`, `act-plain` | One bordered list, newest first. Each entry has a round icon in `--fill`, or in the tint of its status for evidence (`act-3p` third-party, `act-ok` platform reviewed) and in the side's tint for an accepted introduction, the sentence, and a line with the sector and country, the time and, for an investor, View profile. `act-plain` drops the border on a profile's Activity card. An entry the live check adds looks the same and is announced once in a polite live region |
 | Status table | `tbl legend-tbl` | Each status chip beside what it means. On a phone each row stacks, with the table's roles written into the markup |
 | Showcase heading | `show-head` | A short centred title over a showcase that needs one, as on For investors |
 

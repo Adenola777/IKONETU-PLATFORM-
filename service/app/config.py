@@ -20,6 +20,7 @@ class Settings:
     service_role_key: str | None
     site_url: str
     phone_sign_in: bool
+    google_sign_in: bool
     trusted_proxy_hops: str | None
     client_ip_header: str | None
     sentry_dsn: str | None
@@ -56,6 +57,8 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         service_role_key=_blank_to_none(e.get("SUPABASE_SERVICE_ROLE_KEY")),
         site_url=(e.get("NEXT_PUBLIC_SITE_URL") or "http://localhost:3000").rstrip("/"),
         phone_sign_in=e.get("NEXT_PUBLIC_PHONE_SIGN_IN") == "on",
+        # On only once the Google provider is switched on in Supabase, or the button would lead to an error.
+        google_sign_in=e.get("GOOGLE_SIGN_IN") == "on",
         trusted_proxy_hops=e.get("TRUSTED_PROXY_HOPS"),
         client_ip_header=_blank_to_none(e.get("CLIENT_IP_HEADER")),
         sentry_dsn=_blank_to_none(e.get("SENTRY_DSN")),

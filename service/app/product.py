@@ -198,6 +198,21 @@ def date_text(iso) -> str:
     return f"{d.day} {MONTHS[d.month - 1]} {d.year}"
 
 
+def day_month(iso) -> str:
+    """A date as 15 Oct, for the narrow places a card has room for, read in UTC."""
+    d = _when(iso) if iso else None
+    if d is None:
+        return ""
+    d = d.astimezone(timezone.utc)
+    return f"{d.day} {MONTHS[d.month - 1][:3]}"
+
+
+def initials(name: str | None) -> str:
+    """The first letters of the first two words of a name, for an avatar. A missing name gives a question mark."""
+    words = [w for w in (name or "").split() if w[:1].isalpha()]
+    return "".join(w[0] for w in words[:2]).upper() or "?"
+
+
 INVESTOR_TYPE_NAME = {"individual": "Individual investor", "angel": "Angel investor", "fund": "Fund investor"}
 
 # Why each area matters to an investor. The founder's next steps use the same sentences.
@@ -229,18 +244,25 @@ def evidence_added_text(items: list[dict], now: datetime) -> str:
     return f"{len(recent)} {'piece' if len(recent) == 1 else 'pieces'} in 90 days, in {areas} of {AREA_COUNT} areas"
 
 
-def momentum(update_dates: list[str], now: datetime) -> dict:
+def momentum(activity_dates: list[str], now: datetime) -> dict:
     """Momentum, as the website describes it: recency, consistency and evidence added.
 
-    Consistency counts progress updates in the last 90 days, and the strip marks each of
-    the last 13 weeks that had an update. Momentum has no streaks or points of its own.
+    Consistency counts the weeks of the last 13 that hold an entry in the activity feed, and the
+    strip marks each of them. discover_ventures() and admin_ventures() count active_weeks the same
+    way, in UTC calendar days. Momentum has no streaks or points of its own.
     """
-    days = [days_between(d, now) for d in update_dates]
-    in90 = sum(1 for d in days if d <= 90)
+    days = [days_between(d, now) for d in activity_dates]
     weeks = [{"ago": 12 - i, "active": any(d // 7 == 12 - i for d in days)} for i in range(13)]
+    active = sum(1 for w in weeks if w["active"])
     return {
-        "in90": in90,
-        "consistencyText": "No updates in 90 days" if in90 == 0 else f"{in90} {'update' if in90 == 1 else 'updates'} in 90 days",
+        "consistencyText": weeks_text(active),
         "weeks": weeks,
-        "activeWeeks": sum(1 for w in weeks if w["active"]),
+        "activeWeeks": active,
     }
+
+
+def weeks_text(active_weeks: int) -> str:
+    """ "Active in 4 of the last 13 weeks", or "No activity in the last 13 weeks"."""
+    if not active_weeks:
+        return "No activity in the last 13 weeks"
+    return f"Active in {active_weeks} of the last 13 weeks"

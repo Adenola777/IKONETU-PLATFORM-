@@ -1,20 +1,21 @@
 {% extends "base.html" %}
-{# The frame of the sign-in pages: the lockup, a way back home, and one narrow column. #}
+{#
+  The frame of the sign-in pages (screens 01 and 02). On a phone the page fills the screen, with its
+  buttons at the foot, as the app flow design draws it. From 640px the page is a card in the middle of
+  the screen under the lockup. A page that sets `back` shows a back button in place of the lockup on a
+  phone. pg-app marks these as app pages, so their paragraphs are not justified as the website's are.
+  The admin sign-in has a page of its own and keeps the older layout.
+#}
 {% block styles %}<link rel="stylesheet" href="/static/css/sign-in.css">{% endblock %}
 {% block body %}
-<div class="site pg-signin">
-<div class="page">
+<div class="site pg-app pg-auth">
 <a class="skip" href="#main">Skip to content</a>
-<header class="si-hdr">
-<div class="si-hdr-in">
-<a href="/" aria-label="IkonetU home">{{ logo("default", 34) }}</a>
-<a href="/">Back to the home page</a>
-</div>
+<header class="au-top{% if back %} au-has-back{% endif %}">
+{% if back %}<a class="au-back" href="{{ back }}" aria-label="Back">{{ icon("chevron-left", 24) }}</a>{% endif %}
+<a class="au-logo" href="/" aria-label="IkonetU home">{{ logo("default", 32) }}</a>
 </header>
-<main id="main" class="si-main">
-{% if label %}<p class="si-lbl">{{ label }}</p>{% endif %}
+<main id="main" class="au-card">
 {% block content %}{% endblock %}
 </main>
-</div>
 </div>
 {% endblock %}

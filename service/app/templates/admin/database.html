@@ -1,0 +1,77 @@
+{% extends "admin/shell.html" %}
+{# The Database board: the tables in public, grouped, with what each holds, its exact row count and its row security,
+   each table's columns, the stored files by bucket, and the migrations. Values are never read here, only counted. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Database</h1>
+<p class="a-sub">{{ db.subtitle if db else "" }}</p>
+</div>
+</header>
+{% if failed %}
+<p class="a-alert" role="alert">The database could not be read. Please reload the page.</p>
+{% else %}
+<section aria-label="Database summary" class="a-kpis" style="grid-template-columns:repeat(auto-fit,minmax(min(176px,100%),1fr));gap:16px">
+{% for label, value, sub in db.summary %}
+<div class="a-stat"><span class="a-kpi-label">{{ label }}</span><span class="a-kpi-value" style="font-size:28px">{{ value }}</span><span class="a-kpi-sub">{{ sub }}</span></div>
+{% endfor %}
+</section>
+
+<form role="search" method="get" action="/admin/database" class="a-filters" data-auto>
+<div class="a-field" style="flex:2 1 220px">
+<label for="d-q">Find a table or a column</label>
+<input id="d-q" name="q" type="search" class="a-input" value="{{ q }}" maxlength="80">
+</div>
+<label class="a-check" style="flex:1 1 200px;min-height:40px"><input type="checkbox" name="rows" value="1"{% if with_rows %} checked{% endif %}> Only tables that hold rows</label>
+<button type="submit" class="a-btn a-btn-n" data-apply>Show</button>
+<a href="/admin/database" class="a-btn a-btn-n">Clear</a>
+</form>
+
+{% for g in db.groups %}
+<section class="a-card a-card-flush" aria-label="{{ g.label }}">
+<h2 class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">{{ g.label }}</h2>
+{% for t in g.tables %}
+<details class="a-dbt"{% if t.open %} open{% endif %}>
+<summary>
+<span class="a-mono">{{ t.name }}</span>
+<span class="a-dbt-what">{{ t.what }}</span>
+<span class="a-dbt-rows">{{ t.rows_text }}</span>
+{% if t.rls %}<span class="a-chip a-chip-approved" style="font-size:12px">Row security on</span>{% else %}<span class="a-chip a-chip-rejected" style="font-size:12px">Row security off</span>{% endif %}
+<span class="a-btn a-btn-n a-btn-sm a-btn-xs a-dbt-toggle" aria-hidden="true"><span class="a-when-closed">Columns</span><span class="a-when-open">Hide columns</span></span>
+</summary>
+<div class="a-dbt-cols">
+<div>{% for c in t.columns %}<span class="a-colname{{ ' a-colname-' ~ c.kind if c.kind }}">{{ c.name }}</span>{% endfor %}</div>
+{% if t.private %}<p class="a-dbt-private">Message text is never shown.</p>{% endif %}
+</div>
+</details>
+{% endfor %}
+</section>
+{% else %}
+<p class="a-dashed" style="padding:24px 16px">No table or column matches.</p>
+{% endfor %}
+
+<div class="a-grid-2" style="grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr))">
+<section aria-labelledby="files-h" class="a-card a-card-flush">
+<h2 id="files-h" class="a-h2" style="padding:14px 20px;border-bottom:1px solid var(--line)">File storage</h2>
+<table class="a-table">
+<thead><tr><th scope="col">Bucket</th><th scope="col">Holds</th><th scope="col" class="a-right">Files</th></tr></thead>
+<tbody>
+{% for b in db.buckets %}
+<tr><td class="a-mono">{{ b.id }}</td><td>{{ b.holds }}</td><td class="a-right" style="font-weight:600">{{ b.files }}</td></tr>
+{% else %}
+<tr><td colspan="3" class="a-empty">No bucket</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</section>
+<section aria-labelledby="mig-h" class="a-card">
+<h2 id="mig-h" class="a-h2">Schema</h2>
+<dl class="a-pairs">
+<dt>Migrations applied</dt><dd class="a-strong">{{ db.migrations.count if db.migrations else "Not recorded" }}</dd>
+<dt>Latest</dt><dd{% if db.latest %} class="a-mono"{% endif %}>{{ db.latest or "Not recorded" }}</dd>
+<dt>Tables in public</dt><dd class="a-strong">{{ db.tables_text }}</dd>
+</dl>
+</section>
+</div>
+{% endif %}
+{% endblock %}

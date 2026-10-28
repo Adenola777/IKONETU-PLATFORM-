@@ -1,0 +1,67 @@
+{% extends "admin/shell.html" %}
+{% from "admin/macros.html" import scards, pager, chip %}
+{# The Introductions board: the introductions IkonetU made between the two registers, and the sample ones,
+   filtered by status and paged. Staff see the count of messages only. #}
+{% block main %}
+<header class="a-head">
+<div>
+<h1 class="a-h1">Introductions</h1>
+<p class="a-sub">{{ subtitle }}</p>
+</div>
+<a href="{{ csv }}" class="a-btn a-btn-n" download>Export CSV</a>
+</header>
+{% if failed %}<p class="a-alert" role="alert">The introductions could not be read. Please reload the page.</p>{% endif %}
+{{ scards("Introductions by status", [
+  ("Pending", counts.pending, "a-bar-pending", link(status=none if status == "pending" else "pending", page=none), status == "pending", none),
+  ("Accepted", counts.accepted, "a-bar-accepted", link(status=none if status == "accepted" else "accepted", page=none), status == "accepted", none),
+  ("Declined", counts.declined, "a-bar-declined", link(status=none if status == "declined" else "declined", page=none), status == "declined", none),
+  ("Withdrawn", counts.withdrawn, "a-bar-withdrawn", link(status=none if status == "withdrawn" else "withdrawn", page=none), status == "withdrawn", none),
+]) }}
+<form role="search" method="get" action="/admin/introductions" class="a-filters" data-auto>
+<div class="a-field" style="flex:2 1 240px">
+<label for="n-q">Investor, founder, startup or register number</label>
+<input id="n-q" name="q" type="search" class="a-input" value="{{ q }}">
+</div>
+<div class="a-field a-field-wide">
+<label for="n-status">Status</label>
+<select id="n-status" name="status" class="a-select">
+<option value="any">Any status</option>
+{% for k in ["pending", "accepted", "declined", "withdrawn"] %}<option value="{{ k }}"{% if status == k %} selected{% endif %}>{{ av.INTRO_CHIPS[k] }}</option>{% endfor %}
+</select>
+</div>
+<div class="a-field a-field-wide">
+<label for="n-sort">Order</label>
+<select id="n-sort" name="sort" class="a-select">
+{% for k, label in INTRO_SORTS.items() %}<option value="{{ k }}"{% if sort == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>
+</div>
+<button type="submit" class="a-btn a-btn-n" data-apply>Show</button>
+<a href="/admin/introductions" class="a-btn a-btn-n">Clear</a>
+</form>
+<section aria-labelledby="list-h" class="a-card a-card-flush">
+<div class="a-card-head">
+<h2 id="list-h" class="a-h2">All introductions</h2>
+<span class="a-note">{{ av.shown_text(shown, total, "introductions") }}</span>
+</div>
+<div class="a-tablebox">
+<table class="a-table a-table-fixed" style="min-width:1000px">
+<thead><tr><th scope="col" style="width:240px">Investor</th><th scope="col" style="width:240px">Founder</th><th scope="col">Startup</th><th scope="col" style="width:110px">Made</th><th scope="col" style="width:120px">Status</th><th scope="col" class="a-right" style="width:104px">Messages</th><th scope="col" class="a-right" style="width:96px">Actions</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td><div class="a-cell"><b title="{{ r.investor_name }}">{{ r.investor_name }}</b><span>{{ r.inv_no_text }}</span></div></td>
+<td><div class="a-cell"><b title="{{ r.f_name }}">{{ r.f_name }}</b><span title="{{ r.founder_email }}">{{ r.f_no_text }}{% if r.founder_email %} · {{ r.founder_email }}{% endif %}</span></div></td>
+<td><div class="a-cell"><span class="a-trunc" style="color:var(--ink);font-size:14px" title="{{ r.startup_text }}">{{ r.startup_text }}</span><span title="{{ r.sector_text }}">{{ r.sector_text }}</span></div></td>
+<td style="white-space:nowrap">{{ r.made }}</td>
+<td>{{ chip(r.status, r.chip) }}</td>
+<td class="a-right a-num"{% if r.messages %} style="font-weight:600"{% else %} style="color:var(--line-control)"{% endif %}>{{ r.messages }}</td>
+<td class="a-right"><a href="/admin/introductions/{{ r.intro_id }}" class="a-btn a-btn-n a-btn-sm">Open</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if not rows %}<div class="a-empty">No introduction matches these filters.</div>{% endif %}
+{{ pager(page, link) }}
+</section>
+{% endblock %}

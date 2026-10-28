@@ -4,9 +4,17 @@
 (function () {
   var form = document.querySelector("form[data-pitch-upload]");
   if (!form) return;
-  var TYPES = { "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
-  var MAX_BYTES = 50 * 1024 * 1024;
-  var MAX_SECONDS = 90;
+  // The file types, size and length are the ones an admin set on the Settings page, written on the form.
+  var EXTENSIONS = { "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
+  var TYPES = {};
+  (form.getAttribute("data-types") || "video/mp4,video/webm,video/quicktime").split(",").forEach(function (t) {
+    if (EXTENSIONS[t]) TYPES[t] = EXTENSIONS[t];
+  });
+  var NAMES = form.getAttribute("data-names") || "MP4, WebM or MOV";
+  var ARTICLE = form.getAttribute("data-article") || "an";
+  var MAX_MB = Number(form.getAttribute("data-max-mb")) || 50;
+  var MAX_BYTES = MAX_MB * 1024 * 1024;
+  var MAX_SECONDS = Number(form.getAttribute("data-max-seconds")) || 90;
   var input = document.getElementById("p-video");
   var text = document.getElementById("p-transcript");
   var button = form.querySelector('button[type="submit"]');
@@ -86,8 +94,8 @@
     file = null;
     duration = 0;
     if (!f) return;
-    if (!TYPES[f.type]) return setErrors({ video: "Choose an MP4, WebM or MOV video." });
-    if (f.size > MAX_BYTES) return setErrors({ video: "The video must be 50 MB or smaller. Record at 720p, or shorten it." });
+    if (!TYPES[f.type]) return setErrors({ video: "Choose " + ARTICLE + " " + NAMES + " video." });
+    if (f.size > MAX_BYTES) return setErrors({ video: "The video must be " + MAX_MB + " MB or smaller. Record at 720p, or shorten it." });
     var url = URL.createObjectURL(f);
     var seconds = await readDuration(url);
     if (!seconds) {
@@ -96,7 +104,7 @@
     }
     if (seconds > MAX_SECONDS) {
       URL.revokeObjectURL(url);
-      return setErrors({ video: "This video is " + Math.round(seconds) + " seconds long. Keep the pitch to 90 seconds or less." });
+      return setErrors({ video: "This video is " + Math.round(seconds) + " seconds long. Keep the pitch to " + MAX_SECONDS + " seconds or less." });
     }
     setErrors({});
     file = f;

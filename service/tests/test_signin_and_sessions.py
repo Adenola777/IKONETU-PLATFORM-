@@ -224,6 +224,15 @@ def test_every_response_carries_the_security_headers(client):
     assert client.get("/no-such-page").headers["x-frame-options"] == "DENY"
 
 
+
+def test_static_files_are_checked_with_the_server_before_reuse(client):
+    # A browser kept an old stylesheet on 28 October 2026, and the new pricing page drew a bullet beside each tick.
+    r = client.get("/static/css/site.css")
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"
+    again = client.get("/static/css/site.css", headers={"if-none-match": r.headers["etag"]})
+    assert again.status_code == 304 and again.content == b""
+    assert client.get("/media/tour-music.mp3").headers["cache-control"] == "no-cache"
+
 def test_an_unknown_address_answers_404_with_the_not_found_page(client):
     r = client.get("/no-such-page")
     assert r.status_code == 404 and "This page does not exist." in r.text

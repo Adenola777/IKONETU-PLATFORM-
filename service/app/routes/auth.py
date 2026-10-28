@@ -1,19 +1,23 @@
-"""Signing in and out: /signin, /signin/code, /auth/callback and /signout."""
+"""Signing in and out: /signin, /signin/code, /auth/callback, /admin/signin and /signout."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+from .. import platform
 from ..config import settings
-from ..log import log_error, log_warn
-from ..session import current_user, forget, remember
+from ..guards import Limiter, client_address
+from ..log import log_error, log_info, log_warn
+from ..session import current_user, forget, remember, viewer
 from ..signin import (
     CODE_LIFETIME_SECONDS,
     PENDING_COOKIE,
     VERIFIER_COOKIE,
+    VIA_COOKIE,
     Pending,
     now_ms,
+    parse_admin_sign_in,
     parse_code,
     parse_email_sign_in,
     parse_phone_sign_in,
@@ -49,7 +53,7 @@ def _logged(event: str, error: ApiError) -> None:
 
 
 def _signin_page(request: Request, values: dict | None = None, errors: dict | None = None, message: str | None = None,
-                 method: str | None = None):
+                 method: str | None = None, maintenance: str | None = None):
     phone_enabled = settings.phone_sign_in
     return render(request, "signin/signin.html", {
         "phone_enabled": phone_enabled,
@@ -57,7 +61,10 @@ def _signin_page(request: Request, values: dict | None = None, errors: dict | No
         "values": values or {},
         "errors": errors or {},
         "message": message,
+        "maintenance": maintenance,
         "link_error": request.query_params.get("error") == "link",
+        "google_enabled": settings.google_sign_in,
+        "google_error": request.query_params.get("error") == "google",
         "countries": COUNTRIES,
     }, Meta(title="Sign in", noindex=True))
 
@@ -67,7 +74,55 @@ async def signin_page(request: Request):
     if await current_user(request, request.app.state.supabase):
         return RedirectResponse("/dashboard", status_code=307)
     method = request.query_params.get("method")
-    return _signin_page(request, method=method if settings.phone_sign_in and method in ("phone", "email") else None)
+    rules = await platform.rules(request.app.state.supabase)
+    return _signin_page(request, method=method if settings.phone_sign_in and method in ("phone", "email") else None,
+                        maintenance=rules.maintenance_message if rules.maintenance else None)
+
+
+async def _closed_to(request: Request, session) -> bool:
+    """While the platform is in maintenance only staff can sign in. Anyone else's new session is signed out
+    again at once, and they see the maintenance page."""
+    supabase = request.app.state.supabase
+    rules = await platform.rules(supabase)
+    if not rules.maintenance:
+        return False
+    row = await supabase.as_user(session.access_token).table("profiles").eq("user_id", session.user.get("id", "")) \
+        .maybe_single("role, status")
+    p = row.data if row.ok else None
+    if p and p.get("role") in platform.STAFF and p.get("status") == "active":
+        return False
+    await supabase.sign_out(session.access_token)
+    log_info("auth.signin_in_maintenance", {})
+    request.state.maintenance_message = rules.maintenance_message
+    return True
+
+
+def _maintenance_page(request: Request):
+    return render(request, "maintenance.html", {"message": request.state.maintenance_message},
+                  Meta(title="IkonetU is closed for a short while", noindex=True), status_code=503)
+
+
+@router.get("/signin/google")
+async def google_signin(request: Request):
+    """Starts sign-in with Google, with no code to type and no email to send.
+
+    Supabase takes the person to Google and back to /auth/callback with a one-time code, which the
+    verifier set here turns into a session, as the email link does. A first sign-in makes the account,
+    and onboarding then asks for the age confirmation the email form asks for here.
+    """
+    supabase = request.app.state.supabase
+    if not settings.google_sign_in or supabase is None:
+        return RedirectResponse("/signin", status_code=303)
+    if await current_user(request, supabase):
+        return RedirectResponse("/dashboard", status_code=303)
+    verifier, challenge = pkce_pair()
+    response = RedirectResponse(supabase.authorize_url("google", f"{settings.site_url}/auth/callback", challenge),
+                                status_code=303)
+    _set_verifier(response, verifier)
+    # Marks the sign-in as Google's, so a failure at the callback says so rather than speaking of an email link.
+    response.set_cookie(VIA_COOKIE, "google", max_age=CODE_LIFETIME_SECONDS * 2, path="/auth",
+                        httponly=True, samesite="lax", secure=settings.secure_cookies)
+    return response
 
 
 @router.post("/signin")
@@ -166,6 +221,10 @@ async def verify_code(request: Request):
             return _code_page(request, pending, message="Too many attempts. Please wait a few minutes and try again.")
         return _code_page(request, pending, error="Check the code and try again, or ask for a new one.",
                           message="That code is wrong or has expired.")
+    if await _closed_to(request, session):
+        response = _maintenance_page(request)
+        response.delete_cookie(PENDING_COOKIE, path="/signin")
+        return response
     remember(request, session)
     response = redirect("/dashboard")
     response.delete_cookie(PENDING_COOKIE, path="/signin")
@@ -210,27 +269,106 @@ async def resend_code(request: Request):
 
 @router.get("/auth/callback")
 async def callback(request: Request):
-    """The sign-in email links here. The one-time code becomes a session."""
+    """The sign-in email and Google sign-in both return here. The one-time code becomes a session."""
     code = request.query_params.get("code")
     supabase = request.app.state.supabase
     verifier = request.cookies.get(VERIFIER_COOKIE)
+    via_google = request.cookies.get(VIA_COOKIE) == "google"
     if code and supabase is not None and verifier:
         session, error = await supabase.exchange_code(code, verifier)
+        if session is not None and await _closed_to(request, session):
+            response = _maintenance_page(request)
+            response.delete_cookie(VERIFIER_COOKIE, path="/")
+            response.delete_cookie(VIA_COOKIE, path="/auth")
+            return response
         if session is not None:
             remember(request, session)
             response = RedirectResponse("/dashboard", status_code=307)
             response.delete_cookie(VERIFIER_COOKIE, path="/")
+            response.delete_cookie(VIA_COOKIE, path="/auth")
             return response
         log_warn("auth.callback_failed", {"status": error.status, "code": error.code})
     elif code:
         log_warn("auth.callback_failed", {"status": None, "code": "no_verifier" if supabase else "not_configured"})
-    return RedirectResponse("/signin?error=link", status_code=307)
+    elif request.query_params.get("error"):
+        # Supabase returns here with an error and no code when, for example, the person cancels at Google.
+        log_warn("auth.callback_failed", {"status": None, "code": request.query_params.get("error")})
+    response = RedirectResponse("/signin?error=google" if via_google else "/signin?error=link", status_code=307)
+    response.delete_cookie(VIA_COOKIE, path="/auth")
+    return response
+
+
+# ---------------------------------------------------------------- admin sign-in
+# Admins sign in with an email address and a password on a page of their own, as the owner chose on
+# 24 October 2026. Founders and investors keep the email code at /signin. An admin's account and password are
+# made in Supabase by the owner, so no password passes through the app except at sign-in.
+ADMIN_REFUSED = "That email address and password do not match an admin account."
+ADMIN_TOO_MANY = "Too many attempts. Please wait 15 minutes and try again."
+ADMIN_WINDOW_SECONDS = 15 * 60
+admin_by_address = Limiter(10, ADMIN_WINDOW_SECONDS)
+admin_by_email = Limiter(5, ADMIN_WINDOW_SECONDS)
+
+
+def _admin_signin_page(request: Request, email: str = "", errors: dict | None = None, message: str | None = None,
+                       status_code: int = 200):
+    return render(request, "staff/signin.html", {
+        "email": email, "errors": errors or {}, "message": message,
+        "signed_out": request.query_params.get("done") == "out",
+    }, Meta(title="Admin sign-in", noindex=True), status_code=status_code)
+
+
+@router.get("/admin/signin")
+async def admin_signin_page(request: Request):
+    v = await viewer(request)
+    if v is not None and v.profile is not None and v.profile.role == "admin" and v.profile.status == "active":
+        return RedirectResponse("/admin", status_code=307)
+    return _admin_signin_page(request)
+
+
+@router.post("/admin/signin")
+async def admin_sign_in(request: Request):
+    """Signs an admin in with a password. Any other account is signed out again at once and told only that the
+    details do not match, so the page does not say which addresses have accounts."""
+    form = await form_data(request)
+    email, errors = parse_admin_sign_in(one(form, "email"), one(form, "password"))
+    typed = one(form, "email")
+    if errors:
+        return _admin_signin_page(request, typed, dict(errors), "Please check the form.")
+    supabase = request.app.state.supabase
+    if supabase is None:
+        return _admin_signin_page(request, typed, message=NOT_OPEN)
+    address = client_address(request.headers, settings.trusted_proxy_hops, settings.client_ip_header)
+    if not (admin_by_address.allow(address) and admin_by_email.allow(email)):
+        log_warn("admin.signin_limited", {})
+        return _admin_signin_page(request, typed, message=ADMIN_TOO_MANY, status_code=429)
+    session, error = await supabase.sign_in_with_password(email, one(form, "password"))
+    if session is None:
+        if error.status == 429:
+            log_warn("admin.signin_limited", {"status": 429})
+            return _admin_signin_page(request, typed, message=ADMIN_TOO_MANY, status_code=429)
+        if error.status and error.status < 500:
+            log_info("admin.signin_refused", {"status": error.status, "code": error.code})
+            return _admin_signin_page(request, typed, message=ADMIN_REFUSED)
+        _logged("admin.signin_failed", error)
+        return _admin_signin_page(request, typed, message="We could not sign you in. Please try again.")
+    row = await supabase.as_user(session.access_token).table("profiles").eq("user_id", session.user.get("id", "")) \
+        .maybe_single("role, status")
+    profile = row.data if row.ok else None
+    if not profile or profile.get("role") != "admin" or profile.get("status") != "active":
+        await supabase.sign_out(session.access_token)
+        log_warn("admin.signin_not_admin", {"profile": bool(profile)})
+        return _admin_signin_page(request, typed, message=ADMIN_REFUSED)
+    remember(request, session)
+    log_info("admin.signed_in", {})
+    return redirect("/admin")
 
 
 @router.post("/signout")
 async def sign_out(request: Request):
+    """Signs out everywhere. An admin goes back to the admin sign-in, everyone else to the home page."""
+    form = await form_data(request)
     found = await current_user(request, request.app.state.supabase)
     if found:
         await request.app.state.supabase.sign_out(found[1])
     forget(request)
-    return redirect("/")
+    return redirect("/admin/signin?done=out" if one(form, "next") == "/admin/signin" else "/")

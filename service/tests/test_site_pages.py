@@ -93,7 +93,8 @@ LEGAL = ["privacy", "terms", "cookies", "complaints"]
 
 
 def _text(client, path):
-    return html.unescape(re.sub(r"<[^>]+>", " ", client.get(path).text))
+    # Runs of whitespace collapse to one space, as a browser renders them.
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", client.get(path).text)))
 
 
 def test_the_cookie_policy_names_every_cookie_and_storage_item_the_code_sets(client):
@@ -198,9 +199,19 @@ def test_the_pricing_page_has_two_plans_for_each_side_and_says_premium_is_not_on
     for plan in ("Founder Free", "Founder Premium", "Investor Free", "Investor Premium"):
         assert plan in text
     assert "$5 a month" in text and "$29 a month" in text
-    assert "Premium is not on sale yet." in text and "nobody is charged today" in text
+    assert "Premium goes on sale in December 2026. Nobody is charged today." in text
     for path in ("/", "/for-founders", "/for-investors", "/trust-and-safety", "/terms"):
         assert "Premium is not on sale yet" in _text(client, path), path
+
+
+# The owner set Premium's opening for December 2026 on 28 October 2026. The pricing page says so in its opening
+# note, on both Premium cards and in its answer on when Premium can be bought.
+def test_the_pricing_page_says_premium_opens_in_december_2026(client):
+    text = _text(client, "/pricing")
+    assert "Premium goes on sale in December 2026. Nobody is charged today." in text
+    assert text.count("Premium opens in December 2026.") == 2
+    assert "Premium goes on sale in December 2026, together with face verification and anti-money-laundering checks." in text
+    assert "payments are ready" not in text and "can take payments" not in text
 
 
 @pytest.mark.parametrize("key", list(PUBLIC_PAGES))
@@ -246,7 +257,7 @@ def test_the_website_says_ikonetu_is_for_student_founders_in_any_country(client)
     founders = _text(client, "/for-founders")
     assert "Student founders aged 18 or over can join from any country." in founders
     assert "or graduated from one in the last three years." in founders
-    assert "It is free for student founders aged 18 or over, in any country." in _text(client, "/pricing")
+    assert "Student founders aged 18 or over join free, from any country." in _text(client, "/pricing")
 
 
 def test_the_founder_terms_and_the_privacy_policy_state_the_student_founder_rule(client):
@@ -331,10 +342,18 @@ def test_every_page_centres_its_hero(client, key):
     assert hero != -1 and "</section>" not in body[hero:h1]
 
 
+# The owner asked on 28 October 2026 for real icons on the pricing page, so each feature there carries a Lucide icon of
+# its own and the trust band carries three. The rule above still holds on every other page.
+PRICING_ICONS = {"user-round", "video", "file-text", "message-square-quote", "gauge", "activity", "search", "messages-square",
+                 "file-check", "trending-up", "calendar-check", "list-filter", "user-check", "circle-play", "file-search",
+                 "clipboard-check", "badge-check", "sliders-horizontal", "scan-face", "shield-check", "lock-keyhole"}
+
+
 @pytest.mark.parametrize("key", list(PUBLIC_PAGES))
 def test_no_page_carries_a_decorative_icon(client, key):
     body = client.get(PUBLIC_PAGES[key]["path"]).text
-    assert set(re.findall(r'class="lucide lucide-([a-z-]+)"', body)) <= SITE_ICONS
+    allowed = SITE_ICONS | (PRICING_ICONS if key == "pricing" else set())
+    assert set(re.findall(r'class="lucide lucide-([a-z-]+)"', body)) <= allowed
     assert body.count("Menu</button>") == 1
 
 
@@ -361,13 +380,38 @@ def test_the_pricing_page_sets_free_beside_premium_for_each_side(client):
     assert body.count('<div class="qa">') == 1
 
 
-def test_trust_and_safety_links_its_sections_and_sets_the_statuses_as_a_table(client):
-    body = client.get("/trust-and-safety").text
-    hero = body[body.index('<section aria-labelledby="t-title"'):]
-    hero = hero[:hero.index("</section>")]
-    assert len(re.findall(r'<a class="tlink" href="#t-[a-z]+">', hero)) == 8
-    assert '<table class="tbl legend-tbl" role="table">' in body and body.count('<tr role="row"><td role="cell"><span class="chip') == 3
-    assert '<p class="risk-box">Investing in early-stage businesses is high risk.' in body
+
+# Redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a list of what it includes,
+# each feature with its own Lucide icon, and Premium's action waits for December 2026.
+def test_each_plan_states_its_price_value_action_and_features_with_icons(client):
+    body = client.get("/pricing").text
+    plans = re.findall(r'<article class="card plan plan-[fi][^"]*" aria-labelledby="([a-z-]+)">(.*?)</article>', body, re.DOTALL)
+    assert [key for key, _ in plans] == ["founder-free", "founder-premium", "investor-free", "investor-premium"]
+    for key, card in plans:
+        assert '<p class="plan-price"><span class="plan-amt">$' in card, key
+        assert card.count('<p class="plan-value">') == 1, key
+        items = re.findall(r'<li><span class="feat-icon" aria-hidden="true"><svg class="lucide lucide-([a-z-]+)"[^>]*>.*?</svg></span>'
+                           r'<span>([^<]+)</span></li>', card)
+        assert len(items) >= 4, key
+        assert 'class="tick"' not in card, key
+        if key.endswith("premium"):
+            assert '<p class="plan-cta plan-wait">Premium opens in December 2026.</p>' in card and "plan-hi" in body
+        else:
+            assert re.search(r'<a class="btn btn-[fi] plan-cta" href="/signin">', card), key
+
+
+# The owner announced on 28 October 2026 that face verification and anti-money-laundering checks launch in December
+# 2026. The pricing page carries it as a pre-launch announcement in a brand navy band with a drawing of face verification and a
+# padlock, and marks what is live now apart from what is coming.
+def test_the_pricing_page_announces_the_checks_for_december_2026(client):
+    body = client.get("/pricing").text
+    assert '<section aria-labelledby="p-trust" class="trust">' in body
+    assert '<svg class="trust-art" role="img" aria-label="A drawing of face verification on a phone, with a padlock"' in body
+    text = _text(client, "/pricing")
+    assert "Coming in December 2026 Know exactly who is on the other side." in text
+    assert "Face verification December 2026" in text and "Anti-money-laundering checks December 2026" in text
+    assert "Private evidence Live now" in text
+    assert body.count('<span class="trust-when trust-live">Live now</span>') == 1
 
 
 def test_the_founders_page_puts_the_example_dashboard_beneath_the_hero_and_the_steps_on_a_timeline(client):

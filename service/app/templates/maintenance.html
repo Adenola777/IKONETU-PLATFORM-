@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{# Shown to founders and investors while an admin has the platform in maintenance mode. Staff pages stay open. #}
+{% block body %}
+<div class="site">
+<div class="page">
+<main id="main">
+<section aria-labelledby="mt-title">
+<div class="wrap narrow" style="padding-top:96px;padding-bottom:112px">
+<p class="lbl" style="margin-bottom:20px">Maintenance</p>
+<h1 id="mt-title" class="h1">IkonetU is closed for a short while.</h1>
+<p class="lede" style="margin-bottom:32px">{{ message }}</p>
+<a class="btn btn-f btn-lg" href="/">Go to the home page</a>
+</div>
+</section>
+</main>
+</div>
+</div>
+{% endblock %}

@@ -1,40 +1,30 @@
 {% extends "app/shell.html" %}
+{#
+  The founder's pitch (screen 05): the video with its captions, then Replace video and Edit
+  transcript, each opening its own form, and removal behind a second press. With no pitch, the
+  upload form is the page. From 1024px the advice sits in a column beside it.
+#}
 {% from "app/ui.html" import field_error, invalid, form_status %}
 {% from "app/pitch_video.html" import pitch_video %}
 {% set role = "founder" %}
 {% set current = "pitch" %}
 {% block scripts %}<script src="/static/js/app/pitch-video.js" defer></script>
 <script src="/static/js/app/pitch-upload.js" defer></script>{% endblock %}
-{% block main %}
-<h1 class="app-title">Your one-minute pitch</h1>
-<p class="app-lede">Say who you are, what your venture does, who it is for and what you have done so far. Investors see the video with captions and your transcript. Your profile cannot be published without a pitch.</p>
-<div class="side">
-<div class="stack">
-{% if pitch %}
-<section class="card" aria-labelledby="cur-h">
-<h2 id="cur-h" class="app-h2">Your current pitch</h2>
-<p class="small" style="margin-top:0">{{ clock_text(pitch.duration_seconds) }} long, saved on {{ date_text(pitch.updated_at) }}.</p>
-{% if signed %}
-{{ pitch_video(signed, pitch.transcript, pitch.duration_seconds | float, venture.name ~ " pitch") }}
-{% else %}
-<p class="status status-err">The video could not be loaded. Please reload the page.</p>
-{% endif %}
-</section>
-{% endif %}
-<section class="card" aria-labelledby="up-h">
-<h2 id="up-h" class="app-h2">{{ "Replace your pitch" if pitch else "Upload your pitch" }}</h2>
+{% macro say() %}Say who you are, what your venture does, who it is for and what you have done so far. Investors see the video with captions made from your transcript.{% endmacro %}
+{% macro needs() %}A pitch is {{ pitch_rules.article }} {{ pitch_rules.names }} file of up to {{ pitch_rules.seconds }} seconds and {{ pitch_rules.mb }} MB.{% if pitch_rules.mb == 50 and pitch_rules.seconds >= 60 %} A one-minute video recorded at 720p is usually well under 50 MB.{% endif %}{% endmacro %}
 {#
   The founder chooses a video and types what they say. pitch-upload.js sends the video from the
   browser straight to the founder's own folder in storage, and the server then records it with
   the transcript. Without the script the form cannot send a video, so it says so.
 #}
+{% macro upload_form() %}
 {% set up = states.get("upload", {}) %}
-<form class="form" novalidate data-pitch-upload data-user="{{ user_id }}" data-storage="{{ storage_url }}" data-key="{{ storage_key }}" data-has-pitch="{{ 'yes' if pitch else 'no' }}">
+<form class="form" novalidate data-pitch-upload data-user="{{ user_id }}" data-storage="{{ storage_url }}" data-key="{{ storage_key }}" data-has-pitch="{{ 'yes' if pitch else 'no' }}" data-types="{{ pitch_rules.types | join(',') }}" data-names="{{ pitch_rules.names }}" data-article="{{ pitch_rules.article }}" data-max-mb="{{ pitch_rules.mb }}" data-max-seconds="{{ pitch_rules.seconds }}">
 {% if up.get("status") == "sent" %}<p class="status status-ok" role="status">{{ up.message }}</p>{% endif %}
 <div class="field">
 <label for="p-video">{{ "Choose a new video to replace your pitch" if pitch else "Your pitch video" }}</label>
-<input id="p-video" type="file" accept="{{ PITCH_TYPES | join(',') }}" class="input" aria-describedby="p-video-hint">
-<p id="p-video-hint" class="hint">MP4, WebM or MOV, up to 90 seconds and 50 MB. A one-minute video recorded at 720p is usually well under 50 MB.</p>
+<input id="p-video" type="file" accept="{{ pitch_rules.types | join(',') }}" class="input" aria-describedby="p-video-hint">
+<p id="p-video-hint" class="hint">{{ pitch_rules.names }}, up to {{ pitch_rules.seconds }} seconds and {{ pitch_rules.mb }} MB.</p>
 </div>
 <div class="field">
 <label for="p-transcript">What you say in the pitch</label>
@@ -44,13 +34,32 @@
 </div>
 <button type="submit" class="btn btn-f" style="align-self:flex-start">{{ "Replace my pitch" if pitch else "Upload my pitch" }}</button>
 </form>
-</section>
-</div>
-{% if pitch %}
-<aside class="stack" aria-label="Change the pitch">
-<section class="card">
-<h2 class="app-h3">Change the transcript only</h2>
+{% endmacro %}
+{% block main %}
 {% set st = states.get("transcript", {}) %}
+<div class="fr-page">
+<div>
+<h1 class="fr-h1">Your pitch</h1>
+<p class="fr-sub">{% if pitch %}{{ clock_text(pitch.duration_seconds) }} · saved on {{ date_text(pitch.updated_at) }}{% else %}One minute that says who you are and what you are building.{% endif %}</p>
+</div>
+<div class="fr-cols">
+<div class="fr-page">
+{% if pitch %}
+<section class="card2" aria-label="Your current pitch">
+{% if signed %}
+{{ pitch_video(signed, pitch.transcript, pitch.duration_seconds | float, venture.name ~ " pitch") }}
+{% else %}
+<p class="status status-err">The video could not be loaded. Please reload the page.</p>
+{% endif %}
+</section>
+<div class="acts2">
+<details{% if states.get("upload") %} open{% endif %}>
+<summary>{{ icon("upload", 18) }}Replace video</summary>
+<div class="sheet">{{ upload_form() }}</div>
+</details>
+<details{% if st %} open{% endif %}>
+<summary>{{ icon("square-pen", 18) }}Edit transcript</summary>
+<div class="sheet">
 {% set errors = st.get("errors", {}) %}
 {% set value = st.get("values", {}).get("transcript", "") if st.get("status") == "error" else pitch.transcript %}
 <form class="form" method="post" action="/dashboard/pitch/transcript" novalidate>
@@ -61,17 +70,38 @@
 {{ value }}</textarea>
 {{ field_error(errors, "transcript") }}
 </div>
-<button type="submit" class="btn btn-n" style="align-self:flex-start" data-pending="Saving…">Save the transcript</button>
+<button type="submit" class="btn btn-f" style="align-self:flex-start" data-pending="Saving…">Save the transcript</button>
 </form>
+</div>
+</details>
+</div>
+<details class="danger">
+<summary>Remove my pitch</summary>
+<div class="danger-in">
+<p>Removing the pitch also hides your profile from investors, because a profile needs a pitch.</p>
+<form method="post" action="/dashboard/pitch/remove"><button type="submit" class="btn btn-danger">Remove my pitch</button></form>
+</div>
+</details>
+{% else %}
+<section class="fr-emptybox" aria-labelledby="none-h">
+<span class="big" aria-hidden="true">{{ icon("video", 26) }}</span>
+<h2 id="none-h" class="c-h">You have no pitch yet</h2>
+<p class="c-p">Your profile cannot be published without one.</p>
 </section>
-<section class="card">
-<h2 class="app-h3">Remove your pitch</h2>
-<p class="body2">Removing the pitch also hides your profile from investors, because a profile needs a pitch.</p>
-<form method="post" action="/dashboard/pitch/remove" style="margin-top:12px">
-<button type="submit" class="btn btn-n btn-sm">Remove my pitch</button>
-</form>
+<section class="card2" aria-labelledby="up-h">
+<h2 id="up-h" class="c-h">Upload your pitch</h2>
+{{ upload_form() }}
 </section>
-</aside>
 {% endif %}
+<div class="fr-phone-only fr-page" style="gap:8px">
+<details class="help"><summary>{{ icon("info", 18) }}<span class="q">What to say in one minute</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary><p>{{ say() }}</p></details>
+<details class="help"><summary>{{ icon("info", 18) }}<span class="q">Video requirements</span><span class="chev">{{ icon("chevron-down", 18) }}</span></summary><p>{{ needs() }}</p></details>
+</div>
+</div>
+<aside class="fr-aside" aria-label="About your pitch">
+<section class="panel"><h2>{{ icon("info", 18) }}What to say in one minute</h2><p>{{ say() }}</p></section>
+<section class="panel"><h2>{{ icon("video", 18) }}Video requirements</h2><p>{{ needs() }}</p></section>
+</aside>
+</div>
 </div>
 {% endblock %}
