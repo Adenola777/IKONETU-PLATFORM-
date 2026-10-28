@@ -93,7 +93,8 @@ LEGAL = ["privacy", "terms", "cookies", "complaints"]
 
 
 def _text(client, path):
-    return html.unescape(re.sub(r"<[^>]+>", " ", client.get(path).text))
+    # Runs of whitespace collapse to one space, as a browser renders them.
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", client.get(path).text)))
 
 
 def test_the_cookie_policy_names_every_cookie_and_storage_item_the_code_sets(client):
@@ -369,6 +370,23 @@ def test_the_pricing_page_sets_free_beside_premium_for_each_side(client):
         assert re.findall(r'<h3 class="h3" id="[a-z-]+">([^<]+)</h3>', pair) == [f"{side} Free", f"{side} Premium"]
     assert body.count('<div class="qa">') == 1
 
+
+
+# Redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a ticked list of what it
+# includes, and Premium's action waits for December 2026.
+def test_each_plan_states_its_price_value_action_and_ticked_features(client):
+    body = client.get("/pricing").text
+    plans = re.findall(r'<article class="card plan plan-[fi][^"]*" aria-labelledby="([a-z-]+)">(.*?)</article>', body, re.DOTALL)
+    assert [key for key, _ in plans] == ["founder-free", "founder-premium", "investor-free", "investor-premium"]
+    for key, card in plans:
+        assert '<p class="plan-price"><span class="plan-amt">$' in card, key
+        assert card.count('<p class="plan-value">') == 1, key
+        items = re.findall(r'<li><svg class="tick" aria-hidden="true"[^>]*>.*?</svg><span>([^<]+)</span></li>', card)
+        assert len(items) >= 4, key
+        if key.endswith("premium"):
+            assert '<p class="plan-cta plan-wait">Premium opens in December 2026.</p>' in card and "plan-hi" in body
+        else:
+            assert re.search(r'<a class="btn btn-[fi] plan-cta" href="/signin">', card), key
 
 def test_trust_and_safety_links_its_sections_and_sets_the_statuses_as_a_table(client):
     body = client.get("/trust-and-safety").text
