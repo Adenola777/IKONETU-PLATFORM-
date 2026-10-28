@@ -452,10 +452,28 @@ html{scroll-behavior:smooth}
    actions and the lists line up; below 760px the cards sit one above the other. */
 .pg-pricing .plan-jump{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 0}
 .pg-pricing .intro-c .chip{margin-bottom:16px}
-.pg-pricing .launch{display:flex;gap:16px;align-items:flex-start;max-width:var(--w-wide);margin:40px auto 0;padding:24px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--investor-wash);text-align:left}
-.pg-pricing .launch-icon{display:flex;flex:none;align-items:center;justify-content:center;width:48px;height:48px;border-radius:var(--r-control);background:var(--investor-tint);color:var(--investor)}
-.pg-pricing .launch-body .h3{margin:8px 0 4px}
-.site.pg-pricing .hero-c .launch-body p{margin:0;color:var(--text-3);text-align:left;text-align-last:auto;-webkit-hyphens:manual;hyphens:manual}
+/* The trust band under the pricing hero: what arrives in December 2026 and what is live now, beside a drawing of face
+   verification with a padlock. It is dark, so the announcement stands apart from the plans. */
+.pg-pricing .trust{background:var(--ink);color:#FFFFFF}
+.pg-pricing .trust-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:48px;align-items:center;max-width:calc(var(--w-wide) + 48px);margin:0 auto;padding-top:clamp(56px,7vw,96px);padding-bottom:clamp(56px,7vw,96px)}
+.pg-pricing .trust-chip{display:inline-flex;padding:4px 12px;border-radius:var(--r-pill);background:rgba(242,107,29,0.16);color:var(--band-accent);font-size:var(--t-label);font-weight:600}
+.pg-pricing .trust-title{margin:16px 0 0;max-width:18ch;color:#FFFFFF}
+.site.pg-pricing .trust p{text-align:left;-webkit-hyphens:manual;hyphens:manual}
+.pg-pricing .trust-lede{margin:16px 0 0;max-width:46ch;font-size:var(--t-lead);line-height:1.5;color:var(--band-text)}
+.pg-pricing .trust-list{display:flex;flex-direction:column;gap:20px;list-style:none;margin:32px 0 0;padding:0}
+.pg-pricing .trust-list li{display:flex;gap:16px;align-items:flex-start}
+.pg-pricing .trust-icon{display:flex;flex:none;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--r-control);background:rgba(255,255,255,0.08);color:#FFFFFF}
+.pg-pricing .trust-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;font-size:var(--t-ui);font-weight:600;line-height:1.4;color:#FFFFFF}
+.pg-pricing .trust-when{padding:2px 8px;border-radius:var(--r-pill);background:rgba(255,255,255,0.10);font-size:var(--t-ui-xs);font-weight:600;color:var(--band-text)}
+.pg-pricing .trust-live{background:rgba(103,227,161,0.16);color:var(--band-live)}
+.pg-pricing .trust-list p{margin:4px 0 0;font-size:var(--t-ui);line-height:1.5;color:var(--band-text)}
+.pg-pricing .trust-note{margin:28px 0 0;font-size:var(--t-ui-s);color:var(--band-muted)}
+.pg-pricing .trust-visual{display:flex;justify-content:center}
+.pg-pricing .trust-art{width:100%;max-width:360px;height:auto;font-family:inherit}
+@media (max-width: 900px){
+.pg-pricing .trust-grid{grid-template-columns:minmax(0,1fr);gap:40px}
+.pg-pricing .trust-art{max-width:280px}
+}
 .pg-pricing .plan-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;max-width:var(--w-wide);margin:40px auto 0}
 .pg-pricing .plan{display:grid;grid-template-rows:subgrid;grid-row:span 7;row-gap:0;align-content:start}
 .pg-pricing .plan > *{margin:0}
@@ -484,7 +502,6 @@ html{scroll-behavior:smooth}
 .pg-pricing .plan-hi.plan-i .tick circle{fill:var(--investor)}
 .pg-pricing .plan-hi.plan-i .tick path{stroke:#FFFFFF}
 @media (max-width: 760px){
-.pg-pricing .launch{flex-direction:column;padding:20px}
 .pg-pricing .plan-pair{grid-template-columns:minmax(0,1fr);gap:24px}
 .pg-pricing .plan{display:flex;flex-direction:column;grid-row:auto}
 }

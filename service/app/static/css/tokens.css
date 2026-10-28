@@ -17,6 +17,10 @@
   --footer: #0B1A33;
   --footer-text: #B9C4D6;
   --footer-line: #1E3150;
+  --band-text: #D0D5DD; /* the pricing page's dark trust band: body text on --ink */
+  --band-muted: #98A2B3; /* the trust band's closing note */
+  --band-accent: #FDB022; /* the trust band's Coming in December 2026 chip */
+  --band-live: #6CE9A6; /* the trust band's Live now chip */
   /* The admin sidebar, black since 27 October 2026, with white text and brighter colours on it. */
   --side: #000000;
   --side-text: #FFFFFF;
