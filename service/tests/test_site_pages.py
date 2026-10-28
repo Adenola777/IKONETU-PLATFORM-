@@ -203,6 +203,15 @@ def test_the_pricing_page_has_two_plans_for_each_side_and_says_premium_is_not_on
         assert "Premium is not on sale yet" in _text(client, path), path
 
 
+# The owner set Premium's opening for December 2026 on 28 October 2026. The pricing page says so in its
+# opening line, on both Premium cards and in its answer on when Premium can be bought.
+def test_the_pricing_page_says_premium_opens_in_december_2026(client):
+    text = _text(client, "/pricing")
+    assert "It opens in December 2026, with identity and anti-money-laundering checks, and nobody is charged today." in text
+    assert text.count("Premium opens in December 2026") == 3
+    assert "payments are ready" not in text and "can take payments" not in text
+
+
 @pytest.mark.parametrize("key", list(PUBLIC_PAGES))
 def test_every_header_links_to_pricing(client, key):
     body = client.get(PUBLIC_PAGES[key]["path"]).text
