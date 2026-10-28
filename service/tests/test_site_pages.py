@@ -342,10 +342,18 @@ def test_every_page_centres_its_hero(client, key):
     assert hero != -1 and "</section>" not in body[hero:h1]
 
 
+# The owner asked on 28 October 2026 for real icons on the pricing page, so each feature there carries a Lucide icon of
+# its own and the trust band carries three. The rule above still holds on every other page.
+PRICING_ICONS = {"user-round", "video", "file-text", "message-square-quote", "gauge", "activity", "search", "messages-square",
+                 "file-check", "trending-up", "calendar-check", "list-filter", "user-check", "circle-play", "file-search",
+                 "clipboard-check", "badge-check", "sliders-horizontal", "scan-face", "shield-check", "lock-keyhole"}
+
+
 @pytest.mark.parametrize("key", list(PUBLIC_PAGES))
 def test_no_page_carries_a_decorative_icon(client, key):
     body = client.get(PUBLIC_PAGES[key]["path"]).text
-    assert set(re.findall(r'class="lucide lucide-([a-z-]+)"', body)) <= SITE_ICONS
+    allowed = SITE_ICONS | (PRICING_ICONS if key == "pricing" else set())
+    assert set(re.findall(r'class="lucide lucide-([a-z-]+)"', body)) <= allowed
     assert body.count("Menu</button>") == 1
 
 
@@ -373,17 +381,19 @@ def test_the_pricing_page_sets_free_beside_premium_for_each_side(client):
 
 
 
-# Redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a ticked list of what it
-# includes, and Premium's action waits for December 2026.
-def test_each_plan_states_its_price_value_action_and_ticked_features(client):
+# Redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a list of what it includes,
+# each feature with its own Lucide icon, and Premium's action waits for December 2026.
+def test_each_plan_states_its_price_value_action_and_features_with_icons(client):
     body = client.get("/pricing").text
     plans = re.findall(r'<article class="card plan plan-[fi][^"]*" aria-labelledby="([a-z-]+)">(.*?)</article>', body, re.DOTALL)
     assert [key for key, _ in plans] == ["founder-free", "founder-premium", "investor-free", "investor-premium"]
     for key, card in plans:
         assert '<p class="plan-price"><span class="plan-amt">$' in card, key
         assert card.count('<p class="plan-value">') == 1, key
-        items = re.findall(r'<li><svg class="tick" aria-hidden="true"[^>]*>.*?</svg><span>([^<]+)</span></li>', card)
+        items = re.findall(r'<li><span class="feat-icon" aria-hidden="true"><svg class="lucide lucide-([a-z-]+)"[^>]*>.*?</svg></span>'
+                           r'<span>([^<]+)</span></li>', card)
         assert len(items) >= 4, key
+        assert 'class="tick"' not in card, key
         if key.endswith("premium"):
             assert '<p class="plan-cta plan-wait">Premium opens in December 2026.</p>' in card and "plan-hi" in body
         else:

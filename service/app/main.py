@@ -93,10 +93,24 @@ def name_file_types() -> None:
     mimetypes.add_type("font/woff2", ".woff2")
 
 
+class RevalidatedStaticFiles(StaticFiles):
+    """Static files that a browser checks with the server before it reuses them.
+
+    The files went out with no Cache-Control, so a browser chose for itself how long to keep them.
+    On 28 October 2026 the redesigned pricing page met a stylesheet kept from the day before, and
+    each ticked feature showed a list bullet beside an unstyled black circle. "no-cache" makes the
+    browser ask each time; the answer is 304 with no body while the file is unchanged."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers.setdefault("Cache-Control", "no-cache")
+        return response
+
+
 name_file_types()
-app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
+app.mount("/static", RevalidatedStaticFiles(directory=str(HERE / "static")), name="static")
 MEDIA = HERE / "public" / "media"
-app.mount("/media", StaticFiles(directory=str(MEDIA)), name="media")
+app.mount("/media", RevalidatedStaticFiles(directory=str(MEDIA)), name="media")
 
 
 @app.get("/icon.svg", include_in_schema=False)
