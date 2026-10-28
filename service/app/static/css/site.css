@@ -447,8 +447,8 @@ html{scroll-behavior:smooth}
 }
 .pg-readiness .fill{transition:width var(--m-open) ease}
 
-/* Pricing, redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a ticked list of what it
-   includes. Premium carries a border in its side's colour. On wide screens a side's two cards share their rows, so the prices, the
+/* Pricing, redesigned on 28 October 2026: each plan shows its price, one sentence of value, its action and a list of what it
+   includes, each feature with a Lucide icon in a tile of its side's colour. Premium carries a border in its side's colour. On wide screens a side's two cards share their rows, so the prices, the
    actions and the lists line up; below 760px the cards sit one above the other. */
 .pg-pricing .plan-jump{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 0}
 .pg-pricing .intro-c .chip{margin-bottom:16px}
@@ -492,15 +492,11 @@ html{scroll-behavior:smooth}
 .site.pg-pricing .plan-lead{margin-top:24px;padding-top:24px;border-top:1px solid var(--line);font-size:var(--t-ui);font-weight:600;color:var(--ink)}
 .pg-pricing .feat-list{display:flex;flex-direction:column;gap:12px;list-style:none;margin-top:16px;padding:0}
 .pg-pricing .feat-list li{display:flex;align-items:flex-start;gap:12px;font-size:var(--t-ui);line-height:1.5;color:var(--text-3)}
-.pg-pricing .tick{flex:none;margin-top:2px}
-.pg-pricing .plan-f .tick circle{fill:var(--founder-tint)}
-.pg-pricing .plan-f .tick path{stroke:var(--founder-text)}
-.pg-pricing .plan-i .tick circle{fill:var(--investor-tint)}
-.pg-pricing .plan-i .tick path{stroke:var(--investor)}
-.pg-pricing .plan-hi.plan-f .tick circle{fill:var(--founder)}
-.pg-pricing .plan-hi.plan-f .tick path{stroke:var(--ink)}
-.pg-pricing .plan-hi.plan-i .tick circle{fill:var(--investor)}
-.pg-pricing .plan-hi.plan-i .tick path{stroke:#FFFFFF}
+.pg-pricing .feat-icon{display:flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;margin-top:-4px;border-radius:var(--r-control)}
+.pg-pricing .plan-f .feat-icon{background:var(--founder-tint);color:var(--founder-text)}
+.pg-pricing .plan-i .feat-icon{background:var(--investor-tint);color:var(--investor)}
+.pg-pricing .plan-hi.plan-f .feat-icon{background:var(--founder);color:var(--ink)}
+.pg-pricing .plan-hi.plan-i .feat-icon{background:var(--investor);color:#FFFFFF}
 @media (max-width: 760px){
 .pg-pricing .plan-pair{grid-template-columns:minmax(0,1fr);gap:24px}
 .pg-pricing .plan{display:flex;flex-direction:column;grid-row:auto}
