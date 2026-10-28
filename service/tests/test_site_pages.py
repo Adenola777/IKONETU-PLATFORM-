@@ -401,7 +401,7 @@ def test_the_pricing_page_announces_the_checks_for_december_2026(client):
     assert "Coming in December 2026 Know exactly who is on the other side." in text
     assert "Face verification December 2026" in text and "Anti-money-laundering checks December 2026" in text
     assert "Private evidence Live now" in text
-    assert body.count('<span class="trust-when trust-live">Live now</span>') == 1
+    assert body.count('<span class="chip trust-when trust-live">Live now</span>') == 1
 
 
 def test_the_founders_page_puts_the_example_dashboard_beneath_the_hero_and_the_steps_on_a_timeline(client):
